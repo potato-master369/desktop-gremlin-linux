@@ -1,7 +1,7 @@
 # desktop-gremlin-linux
 
 A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C
-*I honestly just gave up on the 20 subs promise you know what guys here you go but still check me out and/or subscribe on (YouTube)[https://www.youtube.com/@WompWomp1234-j6c]*
+*I honestly just gave up on the 20 subs promise you know what guys here you go but still check me out and/or subscribe on [YouTube](https://www.youtube.com/@WompWomp1234-j6c)*
 
 ---
 ## Prerequisites
