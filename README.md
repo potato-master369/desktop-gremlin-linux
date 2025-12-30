@@ -3,7 +3,6 @@
 A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C
 *I honestly just gave up on the 20 subs promise you know what guys here you go but still check me out and/or subscribe on [YouTube](https://www.youtube.com/@WompWomp1234-j6c)*
 
----
 ## Prerequisites
 * a C compiler supporting at least C99 (you probably already have this try typing `gcc` or `clang`)
 * Xlib (you probably also have this preinstalled)
@@ -17,10 +16,13 @@ To build the thing, just run:
 
 ## FAQ
 > Are you gonna add more features?
+
 yeah, I would love to follow `Desktop_Gremlin` in terms of general direction, but I'd also like to add my own features, and/or remove features if I deem them bad or just find them difficult to port over to Xlib + C.
 > When is v3?
+
 Idk bro
 > Are you gonna be working on this forever?
+
 no but it's a passion project so I'll check back on it once in a while
 
 ## Thanks to:
