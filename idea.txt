@@ -1,0 +1,17 @@
+Init
+Load frames
+Load masks
+while true
+if not dragged:
+    increase timer
+    if timer > 20s:
+        go to mouse current position as a target:
+            animate
+            move
+elif right clicked:
+    emote random 1-4
+    timer = 0
+else:
+    set timer to 0
+    grab animation
+    go to mouse
