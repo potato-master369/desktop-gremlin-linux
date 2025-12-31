@@ -11,8 +11,13 @@ A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with
 
 ## build
 To build the thing, just run:
+`git clone https://github.com/potato-master369/desktop-gremlin-linux`
+
 `clang dynamic.c -lX11 -lXpm -lXext -lm -o 'Manhattan Cafe'`
 *(feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
+
+`cp ./desktop-gremlin-assets ~/Desktop`
+*Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.*
 
 ## FAQ
 > Are you gonna add more features?
