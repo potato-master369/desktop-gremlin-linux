@@ -15,10 +15,12 @@
  * up          | 90     | 30   | /
  * idle        | 120    | 60   | The idle animation played when there is no user input up till 20s
  * (old) emote2| 180    | 35   | removed; used incorrectly
- * click       | 180    | ?    | newly implemented; to replace emote2
+ * click       | 180    | 111  | newly implemented; to replace emote2
+ * grab        | 291    | 50   | animation used while dragged
+ * total       | 0      | 341  | -
  */
 
-#define NFRAMES 215
+#define NFRAMES 341 // change with new assets added
 #define WIDTH 325
 #define HEIGHT 325
 
@@ -123,10 +125,10 @@ main ()
     }
     //    Cleaned up by clanker so idk if this is wrong
     // State tracking
-    int current    = 0;
-    int idle       = 0;
-    int PtrState   = 0;
-    int final_dir  = 0;
+    int current = 0;
+    int idle = 0;
+    int PtrState = 0;
+    int final_dir = 0;
 
     // Direction and motion
     double tmp_dir = 0.0;
@@ -135,15 +137,14 @@ main ()
 
     // Pointer and window info
     int root_x = 0, root_y = 0;
-    int win_x  = 0, win_y  = 0;
+    int win_x = 0, win_y = 0;
     unsigned int mask = 0;
 
     // X11 handles
-    Window root      = DefaultRootWindow(d);
-    Window ret_root  = 0;
+    Window root = DefaultRootWindow (d);
+    Window ret_root = 0;
     Window ret_child = 0;
     XWindowAttributes wa; // NOTE: if ur stupid or blind (or both), wa stands for Window Attributes
-
 
     printf ("Starting loop...");
     while (1)
@@ -188,9 +189,9 @@ main ()
                     printf ("RMB\n");
                     idle = 0;
                     // do the emote
-                    for (int i = 0; i < 35; ++i)
+                    for (int i = 0; i < 111; ++i)
                     {
-                        int idx = 180 + (i % 35);
+                        int idx = 180 + i;
                         if (masks[idx] != None)
                         {
                             XShapeCombineMask (d, w, ShapeBounding, 0, 0,
@@ -204,17 +205,20 @@ main ()
                         usleep (100000); // ~30 tps
                         XFlush (d);
                     }
-                } else if (e.xbutton.button == Button1) {
-                  // LMB
-                  // start drag
-                  PtrState = 1;
-                  idle = 0;
+                }
+                else if (e.xbutton.button == Button1)
+                {
+                    // LMB
+                    // start drag
+                    PtrState = 1;
+                    idle = 0;
                 }
                 else
                 {
                     printf ("other\n");
                 }
-            } else if (e.type == ButtonRelease)
+            }
+            else if (e.type == ButtonRelease)
             {
                 // reset drag state machine
                 PtrState = 0;
@@ -237,14 +241,24 @@ main ()
         {
             if (PtrState == 1)
             {
-              // DRAG
-              if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
-                &root_y, &win_x, &win_y, &mask))
-              {
-                printf ("Mouse at: %d,%d, dx %d, dy %d\n", root_x,
-                        root_y, dx, dy);
-              }
-              XMoveWindow (d, w, root_x - 162, root_y - 162);
+                // DRAG
+                int idx = 291 + (current % 50);
+                if (masks[idx] != None)
+                    XShapeCombineMask (d, w, ShapeBounding, 0, 0,
+                                       masks[idx], ShapeSet);
+                if (frames[idx] != None)
+                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
+                               0, 0);
+                current = (current + 1) % 50;
+
+                if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
+                                   &root_y, &win_x, &win_y, &mask))
+                {
+                    printf ("Mouse at: %d,%d, dx %d, dy %d, current %d\n", root_x,
+                            root_y, dx, dy, current);
+                }
+                XMoveWindow (d, w, root_x - 162, root_y - 162);
+                usleep (100000);
             }
             else
             {
