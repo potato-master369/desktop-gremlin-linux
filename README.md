@@ -31,7 +31,7 @@ Idk bro
 no but it's a passion project so I'll check back on it once in a while
 
 ## Thanks to:
-* [KirtVakesco](https://github.com/KurtVelasco) for the [original](https://github.com/KurtVelasco/Desktop_Gremlin), inspiration, and assets (sowwy for stealing them I can't figure umaViewer out)
+* [KirtValesco](https://github.com/KurtVelasco) for the [original](https://github.com/KurtVelasco/Desktop_Gremlin), inspiration, and assets (sowwy for stealing them I can't figure umaViewer out)
 * ImageMagick team: ~~stealing~~ repurposing KurtValesco's assets would have been impossible without this umazing (pun intended) tool.
 * and of course, YOU for being interested in this project of mine!
 
