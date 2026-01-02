@@ -10,8 +10,8 @@
 
 /* Animation   | Offset | size | comment
  * down        | 0      | 30   | \
- * left        | 30     | 30   |  } main motion
- * down        | 60     | 30   |  |
+ * right       | 30     | 30   |  } main motion
+ * left        | 60     | 30   |  |
  * up          | 90     | 30   | /
  * idle        | 120    | 60   | The idle animation played when there is no user input up till 20s
  * (old) emote2| 180    | 35   | removed; used incorrectly
@@ -134,11 +134,15 @@ main ()
     double tmp_dir = 0.0;
     int dx = 0, dy = 0;
     int new_x = 0, new_y = 0;
+    int oldx, oldy;
 
     // Pointer and window info
     int root_x = 0, root_y = 0;
     int win_x = 0, win_y = 0;
     unsigned int mask = 0;
+
+    // idle
+    int cachePX, cachePY;
 
     // X11 handles
     Window root = DefaultRootWindow (d);
@@ -258,9 +262,57 @@ main ()
                             root_y, dx, dy, current);
                 }
                 XMoveWindow (d, w, root_x - 162, root_y - 162);
-                usleep (100000);
+                oldx = win_x;
+                oldy = win_y;
             }
-            else
+            if (PtrState == 2)
+            {
+                if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
+                                   &root_y, &win_x, &win_y, &mask))
+                {
+                    printf ("Mouse at: %d,%d, dx %d, dy %d\n", cachePX,
+                            cachePY, dx, dy);
+                }
+                // dir & distance
+                XGetWindowAttributes (d, w, &wa);
+                // delta from window center to mouse
+                dx = cachePX - wa.x;
+                dy = cachePY - wa.y;
+                // angle in radians double
+                tmp_dir = atan2 (-dy, dx);
+                int tmp_dir2 = (int)(tmp_dir * 180.0 / M_PI);
+                double dist = sqrt (dx * dx + dy * dy);
+                if (tmp_dir2 < 0)
+                    tmp_dir2 += 360;
+                final_dir = ((tmp_dir2 + 45) / 90) * 90 % 360;
+                if (dist > 40)
+                {
+                    new_x = wa.x + dx / 12;
+                    new_y = wa.y + dy / 12;
+                }
+                else
+                {
+                    new_x = wa.x + dx;
+                    new_y = wa.y + dy;
+                    idle = 0;
+                    PtrState = 0;
+                }
+                int base = (final_dir == 270)   ? 0
+                           : (final_dir == 0)   ? 30
+                           : (final_dir == 180) ? 60
+                           : (final_dir == 90)  ? 90
+                                                : 0;
+                int idx = base + (current % 30);
+                if (masks[idx] != None)
+                    XShapeCombineMask (d, w, ShapeBounding, 0, 0,
+                                       masks[idx], ShapeSet);
+                if (frames[idx] != None)
+                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
+                               0, 0);
+                current = (current + 1) % 30;
+                XMoveWindow (d, w, new_x, new_y);
+                usleep (100000); // ~30 tps
+            } else
             {
                 printf ("Main loop!\n");
                 // continue like nothing happened because nothing happened :p
@@ -287,56 +339,9 @@ main ()
                         printf ("Mouse at: %d,%d, dx %d, dy %d\n", root_x, root_y,
                                 dx, dy);
                     }
-                    int cachePX = root_x;
-                    int cachePY = root_y;
-                    while (1)
-                    {
-                        if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
-                                           &root_y, &win_x, &win_y, &mask))
-                        {
-                            printf ("Mouse at: %d,%d, dx %d, dy %d\n", cachePX,
-                                    cachePY, dx, dy);
-                        }
-                        // dir & distance
-                        XGetWindowAttributes (d, w, &wa);
-                        // delta from window center to mouse
-                        dx = cachePX - wa.x;
-                        dy = cachePY - wa.y;
-                        // angle in radians double
-                        tmp_dir = atan2 (-dy, dx);
-                        int tmp_dir2 = (int)(tmp_dir * 180.0 / M_PI);
-                        double dist = sqrt (dx * dx + dy * dy);
-                        if (tmp_dir2 < 0)
-                            tmp_dir2 += 360;
-                        final_dir = ((tmp_dir2 + 45) / 90) * 90 % 360;
-                        if (dist > 40)
-                        {
-                            new_x = wa.x + dx / 12;
-                            new_y = wa.y + dy / 12;
-                        }
-                        else
-                        {
-                            new_x = wa.x + dx;
-                            new_y = wa.y + dy;
-                            idle = 0;
-                            break;
-                        }
-                        int base = (final_dir == 270)   ? 0
-                                   : (final_dir == 0)   ? 30
-                                   : (final_dir == 180) ? 60
-                                   : (final_dir == 90)  ? 90
-                                                        : 0;
-                        int idx = base + (current % 30);
-                        if (masks[idx] != None)
-                            XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                                               masks[idx], ShapeSet);
-                        if (frames[idx] != None)
-                            XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
-                                       0, 0);
-                        current = (current + 1) % 30;
-                        XMoveWindow (d, w, new_x, new_y);
-                        usleep (100000); // ~30 tps
-                    }
+                    cachePX = root_x;
+                    cachePY = root_y;
+                    PtrState = 2;
                 }
             }
         }
