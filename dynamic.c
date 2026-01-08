@@ -7,6 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+/* inih -- simple .INI file parser
+SPDX-License-Identifier: BSD-3-Clause
+Copyright (C) 2009-2025, Ben Hoyt 
+See licenses/BSD3-LICENSE for more info */
+#include "ini.h"
+#include <string.h>
 
 /* Animation   | Offset | size | comment
  * down        | 0      | 30   | \
@@ -28,13 +34,67 @@
 #define M_PI 3.14159265359
 #endif
 
+typedef struct
+{
+    int InitX;
+    int InitY;
+    int InitPtrState;
+    int InitIdle;
+    int ChaseIdleReq;
+    int TickDelay;
+} configuration;
+
+#ifdef GREMLIN_DEBUG
+#warning "You are using the debug. Please do not use -DGREMLIN_DEBUG for better performance."
+#endif
 // def globals
 Display *d = NULL;
 Window w = 0;
 GC gc = 0;
+configuration config;
 
 Pixmap frames[NFRAMES];
 Pixmap masks[NFRAMES];
+
+
+
+static int
+handler (void *user, const char *section, const char *name,
+         const char *value)
+{
+    configuration *pconfig = (configuration *)user;
+
+#define MATCH(s, n) strcmp (section, s) == 0 && strcmp (name, n) == 0
+    if (MATCH ("Window", "InitX"))
+    {
+        pconfig->InitX = atoi (value);
+    }
+    else if (MATCH ("Window", "InitY"))
+    {
+        pconfig->InitY = atoi (value);
+    }
+    else if (MATCH ("Tweaks", "InitPtrState"))
+    {
+        pconfig->InitPtrState = atoi (value);
+    }
+    else if (MATCH ("Tweaks", "InitIdle"))
+    {
+        pconfig->InitIdle = atoi (value);
+    }
+    else if (MATCH ("Tweaks", "ChaseIdleReq"))
+    {
+        pconfig->ChaseIdleReq = atoi (value);
+    }
+    else if (MATCH ("Tweaks", "TickDelay"))
+    {
+        pconfig->TickDelay = atoi (value);
+    }
+    else
+    {
+        return 0; /* unknown section/name, error */
+    }
+    return 1;
+}
 
 void
 cleanup (int sig)
@@ -58,6 +118,33 @@ cleanup (int sig)
 int
 main ()
 {
+    // READ CONFIGURATION
+    
+    config.InitX = 200;
+    config.InitY = 200;
+    config.InitPtrState = 0;
+    config.InitIdle = 600;
+    config.ChaseIdleReq = 600;
+    config.TickDelay = 100000;
+
+    // Detect $HOME
+    const char *home = getenv ("HOME");
+    char filename[256];
+    if (!home)
+    {
+        fprintf (stderr, "HOME not set\n");
+        cleanup (0);
+    }
+
+    snprintf (filename, sizeof (filename),
+              "%s/Desktop/desktop-gremlin-assets/gremlin_config.ini", home);
+
+    if (ini_parse (filename, handler, &config) < 0)
+    {
+        printf ("Can't load %s\n", filename);
+        return 1;
+    }
+
     signal (SIGINT, cleanup);
     signal (SIGTERM, cleanup);
 
@@ -69,12 +156,13 @@ main ()
     }
 
     int screen = DefaultScreen (d);
+#ifdef GREMLIN_DEBUG
     printf ("Hello we loaded da screen things\n");
-
+#endif
     XSetWindowAttributes swa;
     swa.override_redirect = True;
 
-    w = XCreateWindow (d, RootWindow (d, screen), 200, 200, WIDTH, HEIGHT, 0,
+    w = XCreateWindow (d, RootWindow (d, screen), config.InitX, config.InitY, WIDTH, HEIGHT, 0,
                        DefaultDepth (d, screen), InputOutput,
                        DefaultVisual (d, screen), CWOverrideRedirect, &swa);
     if (!w)
@@ -89,26 +177,22 @@ main ()
     gc = XCreateGC (d, w, 0, NULL);
     XSetGraphicsExposures (d, gc, False);
 
+#ifdef GREMLIN_DEBUG
     printf ("Loading our frames i guess\n");
-
-    // load frames & masks
-    char filename[256];
-    const char *home = getenv ("HOME");
-    if (!home)
-    {
-        fprintf (stderr, "HOME not set\n");
-        cleanup (0);
-    }
+#endif
 
     for (int i = 0; i < NFRAMES; ++i)
     {
         frames[i] = None;
         masks[i] = None;
-
+#ifdef GREMLIN_DEBUG
         printf ("Loading frame %d\n", i);
+#endif
         snprintf (filename, sizeof (filename),
                   "%s/Desktop/desktop-gremlin-assets/%d.xpm", home, i);
+#ifdef GREMLIN_DEBUG
         printf ("Loading from file: %s\n", filename);
+#endif
 
         XpmAttributes xpm_attrs;
         xpm_attrs.valuemask = 0; // default; not requesting extra data
@@ -124,8 +208,9 @@ main ()
             masks[i] = None;
             continue;
         }
-
+        #ifdef GREMLIN_DEBUG
         printf ("Loaded frame %d successfully!\n", i);
+        #endif
     }
 
     if (masks[0] != None)
@@ -140,15 +225,14 @@ main ()
     short idx;
     // State tracking
     int current = 0;
-    short idle = 600;
-    char PtrState = 3;
+    short idle = config.InitIdle;
+    char PtrState = config.InitPtrState;
     short final_dir = 0;
 
     // Direction and motion
     double tmp_dir = 0.0;
     int dx = 0, dy = 0;
     int new_x = 0, new_y = 0;
-    int oldx, oldy;
 
     // Pointer and window info
     int root_x = 0, root_y = 0;
@@ -165,15 +249,17 @@ main ()
     XWindowAttributes wa; // NOTE: if ur stupid or blind (or both), wa stands for Window Attributes
 
     XGetWindowAttributes (d, w, &wa);
+    #ifdef GREMLIN_DEBUG
     printf ("Window mapped at %d,%d size %dx%d\n", wa.x, wa.y, wa.width, wa.height);
-
-    // more state machine junk
-    char PtrIn = 0;
-
+    #endif
+    #ifdef GREMLIN_DEBUG
     printf ("Starting loop...");
+    #endif
     while (1)
     {
+        #ifdef GREMLIN_DEBUG
         printf ("New tick: %d, XPending: %d, PtrState: %d, winx: %d, winy: %d\n", idle, XPending (d), PtrState, win_x, win_y);
+        #endif
         // new thingy
         if (XPending (d) > 0)
         {             // is something going on? - IMPT; as XNextEvent will
@@ -185,12 +271,16 @@ main ()
             // queue into the specified XEvent structure and then removes it
             // from the queue.
             XNextEvent (d, &e); // wtf is going on -> e
+#ifdef GREMLIN_DEBUG
             printf ("Event type: %d\n", e.type);
+#endif            
 
             switch (e.type)
             {
             case Expose:
+#ifdef GREMLIN_DEBUG
                 printf ("Expose call!\n");
+#endif                
                 // play idle anim
                 idx = 120 + (current % 60);
                 if (masks[idx] != None)
@@ -200,17 +290,21 @@ main ()
                     XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
                                0);
                 current = (current + 1) % 60;
-                usleep (100000); // ~30 tps
+                usleep (config.TickDelay); // ~30 tps
 
                 idle += 1;
                 break;
             case ButtonPress:
+#ifdef GREMLIN_DEBUG
                 printf ("Button click: ");
+#endif
                 // le button click
                 // is it RMB?
                 if (e.xbutton.button == Button3)
                 {
+#ifdef GREMLIN_DEBUG
                     printf ("RMB\n");
+#endif                    
                     idle = 0;
                     // do the emote
                     for (char i = 0; i < 111; ++i)
@@ -226,7 +320,7 @@ main ()
                             XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH,
                                        HEIGHT, 0, 0);
                         }
-                        usleep (100000); // ~30 tps
+                        usleep (config.TickDelay); // ~30 tps
                         XFlush (d);
                     }
                 }
@@ -255,7 +349,7 @@ main ()
                     XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
                                 0);
                 current = (current + 1) % 60;
-                usleep (100000); // ~30 tps
+                usleep (config.TickDelay); // ~30 tps
             }
         }
         else
@@ -283,7 +377,7 @@ main ()
                         PtrState = 0;
                     }
                 }
-                usleep (100000);
+                usleep (config.TickDelay);
             }
             else if (PtrState == 1)
             {
@@ -300,21 +394,23 @@ main ()
                 if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
                                    &root_y, &win_x, &win_y, &mask))
                 {
+#ifdef GREMLIN_DEBUG
                     printf ("Mouse at: %d,%d, dx %d, dy %d, current %d\n", root_x,
                             root_y, dx, dy, current);
+#endif                            
                 }
                 XMoveWindow (d, w, root_x - 162, root_y - 162);
-                oldx = win_x;
-                oldy = win_y;
-                usleep (100000);
+                usleep (config.TickDelay);
             }
             if (PtrState == 2)
             {
                 if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
                                    &root_y, &win_x, &win_y, &mask))
                 {
+#ifdef GREMLIN_DEBUG
                     printf ("Mouse at: %d,%d, dx %d, dy %d\n", cachePX,
                             cachePY, dx, dy);
+#endif
                 }
                 // dir & distance
                 XGetWindowAttributes (d, w, &wa);
@@ -354,11 +450,13 @@ main ()
                                0, 0);
                 current = (current + 1) % 30;
                 XMoveWindow (d, w, new_x, new_y);
-                usleep (100000); // ~30 tps
+                usleep (config.TickDelay); // ~30 tps
             }
             else if (PtrState == 0)
             {
+#ifdef GREMLIN_DEBUG
                 printf ("Main loop!\n");
+#endif
                 // continue like nothing happened because nothing happened :p
 
                 idx = 120 + (current % 60);
@@ -371,7 +469,7 @@ main ()
 
                 idle += 1;
 
-                usleep (100000); // ~30 tps
+                usleep (config.TickDelay); // ~30 tps
 
                 // have we been idle too long?
                 if (idle >= 600)
@@ -380,8 +478,10 @@ main ()
                     if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
                                        &root_y, &win_x, &win_y, &mask))
                     {
+#ifdef GREMLIN_DEBUG
                         printf ("Mouse at: %d,%d, dx %d, dy %d\n", root_x, root_y,
                                 dx, dy);
+#endif                                
                     }
                     cachePX = root_x;
                     cachePY = root_y;
