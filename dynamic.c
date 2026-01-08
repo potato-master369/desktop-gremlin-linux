@@ -23,6 +23,9 @@
 #define NFRAMES 341 // change with new assets added
 #define WIDTH 325
 #define HEIGHT 325
+#ifndef M_PI
+#define M_PI 3.14159265359
+#endif
 
 // def globals
 Display *d = NULL;
@@ -79,7 +82,7 @@ main ()
         cleanup (0);
     }
     XSelectInput (d, w,
-                  ButtonPressMask | ButtonReleaseMask | PointerMotionHintMask);
+                  ButtonPressMask | ButtonReleaseMask | PointerMotionHintMask | EnterWindowMask | LeaveWindowMask);
 
     XMapWindow (d, w);
     gc = XCreateGC (d, w, 0, NULL);
@@ -124,11 +127,12 @@ main ()
         printf ("Loaded frame %d successfully!\n", i);
     }
     //    Cleaned up by clanker so idk if this is wrong
+    short idx;
     // State tracking
     int current = 0;
-    int idle = 0;
-    int PtrState = 0;
-    int final_dir = 0;
+    short idle = 0;
+    char PtrState = 0;
+    short final_dir = 0;
 
     // Direction and motion
     double tmp_dir = 0.0;
@@ -150,6 +154,9 @@ main ()
     Window ret_child = 0;
     XWindowAttributes wa; // NOTE: if ur stupid or blind (or both), wa stands for Window Attributes
 
+    // more state machine junk
+    char PtrIn = 0;
+
     printf ("Starting loop...");
     while (1)
     {
@@ -167,11 +174,12 @@ main ()
             XNextEvent (d, &e); // wtf is going on -> e
             printf ("Event type: %d\n", e.type);
 
-            if (e.type == Expose)
+            switch (e.type)
             {
+            case Expose:
                 printf ("Expose call!\n");
                 // play idle anim
-                int idx = 120 + (current % 60);
+                idx = 120 + (current % 60);
                 if (masks[idx] != None)
                     XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[idx],
                                        ShapeSet);
@@ -182,9 +190,8 @@ main ()
                 usleep (100000); // ~30 tps
 
                 idle += 1;
-            }
-            else if (e.type == ButtonPress)
-            {
+                break;
+            case ButtonPress:
                 printf ("Button click: ");
                 // le button click
                 // is it RMB?
@@ -193,9 +200,9 @@ main ()
                     printf ("RMB\n");
                     idle = 0;
                     // do the emote
-                    for (int i = 0; i < 111; ++i)
+                    for (char i = 0; i < 111; ++i)
                     {
-                        int idx = 180 + i;
+                        idx = 180 + i;
                         if (masks[idx] != None)
                         {
                             XShapeCombineMask (d, w, ShapeBounding, 0, 0,
@@ -210,33 +217,31 @@ main ()
                         XFlush (d);
                     }
                 }
-                else if (e.xbutton.button == Button1)
-                {
-                    // LMB
-                    // start drag
-                    PtrState = 1;
-                    idle = 0;
-                }
-                else
-                {
-                    printf ("other\n");
-                }
-            }
-            else if (e.type == ButtonRelease)
-            {
+                break;
+            case ButtonRelease:
                 // reset drag state machine
                 PtrState = 0;
-            }
-            {
+                break;
+            case EnterNotify:
+                // mouse pointer has entered window area
+
+                break;
+            case LeaveNotify:
+                // mouse pointer has exited window area
+                break;
+
+
+            // else
+            default:
                 // there is an unknown input; can occur such as a hover etc
                 // play idle anim
-                int idx = 120 + (current % 60);
+                idx = 120 + (current % 60);
                 if (masks[idx] != None)
                     XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[idx],
-                                       ShapeSet);
+                                        ShapeSet);
                 if (frames[idx] != None)
                     XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
-                               0);
+                                0);
                 current = (current + 1) % 60;
                 usleep (100000); // ~30 tps
             }
@@ -246,7 +251,7 @@ main ()
             if (PtrState == 1)
             {
                 // DRAG
-                int idx = 291 + (current % 50);
+                idx = 291 + (current % 50);
                 if (masks[idx] != None)
                     XShapeCombineMask (d, w, ShapeBounding, 0, 0,
                                        masks[idx], ShapeSet);
@@ -280,7 +285,7 @@ main ()
                 dy = cachePY - wa.y;
                 // angle in radians double
                 tmp_dir = atan2 (-dy, dx);
-                int tmp_dir2 = (int)(tmp_dir * 180.0 / M_PI);
+                short tmp_dir2 = (int)(tmp_dir * 180.0 / M_PI);
                 double dist = sqrt (dx * dx + dy * dy);
                 if (tmp_dir2 < 0)
                     tmp_dir2 += 360;
@@ -297,12 +302,12 @@ main ()
                     idle = 0;
                     PtrState = 0;
                 }
-                int base = (final_dir == 270)   ? 0
+                short base = (final_dir == 270)   ? 0
                            : (final_dir == 0)   ? 30
                            : (final_dir == 180) ? 60
                            : (final_dir == 90)  ? 90
                                                 : 0;
-                int idx = base + (current % 30);
+                idx = base + (current % 30);
                 if (masks[idx] != None)
                     XShapeCombineMask (d, w, ShapeBounding, 0, 0,
                                        masks[idx], ShapeSet);
@@ -312,12 +317,13 @@ main ()
                 current = (current + 1) % 30;
                 XMoveWindow (d, w, new_x, new_y);
                 usleep (100000); // ~30 tps
-            } else
+            }
+            else
             {
                 printf ("Main loop!\n");
                 // continue like nothing happened because nothing happened :p
 
-                int idx = 120 + (current % 60);
+                idx = 120 + (current % 60);
                 if (masks[idx] != None)
                     XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[idx],
                                        ShapeSet);
