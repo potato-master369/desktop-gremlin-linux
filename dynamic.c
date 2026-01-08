@@ -17,10 +17,11 @@
  * (old) emote2| 180    | 35   | removed; used incorrectly
  * click       | 180    | 111  | newly implemented; to replace emote2
  * grab        | 291    | 50   | animation used while dragged
- * total       | 0      | 341  | -
+ * hover       | 341    | 89   | animation used when hovering over sprite.
+ * total       | 0      | 430  | -
  */
 
-#define NFRAMES 341 // change with new assets added
+#define NFRAMES 430 // change with new assets added
 #define WIDTH 325
 #define HEIGHT 325
 #ifndef M_PI
@@ -82,7 +83,7 @@ main ()
         cleanup (0);
     }
     XSelectInput (d, w,
-                  ButtonPressMask | ButtonReleaseMask | PointerMotionHintMask | EnterWindowMask | LeaveWindowMask);
+                  ButtonPressMask | ButtonReleaseMask | PointerMotionHintMask);
 
     XMapWindow (d, w);
     gc = XCreateGC (d, w, 0, NULL);
@@ -126,12 +127,21 @@ main ()
 
         printf ("Loaded frame %d successfully!\n", i);
     }
+
+    if (masks[0] != None)
+        XShapeCombineMask (d, w, ShapeBounding, 0, 0,
+                           masks[0], ShapeSet);
+    if (frames[0] != None)
+        XCopyArea (d, frames[0], w, gc, 0, 0, WIDTH, HEIGHT,
+                   0, 0);
+    XFlush (d);
+    
     //    Cleaned up by clanker so idk if this is wrong
     short idx;
     // State tracking
     int current = 0;
-    short idle = 0;
-    char PtrState = 0;
+    short idle = 600;
+    char PtrState = 3;
     short final_dir = 0;
 
     // Direction and motion
@@ -154,13 +164,16 @@ main ()
     Window ret_child = 0;
     XWindowAttributes wa; // NOTE: if ur stupid or blind (or both), wa stands for Window Attributes
 
+    XGetWindowAttributes (d, w, &wa);
+    printf ("Window mapped at %d,%d size %dx%d\n", wa.x, wa.y, wa.width, wa.height);
+
     // more state machine junk
     char PtrIn = 0;
 
     printf ("Starting loop...");
     while (1)
     {
-        printf ("New tick: %d, XPending: %d\n", idle, XPending (d));
+        printf ("New tick: %d, XPending: %d, PtrState: %d, winx: %d, winy: %d\n", idle, XPending (d), PtrState, win_x, win_y);
         // new thingy
         if (XPending (d) > 0)
         {             // is something going on? - IMPT; as XNextEvent will
@@ -217,19 +230,18 @@ main ()
                         XFlush (d);
                     }
                 }
+                else if (e.xbutton.button == Button1)
+                {
+                    // LMB
+                    // start drag
+                    PtrState = 1;
+                    idle = 0;
+                }
                 break;
             case ButtonRelease:
                 // reset drag state machine
                 PtrState = 0;
                 break;
-            case EnterNotify:
-                // mouse pointer has entered window area
-
-                break;
-            case LeaveNotify:
-                // mouse pointer has exited window area
-                break;
-
 
             // else
             default:
@@ -248,7 +260,32 @@ main ()
         }
         else
         {
-            if (PtrState == 1)
+            if (PtrState == 3)
+            {
+                // Hover animation
+                //  - Same as the idle animation but with different offset
+                //  - PtrState for this is controlled by if (XPending(d) > 0)
+                //    so this should not interrupt the main input loop.
+
+                idx = 341 + (current % 89);
+                if (masks[idx] != None)
+                    XShapeCombineMask (d, w, ShapeBounding, 0, 0,
+                                       masks[idx], ShapeSet);
+                if (frames[idx] != None)
+                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
+                               0, 0);
+                current = (current + 1) % 50;
+
+                if (XQueryPointer (d, w, &ret_root, &ret_child, &root_x,
+                                   &root_y, &win_x, &win_y, &mask))
+                {
+                    if (win_x < 80 || win_x > 245 || win_y < 5 || win_y > 325) {
+                        PtrState = 0;
+                    }
+                }
+                usleep (100000);
+            }
+            else if (PtrState == 1)
             {
                 // DRAG
                 idx = 291 + (current % 50);
@@ -269,6 +306,7 @@ main ()
                 XMoveWindow (d, w, root_x - 162, root_y - 162);
                 oldx = win_x;
                 oldy = win_y;
+                usleep (100000);
             }
             if (PtrState == 2)
             {
@@ -318,7 +356,7 @@ main ()
                 XMoveWindow (d, w, new_x, new_y);
                 usleep (100000); // ~30 tps
             }
-            else
+            else if (PtrState == 0)
             {
                 printf ("Main loop!\n");
                 // continue like nothing happened because nothing happened :p
@@ -348,6 +386,14 @@ main ()
                     cachePX = root_x;
                     cachePY = root_y;
                     PtrState = 2;
+                }
+                if (XQueryPointer (d, w, &ret_root, &ret_child, &root_x,
+                                   &root_y, &win_x, &win_y, &mask))
+                {
+                    if (win_x >= 80 && win_x <= 245 && win_y >= 0 && win_y <= 325)
+                    {
+                        PtrState = 3;
+                    }
                 }
             }
         }
