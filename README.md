@@ -1,7 +1,6 @@
 # desktop-gremlin-linux
 
 A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C
-*I honestly just gave up on the 20 subs promise you know what guys here you go but still check me out and/or subscribe on [YouTube](https://www.youtube.com/@WompWomp1234-j6c)*
 
 ## Prerequisites
 * a C compiler supporting at least C99 (you probably already have this try typing `gcc` or `clang`)
@@ -16,7 +15,7 @@ To build the thing, just run:
 ~~`clang dynamic.c -lX11 -lXpm -lXext -lm -o 'Manhattan Cafe'`~~
 
 `make` (as of 2.1.0)
-*(feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
+*feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
 
 `cp ./desktop-gremlin-assets ~/Desktop`
 *Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.*

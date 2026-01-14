@@ -24,14 +24,15 @@ See licenses/BSD3-LICENSE for more info */
  * click       | 180    | 111  | newly implemented; to replace emote2
  * grab        | 291    | 50   | animation used while dragged
  * hover       | 341    | 89   | animation used when hovering over sprite.
- * total       | 0      | 430  | -
+ * intro       | 430    | 100  | animation for intro sequence - use in fork with audio
+ * total       | 0      | 530  | -
  */
 
-#define NFRAMES 430 // change with new assets added
+#define NFRAMES 530 // change with new assets added
 #define WIDTH 325
 #define HEIGHT 325
 #ifndef M_PI
-#define M_PI 3.14159265359
+#define M_PI 3.14
 #endif
 
 typedef struct
@@ -99,6 +100,15 @@ handler (void *user, const char *section, const char *name,
 void
 cleanup (int sig)
 {
+    #ifdef GREMLIN_DEBUG
+    printf("Cleanup time!\n");
+    #endif
+
+    // Goodbye, cruel world!
+    //  - our outro animation goes here!
+    //  - in future, a handler will be created using
+    //    kill() to find the PID of this process and
+    //    send SIGINT.
     if (d)
     {
         for (int i = 0; i < NFRAMES; i++)
@@ -112,12 +122,16 @@ cleanup (int sig)
         XDestroyWindow (d, w);
         XCloseDisplay (d);
     }
+    fflush (stdout);
     _exit (0);
 }
 
 int
 main ()
 {
+    signal (SIGINT, cleanup);
+    signal (SIGTERM, cleanup);
+
     // READ CONFIGURATION
     
     config.InitX = 200;
@@ -141,12 +155,10 @@ main ()
 
     if (ini_parse (filename, handler, &config) < 0)
     {
-        printf ("Can't load %s\n", filename);
+        fprintf (stderr, "Can't load %s\n", filename);
         return 1;
     }
 
-    signal (SIGINT, cleanup);
-    signal (SIGTERM, cleanup);
 
     d = XOpenDisplay (NULL);
     if (!d)
@@ -252,9 +264,28 @@ main ()
     #ifdef GREMLIN_DEBUG
     printf ("Window mapped at %d,%d size %dx%d\n", wa.x, wa.y, wa.width, wa.height);
     #endif
-    #ifdef GREMLIN_DEBUG
+#ifdef GREMLIN_DEBUG
     printf ("Starting loop...");
     #endif
+    // put our intro here
+    //  - Must be after the loading, yet also before the main loop, so the audio will sync up properly!!
+    //  - do note that here we must try not to use X11 things in the other branch of fork() (in future as
+    //    of time of writing so it will be added later)
+    #ifdef GREMLIN_DEBUG
+    printf("HELLO WORLD!");
+    #endif
+    for (int i = 430; i < 530; ++i)
+    {
+        if (masks[i] != None)
+            XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[i],
+                               ShapeSet);
+        if (frames[i] != None)
+            XCopyArea (d, frames[i], w, gc, 0, 0, WIDTH, HEIGHT, 0,
+                       0);
+        XFlush (d);
+        usleep (config.TickDelay); 
+    }
+
     while (1)
     {
         #ifdef GREMLIN_DEBUG
@@ -290,7 +321,7 @@ main ()
                     XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
                                0);
                 current = (current + 1) % 60;
-                usleep (config.TickDelay); // ~30 tps
+                usleep (config.TickDelay); 
 
                 idle += 1;
                 break;
@@ -320,7 +351,7 @@ main ()
                             XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH,
                                        HEIGHT, 0, 0);
                         }
-                        usleep (config.TickDelay); // ~30 tps
+                        usleep (config.TickDelay); 
                         XFlush (d);
                     }
                 }
@@ -339,7 +370,10 @@ main ()
 
             // else
             default:
-                // there is an unknown input; can occur such as a hover etc
+                // there is an unknown input; can occur such as ~~a hover~~ etc
+                // NOTE: now, due to the removal of PointerMotionMask, that is
+                // no longer of concern.
+
                 // play idle anim
                 idx = 120 + (current % 60);
                 if (masks[idx] != None)
@@ -349,7 +383,7 @@ main ()
                     XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
                                 0);
                 current = (current + 1) % 60;
-                usleep (config.TickDelay); // ~30 tps
+                usleep (config.TickDelay); 
             }
         }
         else
@@ -450,7 +484,7 @@ main ()
                                0, 0);
                 current = (current + 1) % 30;
                 XMoveWindow (d, w, new_x, new_y);
-                usleep (config.TickDelay); // ~30 tps
+                usleep (config.TickDelay); 
             }
             else if (PtrState == 0)
             {
@@ -469,9 +503,12 @@ main ()
 
                 idle += 1;
 
-                usleep (config.TickDelay); // ~30 tps
+                usleep (config.TickDelay); 
 
                 // have we been idle too long?
+                //  - creates the illusion of natural movement and reaction. After
+                //    all, if you were bored doing nothing, wouldn't you want to
+                //    pester someone?
                 if (idle >= 600)
                 {
                     // take cursor location
