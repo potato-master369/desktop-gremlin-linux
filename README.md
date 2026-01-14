@@ -21,7 +21,7 @@ To build the thing, just run:
 *Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.*
 
 ## Configuration
-`vim ~/Desktop/desktop-gremlin-assets/gremlin-config.ini`
+`vim ~/Desktop/desktop-gremlin-assets/gremlin_config.ini`
 
 Several options are listed inside the file.
 
