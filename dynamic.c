@@ -25,10 +25,11 @@ See licenses/BSD3-LICENSE for more info */
  * grab        | 291    | 50   | animation used while dragged
  * hover       | 341    | 89   | animation used when hovering over sprite.
  * intro       | 430    | 100  | animation for intro sequence - use in fork with audio
- * total       | 0      | 530  | -
+ * outro       | 530    | 140  | outro animation; trigger with kill()
+ * total       | 0      | 670  | -
  */
 
-#define NFRAMES 530 // change with new assets added
+#define NFRAMES 670 // change with new assets added
 #define WIDTH 325
 #define HEIGHT 325
 #ifndef M_PI
@@ -109,6 +110,19 @@ cleanup (int sig)
     //  - in future, a handler will be created using
     //    kill() to find the PID of this process and
     //    send SIGINT.
+    for (int i = 530; i < 670; ++i)
+    {
+        if (masks[i] != None)
+            XShapeCombineMask (d, w, ShapeBounding, 0, 0,
+                               masks[i], ShapeSet);
+        if (frames[i] != None)
+            XCopyArea (d, frames[i], w, gc, 0, 0, WIDTH, HEIGHT,
+                       0, 0);
+        XFlush (d);
+        usleep (config.TickDelay);
+    }
+
+    // start true cleanup
     if (d)
     {
         for (int i = 0; i < NFRAMES; i++)
