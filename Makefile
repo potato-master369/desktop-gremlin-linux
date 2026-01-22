@@ -2,7 +2,7 @@
 
 CC      = gcc
 CFLAGS  = -Wall -O2 -s -ffunction-sections -fdata-sections -Wl,--gc-sections
-LDLIBS  = -lX11 -lXpm -lXext -lm
+LDLIBS  = -lX11 -lXpm -lXext -lm -lXrender
 TARGET  = "Manhattan_Cafe"
 OBJ     = ini.o dynamic.o
 

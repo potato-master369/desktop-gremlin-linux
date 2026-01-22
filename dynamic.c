@@ -1,5 +1,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/extensions/Xrender.h>
 #include <X11/extensions/shape.h>
 #include <X11/xpm.h>
 #include <math.h>
@@ -9,11 +10,12 @@
 #include <unistd.h>
 /* inih -- simple .INI file parser
 SPDX-License-Identifier: BSD-3-Clause
-Copyright (C) 2009-2025, Ben Hoyt 
+Copyright (C) 2009-2025, Ben Hoyt
 See licenses/BSD3-LICENSE for more info */
 #include "ini.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <string.h>
-
 /* Animation   | Offset | size | comment
  * down        | 0      | 30   | \
  * right       | 30     | 30   |  } main motion
@@ -54,12 +56,42 @@ Display *d = NULL;
 Window w = 0;
 GC gc = 0;
 configuration config;
-
-Pixmap frames[NFRAMES];
+XRenderPictFormat *fmt;
+Picture frames[NFRAMES];
 Pixmap masks[NFRAMES];
+Picture dst;
 
+static void
+drawf (short fid)
+{
+    dst = XRenderCreatePicture (d, w, fmt, 0, NULL);
+    if (!dst)
+    {
+        fprintf (stderr, "dst failed\n");
+        return;
+    }
+    XRenderColor clear = { 0, 0, 0, 0 }; // transparent black
+    Picture fill = XRenderCreateSolidFill (d, &clear);
+    XRenderComposite (d, PictOpSrc, fill, None, dst,
+                      0, 0, 0, 0, 0, 0, WIDTH, HEIGHT);
+    XRenderFreePicture (d, fill);
 
+    // 请用这个function来解决后来发生的某事比如：
+    // 关于XWayland或X11有些超大的区别
+    if (!frames[fid])
+    {
+        fprintf (stderr, "src failed\n");
+        return;
+    }
 
+    XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[fid], ShapeSet);
+    XShapeCombineMask (d, w, ShapeInput, 0, 0, masks[fid], ShapeSet);
+
+    XRenderComposite (d, PictOpOver, frames[fid], None, dst, 0, 0, 0, 0, 0, 0, WIDTH, HEIGHT);
+
+    // FREEEEEEEEEEEEEEEEEEEEEEEEEEEEBIRD
+    XRenderFreePicture (d, dst);
+}
 static int
 handler (void *user, const char *section, const char *name,
          const char *value)
@@ -101,9 +133,9 @@ handler (void *user, const char *section, const char *name,
 void
 cleanup (int sig)
 {
-    #ifdef GREMLIN_DEBUG
-    printf("Cleanup time!\n");
-    #endif
+#ifdef GREMLIN_DEBUG
+    printf ("Cleanup time!\n");
+#endif
 
     // Goodbye, cruel world!
     //  - our outro animation goes here!
@@ -112,12 +144,7 @@ cleanup (int sig)
     //    send SIGINT.
     for (int i = 530; i < 670; ++i)
     {
-        if (masks[i] != None)
-            XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                               masks[i], ShapeSet);
-        if (frames[i] != None)
-            XCopyArea (d, frames[i], w, gc, 0, 0, WIDTH, HEIGHT,
-                       0, 0);
+        drawf (i);
         XFlush (d);
         usleep (config.TickDelay);
     }
@@ -128,9 +155,7 @@ cleanup (int sig)
         for (int i = 0; i < NFRAMES; i++)
         {
             if (frames[i] != None)
-                XFreePixmap (d, frames[i]);
-            if (masks[i] != None)
-                XFreePixmap (d, masks[i]);
+                XRenderFreePicture (d, frames[i]);
         }
         XFreeGC (d, gc);
         XDestroyWindow (d, w);
@@ -146,8 +171,21 @@ main ()
     signal (SIGINT, cleanup);
     signal (SIGTERM, cleanup);
 
+    const char *wayland = getenv ("WAYLAND_DISPLAY");
+    const char *x11 = getenv ("DISPLAY");
+    if (wayland)
+    {
+        fprintf (stdout, "WARNING: YOU ARE RUNNING UNDER WAYLAND. Some features may be unavailable.\n");
+        x11 = 0;
+    }
+    else if (!x11)
+    {
+        printf ("Unknown compositor\n");
+        exit (1);
+    }
+
     // READ CONFIGURATION
-    
+
     config.InitX = 200;
     config.InitY = 200;
     config.InitPtrState = 0;
@@ -173,7 +211,6 @@ main ()
         return 1;
     }
 
-
     d = XOpenDisplay (NULL);
     if (!d)
     {
@@ -185,12 +222,27 @@ main ()
 #ifdef GREMLIN_DEBUG
     printf ("Hello we loaded da screen things\n");
 #endif
+
+    // visual info
+
+    XVisualInfo vinfo;
+    XMatchVisualInfo (
+        d,                 // display
+        DefaultScreen (d), // default screen
+        32,                // 32-bit depth
+        TrueColor,         // class
+        &vinfo             // a valid visual on success
+    );
+
+    Colormap colormap = XCreateColormap (d, RootWindow (d, vinfo.screen), vinfo.visual, AllocNone);
     XSetWindowAttributes swa;
     swa.override_redirect = True;
+    swa.colormap = colormap;
 
-    w = XCreateWindow (d, RootWindow (d, screen), config.InitX, config.InitY, WIDTH, HEIGHT, 0,
-                       DefaultDepth (d, screen), InputOutput,
-                       DefaultVisual (d, screen), CWOverrideRedirect, &swa);
+    // don't forget to check the result!
+
+    w = XCreateWindow (d, RootWindow (d, screen), config.InitX, config.InitY, WIDTH, HEIGHT, 0, vinfo.depth, InputOutput, vinfo.visual,
+                       CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect, &swa);
     if (!w)
     {
         fprintf (stderr, "Failed to create window\n");
@@ -206,47 +258,98 @@ main ()
 #ifdef GREMLIN_DEBUG
     printf ("Loading our frames i guess\n");
 #endif
+    int width, height, channels;
+    unsigned char *data;
+    XImage *tmp;
+    Pixmap tmpp;
 
+    fmt = XRenderFindStandardFormat (d, PictStandardARGB32);
     for (int i = 0; i < NFRAMES; ++i)
     {
+        masks[i] = XCreatePixmap (d, w, WIDTH, HEIGHT, 1);
+        GC gc_mask = XCreateGC (d, masks[i], 0, NULL);
+        XSetForeground (d, gc_mask, 0);
+        XFillRectangle (d, masks[i], gc_mask, 0, 0, WIDTH, HEIGHT);
         frames[i] = None;
-        masks[i] = None;
 #ifdef GREMLIN_DEBUG
         printf ("Loading frame %d\n", i);
 #endif
         snprintf (filename, sizeof (filename),
-                  "%s/Desktop/desktop-gremlin-assets/%d.xpm", home, i);
+                  "%s/Desktop/desktop-gremlin-assets/%d.png", home, i);
+
+        data = stbi_load (filename, &width, &height, &channels, 4);
+        if (!data)
+        {
+            fprintf (stderr, "Failed to load PNG\n");
+            exit (1);
+        }
+        // pre-multiply alphas
+        for (int i = 0; i < width * height; i++)
+        {
+            // swap ABGR -> RGBA
+            unsigned char r = data[4 * i + 0];
+            unsigned char g = data[4 * i + 1];
+            unsigned char b = data[4 * i + 2];
+            unsigned char a = data[4 * i + 3];
+            data[4 * i + 0] = b;
+            data[4 * i + 1] = g;
+            data[4 * i + 2] = r;
+            data[4 * i + 3] = a; // alpha
+            r = data[4 * i + 0];
+            g = data[4 * i + 1];
+            b = data[4 * i + 2];
+            a = data[4 * i + 3];
+            data[4 * i + 0] = (data[4 * i + 0] * a) / 255; // red
+            data[4 * i + 1] = (data[4 * i + 1] * a) / 255; // green
+            data[4 * i + 2] = (data[4 * i + 2] * a) / 255; // blue
+            // alpha stays as-is
+        }
+        tmpp = XCreatePixmap (d, w, 325, 325, vinfo.depth);
+        tmp = XCreateImage (d, vinfo.visual, vinfo.depth,
+                            ZPixmap, 0,
+                            (char *)data,
+                            WIDTH, HEIGHT,
+                            32, 0);
+        GC gc2 = XCreateGC (d, tmpp, 0, NULL);
+        XPutImage (d, tmpp, gc2, tmp, 0, 0, 0, 0, WIDTH, HEIGHT);
+        XFreeGC (d, gc2);
+
+        frames[i] = XRenderCreatePicture (d, tmpp, fmt, 0, NULL);
+        XImage *mask_img = XCreateImage (d, DefaultVisual (d, screen), 1,
+                                         ZPixmap, 0,
+                                         calloc (WIDTH * HEIGHT, 1),
+                                         WIDTH, HEIGHT, 8, 0);
+
+        for (int y = 0; y < HEIGHT; ++y)
+        {
+            for (int x = 0; x < WIDTH; ++x)
+            {
+                unsigned char a = data[4 * (y * WIDTH + x) + 3]; // alpha
+                if (a > 128)
+                {
+                    XPutPixel (mask_img, x, y, 1);
+                }
+            }
+        }
+        XPutImage (d, masks[i], gc_mask, mask_img, 0, 0, 0, 0, WIDTH, HEIGHT);
+        XDestroyImage (mask_img);
+        XFreeGC (d, gc_mask);
+
+        XDestroyImage (tmp);
+        XFreePixmap (d, tmpp);
+
 #ifdef GREMLIN_DEBUG
         printf ("Loading from file: %s\n", filename);
 #endif
 
-        XpmAttributes xpm_attrs;
-        xpm_attrs.valuemask = 0; // default; not requesting extra data
-
-        int status = XpmReadFileToPixmap (d, w, filename, &frames[i],
-                                          &masks[i], &xpm_attrs);
-
-        if (status != XpmSuccess || frames[i] == None)
-        {
-            fprintf (stderr, "Failed to load %s (status=%d)\n", filename,
-                     status);
-            frames[i] = None;
-            masks[i] = None;
-            continue;
-        }
-        #ifdef GREMLIN_DEBUG
+#ifdef GREMLIN_DEBUG
         printf ("Loaded frame %d successfully!\n", i);
-        #endif
+#endif
     }
 
-    if (masks[0] != None)
-        XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                           masks[0], ShapeSet);
-    if (frames[0] != None)
-        XCopyArea (d, frames[0], w, gc, 0, 0, WIDTH, HEIGHT,
-                   0, 0);
+    drawf (0);
     XFlush (d);
-    
+
     //    Cleaned up by clanker so idk if this is wrong
     short idx;
     // State tracking
@@ -275,36 +378,32 @@ main ()
     XWindowAttributes wa; // NOTE: if ur stupid or blind (or both), wa stands for Window Attributes
 
     XGetWindowAttributes (d, w, &wa);
-    #ifdef GREMLIN_DEBUG
+#ifdef GREMLIN_DEBUG
     printf ("Window mapped at %d,%d size %dx%d\n", wa.x, wa.y, wa.width, wa.height);
-    #endif
+#endif
 #ifdef GREMLIN_DEBUG
     printf ("Starting loop...");
-    #endif
-    // put our intro here
-    //  - Must be after the loading, yet also before the main loop, so the audio will sync up properly!!
-    //  - do note that here we must try not to use X11 things in the other branch of fork() (in future as
-    //    of time of writing so it will be added later)
-    #ifdef GREMLIN_DEBUG
-    printf("HELLO WORLD!");
-    #endif
+#endif
+// put our intro here
+//  - Must be after the loading, yet also before the main loop, so the audio will sync up properly!!
+//  - do note that here we must try not to use X11 things in the other branch of fork() (in future as
+//    of time of writing so it will be added later)
+#ifdef GREMLIN_DEBUG
+    printf ("HELLO WORLD!");
+#endif
     for (int i = 430; i < 530; ++i)
     {
-        if (masks[i] != None)
-            XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[i],
-                               ShapeSet);
-        if (frames[i] != None)
-            XCopyArea (d, frames[i], w, gc, 0, 0, WIDTH, HEIGHT, 0,
-                       0);
+        drawf (i);
         XFlush (d);
-        usleep (config.TickDelay); 
+        usleep (config.TickDelay);
     }
 
     while (1)
     {
-        #ifdef GREMLIN_DEBUG
-        printf ("New tick: %d, XPending: %d, PtrState: %d, winx: %d, winy: %d\n", idle, XPending (d), PtrState, win_x, win_y);
-        #endif
+#ifdef GREMLIN_DEBUG
+        XGetWindowAttributes (d, w, &wa);
+        printf ("New tick: %d, XPending: %d, PtrState: %d, winx: %d, winy: %d, wa.x: %d, wa.y: %d, rootx: %d, rooty: %d, delay: %d\n", idle, XPending (d), PtrState, win_x, win_y, wa.x, wa.y, root_x, root_y, config.TickDelay);
+#endif
         // new thingy
         if (XPending (d) > 0)
         {             // is something going on? - IMPT; as XNextEvent will
@@ -318,24 +417,20 @@ main ()
             XNextEvent (d, &e); // wtf is going on -> e
 #ifdef GREMLIN_DEBUG
             printf ("Event type: %d\n", e.type);
-#endif            
+#endif
 
             switch (e.type)
             {
             case Expose:
 #ifdef GREMLIN_DEBUG
                 printf ("Expose call!\n");
-#endif                
+#endif
                 // play idle anim
                 idx = 120 + (current % 60);
-                if (masks[idx] != None)
-                    XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[idx],
-                                       ShapeSet);
-                if (frames[idx] != None)
-                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
-                               0);
+                drawf (idx);
+                XFlush (d);
                 current = (current + 1) % 60;
-                usleep (config.TickDelay); 
+                usleep (config.TickDelay);
 
                 idle += 1;
                 break;
@@ -349,23 +444,15 @@ main ()
                 {
 #ifdef GREMLIN_DEBUG
                     printf ("RMB\n");
-#endif                    
+#endif
                     idle = 0;
                     // do the emote
                     for (char i = 0; i < 111; ++i)
                     {
                         idx = 180 + i;
-                        if (masks[idx] != None)
-                        {
-                            XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                                               masks[idx], ShapeSet);
-                        }
-                        if (frames[idx] != None)
-                        {
-                            XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH,
-                                       HEIGHT, 0, 0);
-                        }
-                        usleep (config.TickDelay); 
+                        drawf (idx);
+                        XFlush (d);
+                        usleep (config.TickDelay);
                         XFlush (d);
                     }
                 }
@@ -390,19 +477,15 @@ main ()
 
                 // play idle anim
                 idx = 120 + (current % 60);
-                if (masks[idx] != None)
-                    XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[idx],
-                                        ShapeSet);
-                if (frames[idx] != None)
-                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0,
-                                0);
+                drawf (idx);
+                XFlush (d);
                 current = (current + 1) % 60;
-                usleep (config.TickDelay); 
+                usleep (config.TickDelay);
             }
         }
         else
         {
-            if (PtrState == 3)
+            if (PtrState == 3 && x11)
             {
                 // Hover animation
                 //  - Same as the idle animation but with different offset
@@ -410,18 +493,16 @@ main ()
                 //    so this should not interrupt the main input loop.
 
                 idx = 341 + (current % 89);
-                if (masks[idx] != None)
-                    XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                                       masks[idx], ShapeSet);
-                if (frames[idx] != None)
-                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
-                               0, 0);
+                drawf (idx);
+                XFlush (d);
                 current = (current + 1) % 50;
 
                 if (XQueryPointer (d, w, &ret_root, &ret_child, &root_x,
                                    &root_y, &win_x, &win_y, &mask))
                 {
-                    if (win_x < 80 || win_x > 245 || win_y < 5 || win_y > 325) {
+                    XGetWindowAttributes (d, w, &wa);
+                    if (!(root_x >= wa.x + 80 && root_x <= wa.x + 245 && root_y >= wa.y + 0 && root_y <= wa.y + 325))
+                    {
                         PtrState = 0;
                     }
                 }
@@ -431,12 +512,8 @@ main ()
             {
                 // DRAG
                 idx = 291 + (current % 50);
-                if (masks[idx] != None)
-                    XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                                       masks[idx], ShapeSet);
-                if (frames[idx] != None)
-                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
-                               0, 0);
+                drawf (idx);
+                XFlush (d);
                 current = (current + 1) % 50;
 
                 if (XQueryPointer (d, root, &ret_root, &ret_child, &root_x,
@@ -445,7 +522,7 @@ main ()
 #ifdef GREMLIN_DEBUG
                     printf ("Mouse at: %d,%d, dx %d, dy %d, current %d\n", root_x,
                             root_y, dx, dy, current);
-#endif                            
+#endif
                 }
                 XMoveWindow (d, w, root_x - 162, root_y - 162);
                 usleep (config.TickDelay);
@@ -485,20 +562,16 @@ main ()
                     PtrState = 0;
                 }
                 short base = (final_dir == 270)   ? 0
-                           : (final_dir == 0)   ? 30
-                           : (final_dir == 180) ? 60
-                           : (final_dir == 90)  ? 90
-                                                : 0;
+                             : (final_dir == 0)   ? 30
+                             : (final_dir == 180) ? 60
+                             : (final_dir == 90)  ? 90
+                                                  : 0;
                 idx = base + (current % 30);
-                if (masks[idx] != None)
-                    XShapeCombineMask (d, w, ShapeBounding, 0, 0,
-                                       masks[idx], ShapeSet);
-                if (frames[idx] != None)
-                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT,
-                               0, 0);
+                drawf (idx);
+                XFlush (d);
                 current = (current + 1) % 30;
                 XMoveWindow (d, w, new_x, new_y);
-                usleep (config.TickDelay); 
+                usleep (config.TickDelay);
             }
             else if (PtrState == 0)
             {
@@ -508,16 +581,13 @@ main ()
                 // continue like nothing happened because nothing happened :p
 
                 idx = 120 + (current % 60);
-                if (masks[idx] != None)
-                    XShapeCombineMask (d, w, ShapeBounding, 0, 0, masks[idx],
-                                       ShapeSet);
-                if (frames[idx] != None)
-                    XCopyArea (d, frames[idx], w, gc, 0, 0, WIDTH, HEIGHT, 0, 0);
+                drawf (idx);
+                XFlush (d);
                 current = (current + 1) % 60;
 
                 idle += 1;
 
-                usleep (config.TickDelay); 
+                usleep (config.TickDelay);
 
                 // have we been idle too long?
                 //  - creates the illusion of natural movement and reaction. After
@@ -532,7 +602,7 @@ main ()
 #ifdef GREMLIN_DEBUG
                         printf ("Mouse at: %d,%d, dx %d, dy %d\n", root_x, root_y,
                                 dx, dy);
-#endif                                
+#endif
                     }
                     cachePX = root_x;
                     cachePY = root_y;
@@ -541,7 +611,7 @@ main ()
                 if (XQueryPointer (d, w, &ret_root, &ret_child, &root_x,
                                    &root_y, &win_x, &win_y, &mask))
                 {
-                    if (win_x >= 80 && win_x <= 245 && win_y >= 0 && win_y <= 325)
+                    if (win_x >= 80 && win_x <= 245 && win_y >= 0 && win_y <= 325 && x11)
                     {
                         PtrState = 3;
                     }
