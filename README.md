@@ -1,7 +1,6 @@
 # desktop-gremlin-linux
 
 A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C
-*I honestly just gave up on the 20 subs promise you know what guys here you go but still check me out and/or subscribe on [YouTube](https://www.youtube.com/@WompWomp1234-j6c)*
 
 ## Prerequisites
 * a C compiler supporting at least C99 (you probably already have this try typing `gcc` or `clang`)
@@ -11,9 +10,22 @@ A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with
 
 ## build
 To build the thing, just run:
-`clang dynamic.c -lX11 -lXpm -lXext -lm -o 'Manhattan Cafe'`
-*(feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
+`git clone https://github.com/potato-master369/desktop-gremlin-linux`
 
+~~`clang dynamic.c -lX11 -lXpm -lXext -lm -o 'Manhattan Cafe'`~~
+
+`make` (as of 2.1.0)
+*feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
+
+`cp ./desktop-gremlin-assets ~/Desktop`
+*Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.*
+
+## Configuration
+`vim ~/Desktop/desktop-gremlin-assets/gremlin_config.ini`
+
+Several options are listed inside the file.
+
+-----
 ## FAQ
 > Are you gonna add more features?
 
@@ -26,8 +38,9 @@ Idk bro
 no but it's a passion project so I'll check back on it once in a while
 
 ## Thanks to:
-* [KirtVakesco](https://github.com/KurtVelasco) for the [original](https://github.com/KurtVelasco/Desktop_Gremlin), inspiration, and assets (sowwy for stealing them I can't figure umaViewer out)
+* [KirtValesco](https://github.com/KurtVelasco) for the [original](https://github.com/KurtVelasco/Desktop_Gremlin), inspiration, and assets (sowwy for stealing them I can't figure umaViewer out)
 * ImageMagick team: ~~stealing~~ repurposing KurtValesco's assets would have been impossible without this umazing (pun intended) tool.
+* Ben Hoyt for INIH
 * and of course, YOU for being interested in this project of mine!
 
 # future to-do
