@@ -60,6 +60,9 @@ XRenderPictFormat *fmt;
 Picture frames[NFRAMES];
 Pixmap masks[NFRAMES];
 Picture dst;
+// move to top-level to allow referencing in sigrthandler
+int current = 0;
+int handlerwait = 0;
 
 static void
 drawf (short fid)
@@ -165,11 +168,59 @@ cleanup (int sig)
     _exit (0);
 }
 
+void
+sigrthandler (int sig)
+{
+    XWindowAttributes wa;
+#ifdef GREMLIN_DEBUG
+    printf ("Recieved signal: %d", sig);
+#endif
+    switch (sig - SIGRTMIN)
+    {
+    case 0:
+        // w
+        XGetWindowAttributes (d, w, &wa);
+        XMoveWindow (d, w, wa.x, wa.y - 10);
+        break;
+    case 1:
+        // a
+        XGetWindowAttributes (d, w, &wa);
+        XMoveWindow (d, w, wa.x - 10, wa.y);
+        break;
+    case 2:
+        // s
+        XGetWindowAttributes (d, w, &wa);
+        XMoveWindow (d, w, wa.x, wa.y + 10);
+        break;
+    case 3:
+        // d
+        XGetWindowAttributes (d, w, &wa);
+        XMoveWindow (d, w, wa.x + 10, wa.y);
+        break;
+    default:
+        // gracefully exit without issues
+        break;
+    }
+    short base = (sig - SIGRTMIN == 2)   ? 0
+                 : (sig - SIGRTMIN == 3) ? 30
+                 : (sig - SIGRTMIN == 1) ? 60
+                 : (sig - SIGRTMIN == 0) ? 90
+                                         : 0;
+    short idx = base + (current % 30);
+    ++current;
+    drawf (idx);
+    handlerwait = 10;
+}
+
 int
 main ()
 {
     signal (SIGINT, cleanup);
     signal (SIGTERM, cleanup);
+    signal (SIGRTMIN, sigrthandler);
+    signal (SIGRTMIN + 1, sigrthandler);
+    signal (SIGRTMIN + 2, sigrthandler);
+    signal (SIGRTMIN + 3, sigrthandler);
 
     const char *wayland = getenv ("WAYLAND_DISPLAY");
     const char *x11 = getenv ("DISPLAY");
@@ -203,7 +254,7 @@ main ()
     }
 
     snprintf (filename, sizeof (filename),
-              "%s/Desktop/desktop-gremlin-assets/gremlin_config.ini", home);
+              "%s/.local/share/desktop-gremlin-linux/desktop-gremlin-assets/gremlin_config.ini", home);
 
     if (ini_parse (filename, handler, &config) < 0)
     {
@@ -266,6 +317,9 @@ main ()
     fmt = XRenderFindStandardFormat (d, PictStandardARGB32);
     for (int i = 0; i < NFRAMES; ++i)
     {
+#ifdef GREMLIN_DEBUG
+        printf ("Loading from file: %s\n", filename);
+#endif
         masks[i] = XCreatePixmap (d, w, WIDTH, HEIGHT, 1);
         GC gc_mask = XCreateGC (d, masks[i], 0, NULL);
         XSetForeground (d, gc_mask, 0);
@@ -275,7 +329,7 @@ main ()
         printf ("Loading frame %d\n", i);
 #endif
         snprintf (filename, sizeof (filename),
-                  "%s/Desktop/desktop-gremlin-assets/%d.png", home, i);
+                  "%s/.local/share/desktop-gremlin-linux/desktop-gremlin-assets/%d.png", home, i);
 
         data = stbi_load (filename, &width, &height, &channels, 4);
         if (!data)
@@ -339,10 +393,6 @@ main ()
         XFreePixmap (d, tmpp);
 
 #ifdef GREMLIN_DEBUG
-        printf ("Loading from file: %s\n", filename);
-#endif
-
-#ifdef GREMLIN_DEBUG
         printf ("Loaded frame %d successfully!\n", i);
 #endif
     }
@@ -353,7 +403,7 @@ main ()
     //    Cleaned up by clanker so idk if this is wrong
     short idx;
     // State tracking
-    int current = 0;
+
     short idle = config.InitIdle;
     char PtrState = config.InitPtrState;
     short final_dir = 0;
@@ -388,6 +438,7 @@ main ()
 //  - Must be after the loading, yet also before the main loop, so the audio will sync up properly!!
 //  - do note that here we must try not to use X11 things in the other branch of fork() (in future as
 //    of time of writing so it will be added later)
+// EDIT PER 1/2/2026: its been like 2 months and im still too lazy to add audio.
 #ifdef GREMLIN_DEBUG
     printf ("HELLO WORLD!");
 #endif
@@ -400,6 +451,12 @@ main ()
 
     while (1)
     {
+        if (handlerwait > 0)
+        {
+            handlerwait--; // skip drawing this tick
+            usleep (20000);
+            continue;
+        }
 #ifdef GREMLIN_DEBUG
         XGetWindowAttributes (d, w, &wa);
         printf ("New tick: %d, XPending: %d, PtrState: %d, winx: %d, winy: %d, wa.x: %d, wa.y: %d, rootx: %d, rooty: %d, delay: %d\n", idle, XPending (d), PtrState, win_x, win_y, wa.x, wa.y, root_x, root_y, config.TickDelay);

@@ -1,27 +1,41 @@
-# Build ini.o and dynamic.o, then link into final binary with X11 libs
+# Makefile for desktop-gremlin-linux
+# Copyright (C) potato-master369 2026
 
 CC      = gcc
-CFLAGS  = -Wall -O2 -s -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS  = -Wall -O2 -s -ffunction-sections -fdata-sections
+LDFLAGS = -Wl,--gc-sections
 LDLIBS  = -lX11 -lXpm -lXext -lm -lXrender
-TARGET  = "Manhattan_Cafe"
+NCURSES = -lncursesw
+
+TARGETS = Manhattan_Cafe desktop-gremlin-linux-manager
 OBJ     = ini.o dynamic.o
 
 # Default target
-all: $(TARGET)
+all: $(TARGETS)
 
-# Final executable (linked with X11-related libraries)
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDLIBS)
+# Manhattan_Cafe build (X11-based)
+Manhattan_Cafe: $(OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
-# Compile dynamic.c into dynamic.o (depends on ini.h for headers)
+# desktop-gremlin-linux-manager build (ncurses-based)
+desktop-gremlin-linux-manager: ncurses-manager.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ncurses-manager.c $(NCURSES)
+
+# Object rules
 dynamic.o: dynamic.c ini.h
-	$(CC) $(CFLAGS) -c dynamic.c -o dynamic.o
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile ini.c into ini.o (typical for inih; adjust if header-only)
 ini.o: ini.c ini.h
-	$(CC) $(CFLAGS) -c ini.c -o ini.o -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0
+	$(CC) $(CFLAGS) -c $< -o $@ -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0
 
 # Clean
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(OBJ) $(TARGETS)
 
+install:
+	mkdir -p $$HOME/.local/share/desktop-gremlin-linux
+	cp desktop-gremlin-assets $$HOME/.local/share/desktop-gremlin-linux -r
+	cp icon.xpm $$HOME/.local/share/desktop-gremlin-linux
+	cp desktop-gremlin-linux-manager $$HOME/.local/bin
+	cp Manhattan_Cafe $$HOME/.local/bin
+	cp desktop-gremlin-linux-manager.desktop $$HOME/.local/share/applications

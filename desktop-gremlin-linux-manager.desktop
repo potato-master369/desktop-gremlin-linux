@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=desktop-gremlin-linux Manager
+Icon=~/.local/share/desktop-gremlin-linux/icon.xpm
+Exec=~/.local/bin/desktop-gremlin-linux-manager
+Comment=Launch and Control Your Desktop Gremlin
+Categories=Utility;
+Terminal=true
