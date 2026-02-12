@@ -17,12 +17,16 @@ To build the thing, just run:
 `make` (as of 2.1.0)
 *feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
 
-`cp ./desktop-gremlin-assets ~/Desktop`
-*Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.*
+~~`cp ./desktop-gremlin-assets ~/Desktop`~~
+~~Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.~~
 
+## Install
+
+(as of 2.3.0)
+You can install `desktop-gremlin-linux` using `make install`. This will copy the assets and config as well.
 ## Configuration
-`vim ~/Desktop/desktop-gremlin-assets/gremlin_config.ini`
-
+`vim ~/Desktop/desktop-gremlin-assets/gremlin_config.ini` (For &lt;2.3.0)
+`vim ~/.local/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.0+)
 Several options are listed inside the file.
 
 -----
