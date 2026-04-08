@@ -33,9 +33,9 @@ clean:
 	rm -f $(OBJ) $(TARGETS)
 
 install:
-	mkdir -p $$HOME/.local/share/desktop-gremlin-linux
-	cp desktop-gremlin-assets $$HOME/.local/share/desktop-gremlin-linux -r
-	cp icon.xpm $$HOME/.local/share/desktop-gremlin-linux
-	cp desktop-gremlin-linux-manager $$HOME/.local/bin
-	cp Manhattan_Cafe $$HOME/.local/bin
-	cp desktop-gremlin-linux-manager.desktop $$HOME/.local/share/applications
+	mkdir /usr/share/desktop-gremlin-linux
+	cp desktop-gremlin-assets /usr/share/desktop-gremlin-linux -r
+	cp icon.xpm /usr/share/desktop-gremlin-linux
+	cp desktop-gremlin-linux-manager /usr/local/bin
+	cp Manhattan_Cafe /usr/local/bin
+	cp desktop-gremlin-linux-manager.desktop /usr/share/applications

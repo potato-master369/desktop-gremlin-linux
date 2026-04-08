@@ -245,16 +245,10 @@ main ()
     config.TickDelay = 100000;
 
     // Detect $HOME
-    const char *home = getenv ("HOME");
     char filename[256];
-    if (!home)
-    {
-        fprintf (stderr, "HOME not set\n");
-        cleanup (0);
-    }
 
     snprintf (filename, sizeof (filename),
-              "%s/.local/share/desktop-gremlin-linux/desktop-gremlin-assets/gremlin_config.ini", home);
+              "/usr/share/desktop-gremlin-linux/desktop-gremlin-assets/gremlin_config.ini");
 
     if (ini_parse (filename, handler, &config) < 0)
     {
@@ -329,7 +323,7 @@ main ()
         printf ("Loading frame %d\n", i);
 #endif
         snprintf (filename, sizeof (filename),
-                  "%s/.local/share/desktop-gremlin-linux/desktop-gremlin-assets/%d.png", home, i);
+                  "/usr/share/desktop-gremlin-linux/desktop-gremlin-assets/%d.png", i);
 
         data = stbi_load (filename, &width, &height, &channels, 4);
         if (!data)
