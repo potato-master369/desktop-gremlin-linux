@@ -1,6 +1,10 @@
 # desktop-gremlin-linux
 
-A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C
+*NOTE 2026/04/18 We are currently working on the Wayland client. See `wayland.c` for more information. It is a work in progress, but no further work on the Xlib client will be done.*
+A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C. You will need to download the source code folder as it contains assets and installation. If you do not have access to the required libraries, by default the prebuilt ones will be included.
+
+The JukeBox only works as intended on pure X11 environments (as shape emulation is flaky on XWayland) and will **NOT** be actively maintained, just like Tachyon. However, Tachyon is not animated so you can still use that!
+
 
 ## Prerequisites
 * a C compiler supporting at least C99 (you probably already have this try typing `gcc` or `clang`)
@@ -8,7 +12,17 @@ A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with
 * X11 (it should in theory run fine under XWayland but I never checked)
 * an X11 compositor with alpha support
 
-## build
+## Uninstallation (v2.3.1+)
+
+`make uninstall` (this depends on the folders and binaries being the same as the current release u are using. If it changes, download the Source Code (.zip) from the release of your previous version and use its `make uninstall`)
+
+## Clean
+
+*This step is for people who want to build their own version as the repo already contains prebuilt binaries for x86_64 Debian 13 Trixie/ArchLinux depending on which of my machines I feel like using*
+
+`make clean`: removes binaries (`*.o`, `Manhattan_Cafe`, `desktop-gremlin-linux-manager`)
+
+## Build
 To build the thing, just run:
 `git clone https://github.com/potato-master369/desktop-gremlin-linux`
 
@@ -23,10 +37,11 @@ To build the thing, just run:
 ## Install
 
 (as of 2.3.0)
-You can install `desktop-gremlin-linux` using `make install`. This will copy the assets and config as well.
+You can install `desktop-gremlin-linux` using `sudo make install` (starting v2.3.1). This will copy the assets and config as well.
 ## Configuration
 `vim ~/Desktop/desktop-gremlin-assets/gremlin_config.ini` (For &lt;2.3.0)
-`vim ~/.local/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.0+)
+`vim ~/.local/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.0)
+`vim /usr/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.1+)
 Several options are listed inside the file.
 
 -----

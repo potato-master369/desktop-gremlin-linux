@@ -201,7 +201,7 @@ main (int argc, char *argv[])
                             exit (1);
                         }
                         char path[512];
-                        snprintf (path, sizeof (path), "%s/.local/bin/Manhattan_Cafe", home);
+                        snprintf (path, sizeof (path), "/usr/ocal/bin/Manhattan_Cafe", home);
                         execlp (path, "Manhattan_Cafe", NULL);
                         perror ("exec failed");
                         exit (1);

@@ -75,7 +75,7 @@ int main() {
 
     XpmAttributes xpm_attrs;
     snprintf(filename, sizeof(filename),
-             "%s/Desktop/desktop-gremlin-assets/tachyon.xpm", home);
+             "/usr/share/desktop-gremlin-linux/desktop-gremlin-assets/tachyon.xpm");
     xpm_attrs.valuemask = 0;
     int status = XpmReadFileToPixmap(d, w, filename,
                                      &frames[0], &masks[0], &xpm_attrs);
@@ -91,7 +91,7 @@ int main() {
     unsigned int mask;
     XWindowAttributes wa;
     int dx = 0, dy = 0, new_x = 200, new_y = 200;
-    char prompt[64];
+    char prompt[128];
 
     printf("Starting loop...\n");
     while (1) {
@@ -110,7 +110,7 @@ int main() {
             }
 
             if (e.type == ButtonPress) {
-                snprintf(prompt, sizeof(prompt), "paplay $HOME/Desktop/desktop-gremlin-assets/aud%d.mp3", (rand() % 4) + 1);
+                snprintf(prompt, sizeof(prompt), "paplay /usr/share/desktop-gremlin-linux/desktop-gremlin-assets/aud%d.mp3", (rand() % 4) + 1);
                 system(prompt);
             }
         }
