@@ -1,16 +1,11 @@
 # desktop-gremlin-linux
 
-*NOTE 2026/04/18 We are currently working on the Wayland client. See `wayland.c` for more information. It is a work in progress, but no further work on the Xlib client will be done.*
+
 A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with C. You will need to download the source code folder as it contains assets and installation. If you do not have access to the required libraries, by default the prebuilt ones will be included.
-
-The JukeBox only works as intended on pure X11 environments (as shape emulation is flaky on XWayland) and will **NOT** be actively maintained, just like Tachyon. However, Tachyon is not animated so you can still use that!
-
 
 ## Prerequisites
 * a C compiler supporting at least C99 (you probably already have this try typing `gcc` or `clang`)
-* Xlib (you probably also have this preinstalled)
-* X11 (it should in theory run fine under XWayland but I never checked)
-* an X11 compositor with alpha support
+* libgtk4-dev
 
 ## Uninstallation (v2.3.1+)
 
@@ -20,19 +15,13 @@ The JukeBox only works as intended on pure X11 environments (as shape emulation 
 
 *This step is for people who want to build their own version as the repo already contains prebuilt binaries for x86_64 Debian 13 Trixie/ArchLinux depending on which of my machines I feel like using*
 
-`make clean`: removes binaries (`*.o`, `Manhattan_Cafe`, `desktop-gremlin-linux-manager`)
+`make clean`: removes binaries (`*.o`, `Manhattan_Cafe`)
 
 ## Build
 To build the thing, just run:
 `git clone https://github.com/potato-master369/desktop-gremlin-linux`
 
-~~`clang dynamic.c -lX11 -lXpm -lXext -lm -o 'Manhattan Cafe'`~~
-
 `make` (as of 2.1.0)
-*feel free to replace clang with a `cc` of your choice and change dynamic.c to any of the .c files (feel free to change the -o as well it doesnt have to be called that. ~~use `-o jukebox` on `jukebox.c` for it to work with v1~~)*
-
-~~`cp ./desktop-gremlin-assets ~/Desktop`~~
-~~Copy the assets folder to the desktop - required for the program to function properly, without which it is undefined behaviour.~~
 
 ## Install
 
@@ -43,6 +32,7 @@ You can install `desktop-gremlin-linux` using `sudo make install` (starting v2.3
 `vim ~/.local/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.0)
 `vim /usr/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.1+)
 Several options are listed inside the file.
+Configuration is not needed on the Wayland client as packs are preconfigured and there aren't X11 quirks anymore yay
 
 -----
 ## FAQ

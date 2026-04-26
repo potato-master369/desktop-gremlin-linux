@@ -2,14 +2,6 @@
 #include <cairo.h>
 #include "ini.h"
 
-// function to draw things onto window on tick
-static gboolean
-tick_cb (gpointer user_data)
-{
-  g_print ("Test\n");
-  return TRUE;
-}
-
 struct
 {
   char *assetpack;
@@ -22,12 +14,45 @@ struct
 {
   int ssleep, esleep, sidle, eidle, sclick, eclick, sgrab, egrab, shover,
     ehover, sintro, eintro, soutro, eoutro, InitX, InitY, InitIdle,
-    ChaseIdleReq, TickDelay, total;
+    ChaseIdleReq, TickDelay, total, current;
 } app_adata;
 
+// most stuff will go here.
+static int
+tick_cb (gpointer user_data) {
+	GtkImage *image = (GtkImage *)user_data;
+	gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current));
+	if (!(app_adata.current < app_adata.total)) {
+		app_adata.current = 0;
+	} else {
+		app_adata.current++;
+	}
+	return 1;
+}
 // scary loading thing
-static int loadf(void) {
-	app_cdata.textures = g_ptr_array_new();
+static void
+loadf (void)
+{
+  char filename[256];
+  app_cdata.textures = g_ptr_array_new_with_free_func(g_object_unref);
+
+  // load all from 0-total in an array.
+  for (int i = 0; i < app_adata.total; ++i) {
+	  snprintf(filename, sizeof (filename), "/usr/share/desktop-gremlin-linux/assets/%s/%d.png", app_cdata.assetpack, i);
+	  GdkTexture *tex = gdk_texture_new_from_filename(filename, NULL);
+	   
+	  if (tex) {
+		g_ptr_array_add(app_cdata.textures, g_object_ref(tex));
+		g_object_unref(tex);
+          }
+  }
+}
+
+// free frames
+static void
+freef (void)
+{
+	g_ptr_array_unref(app_cdata.textures);
 }
 
 static int
@@ -114,9 +139,10 @@ handler (void *user, const char *section, const char *name, const char *value)
     {
       app_adata.eoutro = atoi (value);
     }
-  else if (INI_MATCH ("TextureBounds", "total")) {
-	  app_adata.total = atoi (value);
-	}
+  else if (INI_MATCH ("TextureBounds", "total"))
+    {
+      app_adata.total = atoi (value);
+    }
 
   return 1;
 }
@@ -205,15 +231,22 @@ activate (GtkApplication *app, gpointer user_data)
 
   char filename[256];
 
-  snprintf(filename, sizeof (filename), "/usr/share/desktop-gremlin-linux/assets/%s/config.ini", app_cdata.assetpack);
-  ini_parse(filename, handler, NULL); // really jank, but we want to reduce typedefs so it's a BIT cleaner this way.
+  snprintf (filename, sizeof (filename),
+	    "/usr/share/desktop-gremlin-linux/assets/%s/config.ini",
+	    app_cdata.assetpack);
+  ini_parse (filename, handler, NULL);	// really jank, but we want to reduce typedefs so it's a BIT cleaner this way.
   //printf("DEBUG: InitX: %d", app_adata.InitX); 
+  loadf();
+  app_adata.current = 0; // reset stupid overengineered state machine
+			 // cos u have to
 
   gtk_window_set_child (GTK_WINDOW (window), image);
 
   gtk_window_present (GTK_WINDOW (window));
 
-  g_timeout_add (app_adata.TickDelay, tick_cb, NULL);
+  g_print("I am alive?\n");
+  g_print("TickDelay: %d\n", app_adata.TickDelay);
+  g_timeout_add (app_adata.TickDelay, tick_cb, image);
 }
 
 int

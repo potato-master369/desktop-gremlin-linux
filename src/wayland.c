@@ -14,46 +14,101 @@ struct
 {
   int ssleep, esleep, sidle, eidle, sclick, eclick, sgrab, egrab, shover,
     ehover, sintro, eintro, soutro, eoutro, InitX, InitY, InitIdle,
-    ChaseIdleReq, TickDelay, total, current;
+    ChaseIdleReq, TickDelay, total, current, currentstate;
 } app_adata;
 
+// most stuff will go here.
 static int
-tick_cb (gpointer user_data) {
-	g_print("I AM ALIVE!\n");
-	GtkImage *image = (GtkImage *)user_data;
-	gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current));
-	if (!(app_adata.current < app_adata.total)) {
-		app_adata.current = 0;
-	} else {
-		app_adata.current++;
-	}
-	return 1;
+tick_cb (gpointer user_data)
+{
+  GtkImage *image = (GtkImage *) user_data;
+  switch (app_adata.currentstate) {
+	case 0:
+		if (app_adata.current >= app_adata.eidle - app_adata.sidle) {
+			app_adata.current = 0;
+		} else {
+			app_adata.current++;
+		}
+		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sidle));
+		break;
+	case 1:
+		if (app_adata.current >= app_adata.eclick - app_adata.sclick) {
+			app_adata.current = 0;
+			app_adata.currentstate = 0;
+			break;
+		} else {
+		       app_adata.current++;
+		}
+ 		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sclick));
+		break;
+	case 2:
+		
+		if (app_adata.current >= app_adata.egrab - app_adata.sgrab) {
+			app_adata.current = 0;
+		}
+		else {
+			app_adata.current++;
+		}
+		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sgrab));
+		break;
+  }
+  return 1;
 }
+
+int tickresetcstate (gpointer user_data) {
+  if (app_adata.currentstate == 2) {
+    app_adata.currentstate = 0;
+  }
+  return 1;
+}
+// events
+static void on_right_click(GtkGestureClick *gesture, int n_press, double x, double y, gpointer user_data) {
+  app_adata.currentstate = 1;
+  app_adata.current = 0;
+}
+
+static void on_drag_begin (GtkGestureClick *gesture, int n_press,  double x, double y, gpointer user_data) {
+    GtkWindow *window = GTK_WINDOW (user_data);
+    GdkSurface *surface = gtk_native_get_surface (GTK_NATIVE (window));
+
+    GdkDevice *device = gtk_event_controller_get_current_event_device (GTK_EVENT_CONTROLLER (gesture));
+    guint button = gtk_gesture_single_get_current_button (GTK_GESTURE_SINGLE (gesture));
+    guint32 time = gtk_event_controller_get_current_event_time (GTK_EVENT_CONTROLLER (gesture));
+
+    app_adata.current = 0;
+    app_adata.currentstate = 2;
+
+    gdk_toplevel_begin_move (GDK_TOPLEVEL (surface), device, button, x, y, time);
+}
+
 // scary loading thing
 static void
 loadf (void)
 {
   char filename[256];
-  app_cdata.textures = g_ptr_array_new_with_free_func(g_object_unref);
+  app_cdata.textures = g_ptr_array_new_with_free_func (g_object_unref);
 
   // load all from 0-total in an array.
-  for (int i = 0; i < app_adata.total; ++i) {
-	  snprintf(filename, sizeof (filename), "/usr/share/desktop-gremlin-linux/assets/%s/%d.png", app_cdata.assetpack, i);
-	  GdkTexture *tex = gdk_texture_new_from_filename(filename, NULL);
-	   
-	  if (tex) {
-		g_print("Loaded frame: %d\n", i);
-		g_ptr_array_add(app_cdata.textures, g_object_ref(tex));
-		g_object_unref(tex);
-          }
-  }
+  for (int i = 0; i < app_adata.total; ++i)
+    {
+      snprintf (filename, sizeof (filename),
+		"/usr/share/desktop-gremlin-linux/assets/%s/%d.png",
+		app_cdata.assetpack, i);
+      GdkTexture *tex = gdk_texture_new_from_filename (filename, NULL);
+
+      if (tex)
+	{
+	  g_ptr_array_add (app_cdata.textures, g_object_ref (tex));
+	  g_object_unref (tex);
+	}
+    }
 }
 
 // free frames
 static void
 freef (void)
 {
-	g_ptr_array_unref(app_cdata.textures);
+  g_ptr_array_unref (app_cdata.textures);
 }
 
 static int
@@ -184,7 +239,7 @@ command_line (GApplication *app, GApplicationCommandLine *cmdline)
 static void
 activate (GtkApplication *app, gpointer user_data)
 {
-  GtkWidget *window;
+  GtkWidget *window, *event_box;
   GtkCssProvider *css__;
 
 
@@ -237,18 +292,33 @@ activate (GtkApplication *app, gpointer user_data)
 	    app_cdata.assetpack);
   ini_parse (filename, handler, NULL);	// really jank, but we want to reduce typedefs so it's a BIT cleaner this way.
   //printf("DEBUG: InitX: %d", app_adata.InitX); 
-  loadf();
-  g_print("I am alive!\n");
-  app_adata.current = 0; // reset stupid overengineered state machine
-			 // cos u have to
+  loadf ();
+  app_adata.current = 0;	// reset stupid overengineered state machine
+  // cos u have to
+  app_adata.currentstate = 0;
 
   gtk_window_set_child (GTK_WINDOW (window), image);
 
   gtk_window_present (GTK_WINDOW (window));
 
-  g_print("I am alive?\n");
-  g_print("TickDelay: %d\n", app_adata.TickDelay);
+  //g_print ("I am alive?\n");
+  //g_print ("TickDelay: %d\n", app_adata.TickDelay);
+
+  // right click controller
+  GtkGestureClick *right_click = GTK_GESTURE_CLICK (gtk_gesture_click_new());
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(right_click), 3);
+  g_signal_connect(right_click, "pressed", G_CALLBACK(on_right_click), NULL);
+  gtk_widget_add_controller(image, GTK_EVENT_CONTROLLER (right_click));
+
+  // drag controller
+  GtkGestureClick *drag = GTK_GESTURE_CLICK (gtk_gesture_click_new());
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(drag), 1);
+  g_signal_connect(drag, "pressed", G_CALLBACK (on_drag_begin), window);
+
+  gtk_widget_add_controller(image, GTK_EVENT_CONTROLLER (drag));
+
   g_timeout_add (app_adata.TickDelay, tick_cb, image);
+  g_timeout_add (2000, tickresetcstate, NULL);
 }
 
 int

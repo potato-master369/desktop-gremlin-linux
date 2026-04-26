@@ -8,7 +8,7 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4)
 NCURSES = -lncursesw
 
-TARGETS = Manhattan_Cafe desktop-gremlin-linux-manager
+TARGETS = Manhattan_Cafe
 OBJ     = ini.o dynamic.o
 
 # Default target
@@ -17,10 +17,6 @@ all: $(TARGETS)
 # Manhattan_Cafe build (X11-based)
 Manhattan_Cafe: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
-
-# desktop-gremlin-linux-manager build (ncurses-based)
-desktop-gremlin-linux-manager: ncurses-manager.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ncurses-manager.c $(NCURSES)
 
 # Object rules
 dynamic.o: src/wayland.c src/ini.h
@@ -34,10 +30,10 @@ clean:
 	rm -f $(OBJ) $(TARGETS)
 
 install:
-	mkdir /usr/share/desktop-gremlin-linux
-	cp desktop-gremlin-assets /usr/share/desktop-gremlin-linux -r
-	cp icon.xpm /usr/share/desktop-gremlin-linux
-	cp desktop-gremlin-linux-manager /usr/local/bin
+	mkdir -p /usr/share/desktop-gremlin-linux
+	mkdir -p /usr/share/desktop-gremlin-linux/assets
+	cp -r manhattancafe /usr/share/desktop-gremlin-linux/assets
+	#cp desktop-gremlin-linux-manager /usr/local/bin
 	cp Manhattan_Cafe /usr/local/bin
 	cp desktop-gremlin-linux-manager.desktop /usr/share/applications
 
