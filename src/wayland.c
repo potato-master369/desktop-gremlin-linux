@@ -14,7 +14,7 @@ struct
 {
   int ssleep, esleep, sidle, eidle, sclick, eclick, sgrab, egrab, shover,
     ehover, sintro, eintro, soutro, eoutro, InitX, InitY, InitIdle,
-    ChaseIdleReq, TickDelay, total, current, currentstate;
+    ChaseIdleReq, TickDelay, total, current, currentstate, idlecount;
 } app_adata;
 
 // most stuff will go here.
@@ -24,14 +24,28 @@ tick_cb (gpointer user_data)
   GtkImage *image = (GtkImage *) user_data;
   switch (app_adata.currentstate) {
 	case 0:
-		if (app_adata.current >= app_adata.eidle - app_adata.sidle) {
-			app_adata.current = 0;
+		//g_print("idlecount: %d\n", app_adata.idlecount);
+		if (app_adata.idlecount <= app_adata.ChaseIdleReq)
+			app_adata.idlecount++;
+
+		if (app_adata.idlecount < app_adata.ChaseIdleReq) {
+			if (app_adata.current >= app_adata.eidle - app_adata.sidle) {
+				app_adata.current = 0;
+			} else {
+				app_adata.current++;
+			}
+			gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sidle));
 		} else {
-			app_adata.current++;
+			if (app_adata.current >= app_adata.esleep - app_adata.ssleep) {
+				app_adata.current = 0;
+			} else {
+				app_adata.current++;
+			}
+			gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.ssleep));
 		}
-		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sidle));
 		break;
 	case 1:
+		app_adata.idlecount = 0;
 		if (app_adata.current >= app_adata.eclick - app_adata.sclick) {
 			app_adata.current = 0;
 			app_adata.currentstate = 0;
@@ -42,7 +56,7 @@ tick_cb (gpointer user_data)
  		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sclick));
 		break;
 	case 2:
-		
+		app_adata.idlecount = 0;
 		if (app_adata.current >= app_adata.egrab - app_adata.sgrab) {
 			app_adata.current = 0;
 		}
@@ -50,6 +64,15 @@ tick_cb (gpointer user_data)
 			app_adata.current++;
 		}
 		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sgrab));
+		break;
+	case 999:
+		gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, app_adata.current + app_adata.sintro));
+		if (app_adata.current == app_adata.eintro - app_adata.sintro) {
+			app_adata.currentstate = 0;
+			app_adata.current = 0;
+		} else {
+			app_adata.current++;
+		}
 		break;
   }
   return 1;
@@ -295,14 +318,12 @@ activate (GtkApplication *app, gpointer user_data)
   loadf ();
   app_adata.current = 0;	// reset stupid overengineered state machine
   // cos u have to
-  app_adata.currentstate = 0;
+  app_adata.currentstate = 999;
+  app_adata.idlecount = 0;
 
   gtk_window_set_child (GTK_WINDOW (window), image);
 
   gtk_window_present (GTK_WINDOW (window));
-
-  //g_print ("I am alive?\n");
-  //g_print ("TickDelay: %d\n", app_adata.TickDelay);
 
   // right click controller
   GtkGestureClick *right_click = GTK_GESTURE_CLICK (gtk_gesture_click_new());

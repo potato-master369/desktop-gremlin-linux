@@ -8,14 +8,14 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4)
 NCURSES = -lncursesw
 
-TARGETS = Manhattan_Cafe
+TARGETS = degrli
 OBJ     = ini.o dynamic.o
 
 # Default target
 all: $(TARGETS)
 
-# Manhattan_Cafe build (X11-based)
-Manhattan_Cafe: $(OBJ)
+# NEW WAYLAND CLIENT11111!!!
+degrli: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
 # Object rules
@@ -34,11 +34,11 @@ install:
 	mkdir -p /usr/share/desktop-gremlin-linux/assets
 	cp -r manhattancafe /usr/share/desktop-gremlin-linux/assets
 	#cp desktop-gremlin-linux-manager /usr/local/bin
-	cp Manhattan_Cafe /usr/local/bin
+	cp degrli /usr/local/bin
 	cp desktop-gremlin-linux-manager.desktop /usr/share/applications
 
 uninstall:
 	rm -rf /usr/share/desktop-gremlin-linux
 	rm -f /usr/local/bin/desktop-gremlin-linux-manager
-	rm -f /usr/local/bin/Manhattan_Cafe
+	rm -f /usr/local/bin/degrli
 	rm -f /usr/share/applications/desktop-gremlin-linux-manager.desktop

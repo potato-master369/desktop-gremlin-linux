@@ -18,14 +18,14 @@ Manhattan_Cafe: $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
 # desktop-gremlin-linux-manager build (ncurses-based)
-desktop-gremlin-linux-manager: ncurses-manager.c
+desktop-gremlin-linux-manager: src/ncurses-manager.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ncurses-manager.c $(NCURSES)
 
 # Object rules
-dynamic.o: dynamic.c ini.h
+dynamic.o: src/dynamic.c src/ini.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ini.o: ini.c ini.h
+ini.o: src/ini.c src/ini.h
 	$(CC) $(CFLAGS) -c $< -o $@ -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0
 
 # Clean
