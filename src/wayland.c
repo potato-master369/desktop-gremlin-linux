@@ -1,4 +1,11 @@
+// wayland.c
+// main source file.
+#define DGL_MAXWT 5
+// The following library, INIH:
+// Copyright (C) Ben Hoyt
+// used under the BSD License (see licenses/BSD3-LICENSE)
 #include "ini.h"
+#include "compositor-specific.h"
 #include <cairo.h>
 #include <fcntl.h>
 #include <gtk-4.0/gtk/gtk.h>
@@ -8,13 +15,14 @@ struct {
   int ipcid;
   bool validated;
   GPtrArray *textures;
+  unsigned char wmtype;
 } app_cdata;
 
 struct {
   int ssleep, esleep, sidle, eidle, sclick, eclick, sgrab, egrab, shover,
       ehover, sintro, eintro, soutro, eoutro, sdown, edown, sright, eright,
       sleft, eleft, sup, eup, InitX, InitY, InitIdle, ChaseIdleReq, TickDelay,
-      total, current, currentstate, idlecount;
+      total, current, currentstate, walkcurrent, idlecount, walkTicks;
 } app_adata;
 
 void register_ipc(int ipc_id) {
@@ -51,6 +59,7 @@ void unregister_ipc(int ipc_id) {
 
 int pipe_fd[2];
 GtkApplication *app;
+GtkWidget *window;
 // most stuff will go here.
 static int tick_cb(gpointer user_data) {
   GtkImage *image = (GtkImage *)user_data;
@@ -103,8 +112,74 @@ static int tick_cb(gpointer user_data) {
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.sgrab));
+  
     break;
-  case 998:
+  case 100:
+    app_adata.idlecount = 0;
+    app_adata.walkTicks++;
+    if (app_adata.walkcurrent >= app_adata.eup - app_adata.sup) {
+      app_adata.walkcurrent = 0;
+    }
+    else {
+      app_adata.walkcurrent++;
+    }
+    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+                                 app_adata.walkcurrent + app_adata.sup));
+    
+    if (app_adata.walkTicks >= DGL_MAXWT) {
+        app_adata.currentstate = 0;
+        app_adata.walkTicks = 0;
+    }
+    break;
+  case 101:
+        app_adata.idlecount = 0;
+        app_adata.walkTicks++;
+    if (app_adata.walkcurrent >= app_adata.eleft - app_adata.sleft) {
+      app_adata.walkcurrent = 0;
+    }
+    else {
+      app_adata.walkcurrent++;
+    }
+    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+                                 app_adata.walkcurrent + app_adata.sleft));
+    if (app_adata.walkTicks >= DGL_MAXWT) {
+        app_adata.currentstate = 0;
+        app_adata.walkTicks = 0;
+    }
+    break;
+  case 102:
+        app_adata.idlecount = 0;
+        app_adata.walkTicks++;
+    if (app_adata.walkcurrent >= app_adata.edown - app_adata.sdown) {
+      app_adata.walkcurrent = 0;
+    }
+    else {
+      app_adata.walkcurrent++;
+    }
+    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+                                 app_adata.walkcurrent + app_adata.sdown));
+    if (app_adata.walkTicks >= DGL_MAXWT) {
+        app_adata.currentstate = 0;
+        app_adata.walkTicks = 0;
+    }
+    break;
+  case 103:
+        app_adata.idlecount = 0;
+        app_adata.walkTicks++;
+    if (app_adata.walkcurrent >= app_adata.eright - app_adata.sright) {
+      app_adata.walkcurrent = 0;
+    }
+    else {
+      app_adata.walkcurrent++;
+    }
+    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+                                 app_adata.walkcurrent + app_adata.sright));
+    if (app_adata.walkTicks >= DGL_MAXWT) {
+        app_adata.currentstate = 0;
+        app_adata.walkTicks = 0;
+    }
+    break;
+  case 254:
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.soutro));
@@ -115,7 +190,7 @@ static int tick_cb(gpointer user_data) {
       app_adata.current++;
     }
     break;
-  case 999:
+  case 255:
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.sintro));
@@ -161,13 +236,28 @@ gboolean deliver_signal(GIOChannel *source, GIOCondition cond, gpointer d) {
     }
 
     // deal with signal
-    switch (buf.signal) {
-    case SIGINT:
+    if (buf.signal == SIGINT) {
       // g_print("Recieved SIGINT!\n");
       // g_application_quit(G_APPLICATION(app));
       app_adata.current = 0;
-      app_adata.currentstate = 998;
-      break;
+      app_adata.currentstate = 254;
+    }
+    // according to IPC spec, these are per WASD
+    else if (buf.signal == SIGRTMIN) {
+      app_adata.currentstate = 100;
+      dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 0, 10);
+    }
+    else if (buf.signal == SIGRTMIN + 1) {
+      app_adata.currentstate = 101;
+      dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, -10, 0);
+    }
+    else if (buf.signal == SIGRTMIN + 2) {
+      app_adata.currentstate = 102;
+      dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 0, -10);
+    }
+    else if (buf.signal == SIGRTMIN + 3) {
+      app_adata.currentstate = 103;
+      dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 10, 0);
     }
   }
   if (error != NULL) {
@@ -334,7 +424,7 @@ static int command_line(GApplication *app, GApplicationCommandLine *cmdline) {
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
-  GtkWidget *window, *event_box;
+  GtkWidget *event_box;
   GtkCssProvider *css__;
   long fd_flags;
   GIOChannel *g_signal_in;
@@ -394,8 +484,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
   loadf();
   app_adata.current = 0; // reset stupid overengineered state machine
   // cos u have to
-  app_adata.currentstate = 999;
+  app_adata.currentstate = 255;
   app_adata.idlecount = 0;
+  app_adata.walkTicks = 0;
+
   if (pipe(pipe_fd)) {
     perror("pipe");
     exit(1);
@@ -411,8 +503,12 @@ static void activate(GtkApplication *app, gpointer user_data) {
     exit(1);
   }
 
-  // add the SIGUSR ones as well
+  // add the SIGRT ones as well
   signal(SIGINT, pipe_signals);
+  signal(SIGRTMIN, pipe_signals);
+  signal(SIGRTMIN + 1, pipe_signals);
+  signal(SIGRTMIN + 2, pipe_signals);
+  signal(SIGRTMIN + 3, pipe_signals);
 
   g_signal_in = g_io_channel_unix_new(pipe_fd[0]);
 
@@ -431,6 +527,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
   }
 
   register_ipc(app_cdata.ipcid);
+  app_cdata.wmtype = dgl_detect_session();
+  
   g_io_add_watch(g_signal_in, G_IO_IN | G_IO_PRI, deliver_signal, NULL);
 
   gtk_window_set_child(GTK_WINDOW(window), image);

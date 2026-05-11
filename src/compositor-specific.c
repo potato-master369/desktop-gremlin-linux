@@ -1,5 +1,12 @@
+// compositor-specific.c
+// source file for degrli compositor specific
+// functions.
+
 #include <gtk-4.0/gtk/gtk.h>
 #include <gdk/x11/gdkx.h>
+
+// our header
+#include "compositor-specific.h"
 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -8,6 +15,7 @@
 #define X11_SUPPORT
 #ifdef X11_SUPPORT
 #include <X11/X.h>
+#include <unistd.h>
 #endif
 #define DGL_CS_X11 0x01
 #define DGL_CS_MUTTER 0x02
@@ -40,8 +48,9 @@ unsigned char dgl_detect_session(void) {
 	}
 }
 
+#ifdef X11_SUPPORT
 Window dgl_get_x11_window(GtkWindow *window) {
-	GtkNative *native = gtk_widget_get_native(window);
+	GtkNative *native = gtk_widget_get_native(GTK_WIDGET (window));
 	GdkSurface *surface = gtk_native_get_surface(native);
 	if (GDK_IS_X11_SURFACE (surface)) {
 		// note: we will have to use a deprecated function
@@ -53,6 +62,7 @@ Window dgl_get_x11_window(GtkWindow *window) {
 		exit(1);
 	}
 }
+#endif
 
 void send_sway_command(const char *command) {
     const char *socket_path = getenv("SWAYSOCK");
@@ -89,5 +99,37 @@ void send_sway_command(const char *command) {
 }
 
 void dgl_move_window(GtkWindow *window, unsigned char wmtype, int x_offset, int y_offset) {
-		
+	char command[256];
+	Window w;
+	Display *d;
+	XWindowAttributes a;
+	switch (wmtype) {
+		case DGL_CS_SWAY:
+			
+			if (x_offset == 0) {
+				if (y_offset > 0) {
+					snprintf(command, sizeof(command), "[pid=%d] move up", getpid());
+					send_sway_command(command);
+				} else {
+					snprintf(command, sizeof(command), "[pid=%d] move down", getpid());
+					send_sway_command(command);
+				}
+			} else {
+				if (x_offset > 0) {
+					snprintf(command, sizeof(command), "[pid=%d] move right", getpid());
+					send_sway_command(command);
+				} else {
+					snprintf(command, sizeof(command), "[pid=%d] move left", getpid());
+					send_sway_command(command);
+				}
+			}
+			break;
+		case DGL_CS_X11:
+			d = GDK_DISPLAY_XDISPLAY (gdk_display_get_default());
+			w = dgl_get_x11_window(window);
+			XGetWindowAttributes(d, w, &a);
+			break;
+		default:
+			printf("This compositor, code %02d, is not supported right now.", wmtype);
+	}
 }

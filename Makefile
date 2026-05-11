@@ -9,7 +9,7 @@ LDLIBS  = $(shell pkg-config --libs gtk4)
 NCURSES = -lncursesw
 
 TARGETS = degrli
-OBJ     = ini.o dynamic.o
+OBJ     = ini.o cs.o dynamic.o
 
 # Default target
 all: $(TARGETS)
@@ -24,6 +24,9 @@ dynamic.o: src/wayland.c src/ini.h
 
 ini.o: src/ini.c src/ini.h
 	$(CC) $(CFLAGS) -c $< -o $@ -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0
+
+cs.o: src/compositor-specific.c src/compositor-specific.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean
 clean:
