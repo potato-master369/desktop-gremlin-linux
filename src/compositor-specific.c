@@ -128,6 +128,7 @@ void dgl_move_window(GtkWindow *window, unsigned char wmtype, int x_offset, int 
 			d = GDK_DISPLAY_XDISPLAY (gdk_display_get_default());
 			w = dgl_get_x11_window(window);
 			XGetWindowAttributes(d, w, &a);
+			XMoveWindow(d, w, a.x + x_offset, a.y + y_offset);
 			break;
 		default:
 			printf("This compositor, code %02d, is not supported right now.", wmtype);

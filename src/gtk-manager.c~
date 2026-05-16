@@ -1,0 +1,67 @@
+#include <gtk/gtk.h>
+
+static void
+print_hello (GtkWidget *widget,
+             gpointer   data)
+{
+  g_print ("Hello World\n");
+}
+
+static void
+activate (GtkApplication *app,
+          gpointer        user_data)
+{
+  GtkWidget *window;
+  GtkWidget *button;
+
+  window = gtk_application_window_new (app);
+  gtk_window_set_title (GTK_WINDOW (window), "desktop-gremlin-linux manager");
+  gtk_window_set_default_size (GTK_WINDOW (window), 300, 400);
+  button = gtk_button_new_with_label ("Refresh Registry");
+  gtk_widget_set_valign(button, GTK_ALIGN_START);
+  gtk_widget_set_halign(button, GTK_ALIGN_FILL);
+  g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
+  gtk_window_set_child (GTK_WINDOW (window), button);
+
+GtkWidget *grid = gtk_grid_new();
+
+GtkWidget *btn_up    = gtk_button_new_with_label("W");
+GtkWidget *btn_left  = gtk_button_new_with_label("A");
+GtkWidget *btn_down  = gtk_button_new_with_label("S");
+GtkWidget *btn_right = gtk_button_new_with_label("D");
+
+  
+  gtk_grid_attach(GTK_GRID(grid), btn_up,    1, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_left,  0, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_down,  1, 1, 1, 1);
+  gtk_grid_attach(GTK_GRID(grid), btn_right, 2, 1, 1, 1);
+							 
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+
+  gtk_box_append(GTK_BOX(hbox), grid);
+  gtk_widget_set_halign(grid, GTK_ALIGN_START);  // left-align within hbox
+  gtk_widget_set_valign(grid, GTK_ALIGN_END);    // push to bottom
+
+  gtk_widget_set_vexpand(vbox, TRUE);
+  gtk_box_append(GTK_BOX(vbox), hbox);
+  gtk_window_set_child(GTK_WINDOW(window), vbox);
+
+  gtk_window_present (GTK_WINDOW (window));
+}
+
+int
+main (int    argc,
+      char **argv)
+{
+  GtkApplication *app;
+  int status;
+
+  app = gtk_application_new ("io.github.potato-master369.desktop-gremlin-linux", G_APPLICATION_DEFAULT_FLAGS);
+  g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
+  status = g_application_run (G_APPLICATION (app), argc, argv);
+  g_object_unref (app);
+
+  return status;
+}
+

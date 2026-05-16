@@ -8,11 +8,12 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4)
 NCURSES = -lncursesw
 
+MANAGER = degrli-manager
 TARGETS = degrli
 OBJ     = ini.o cs.o dynamic.o
 
 # Default target
-all: $(TARGETS)
+all: $(TARGETS) $(MANAGER)
 
 # NEW WAYLAND CLIENT11111!!!
 degrli: $(OBJ)
@@ -25,7 +26,7 @@ dynamic.o: src/wayland.c src/ini.h
 ini.o: src/ini.c src/ini.h
 	$(CC) $(CFLAGS) -c $< -o $@ -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0
 degrli-manager: src/gtk-manager.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $< -o $@ $(CFLAGS) $(LDLIBS)
 
 cs.o: src/compositor-specific.c src/compositor-specific.h
 	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS)
