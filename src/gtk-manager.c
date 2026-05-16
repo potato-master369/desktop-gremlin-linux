@@ -40,7 +40,7 @@ static void on_dropdown_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpoint
         // Do something with the item (e.g., cast if it's a GtkStringObject)
         const char *text = gtk_string_object_get_string(GTK_STRING_OBJECT(selected_item));
         g_print("Selected: %s\n", text);
-	currenti = atoi(text + 7);
+	currenti = gtk_string_list_find(list, text);
 	g_print("Currenti: %d\n", currenti);
     }
 }
@@ -48,27 +48,37 @@ static void on_dropdown_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpoint
 static void
 go_left (GtkWidget *widget, gpointer data)
 {
-
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 1);
 }
 
 static void
 go_right (GtkWidget *widget, gpointer data)
 {
-
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 3);
 }
 
 static void
 go_up (GtkWidget *widget, gpointer data)
 {
- 
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN);
 }
 
 static void
 go_down (GtkWidget *widget, gpointer data)
 {
-
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 2);
 }
 
+static void
+interrupt_degrli(GtkWidget *widgget, gpointer data)
+{
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGINT);
+}
 static gboolean
 on_key_pressed (GtkEventControllerKey *controller,
                 guint                  keyval,
@@ -129,8 +139,9 @@ activate (GtkApplication *app, gpointer user_data)
   model = GTK_STRING_LIST(gtk_drop_down_get_model(GTK_DROP_DOWN(regchooser)));
   g_signal_connect(btn_up, "clicked", G_CALLBACK (go_up), NULL);
   g_signal_connect(btn_down, "clicked", G_CALLBACK (go_down), NULL);
-  g_signal_connect(btn_left, "clicked", G_CALLBACK(btn_left), NULL);
+  g_signal_connect(btn_left, "clicked", G_CALLBACK(go_left), NULL);
   g_signal_connect(btn_right, "clicked", G_CALLBACK(go_right), NULL);
+  g_signal_connect(btn_kill, "clicked", G_CALLBACK(interrupt_degrli), NULL);
   g_signal_connect(regchooser, "notify::selected-item", G_CALLBACK(on_dropdown_changed), NULL);
   gtk_grid_attach(GTK_GRID (grid), button, 0, 0, 4, 1);
   gtk_grid_attach(GTK_GRID (grid), regchooser, 4, 0, 1, 1);
