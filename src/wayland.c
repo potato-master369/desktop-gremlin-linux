@@ -116,6 +116,7 @@ static int tick_cb(gpointer user_data) {
     break;
   case 100:
     app_adata.idlecount = 0;
+    g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
     app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eup - app_adata.sup) {
       app_adata.walkcurrent = 0;
@@ -132,6 +133,7 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 101:
+  g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
         app_adata.idlecount = 0;
         app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eleft - app_adata.sleft) {
@@ -148,6 +150,7 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 102:
+  g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
         app_adata.idlecount = 0;
         app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.edown - app_adata.sdown) {
@@ -164,6 +167,7 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 103:
+  g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
         app_adata.idlecount = 0;
         app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eright - app_adata.sright) {
