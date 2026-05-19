@@ -1,9 +1,9 @@
-// wayland.c
-// main source file.
+/* wayland.c */
+/* main source file. */
 #define DGL_MAXWT 5
-// The following library, INIH:
-// Copyright (C) Ben Hoyt
-// used under the BSD License (see licenses/BSD3-LICENSE)
+/* The following library, INIH: */
+/* Copyright (C) Ben Hoyt */
+/* used under the BSD License (see licenses/BSD3-LICENSE) */
 #include "ini.h"
 #include "compositor-specific.h"
 #include <cairo.h>
@@ -25,6 +25,10 @@ struct {
       total, current, currentstate, walkcurrent, idlecount, walkTicks;
 } app_adata;
 
+/* Stuff for IPC
+ *   - stored in /tmp/degrli-ipc.txt
+ *   - format per line: IPCID:PID
+ */
 void register_ipc(int ipc_id) {
   FILE *f = fopen("/tmp/degrli-ipc.txt", "a");
   if (!f)
@@ -60,12 +64,12 @@ void unregister_ipc(int ipc_id) {
 int pipe_fd[2];
 GtkApplication *app;
 GtkWidget *window;
-// most stuff will go here.
+/* most stuff will go here. */
 static int tick_cb(gpointer user_data) {
   GtkImage *image = (GtkImage *)user_data;
   switch (app_adata.currentstate) {
   case 0:
-    // g_print("idlecount: %d\n", app_adata.idlecount);
+    /* g_print("idlecount: %d\n", app_adata.idlecount); */
     if (app_adata.idlecount <= app_adata.ChaseIdleReq)
       app_adata.idlecount++;
 
@@ -116,7 +120,6 @@ static int tick_cb(gpointer user_data) {
     break;
   case 100:
     app_adata.idlecount = 0;
-    g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
     app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eup - app_adata.sup) {
       app_adata.walkcurrent = 0;
@@ -133,7 +136,6 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 101:
-  g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
         app_adata.idlecount = 0;
         app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eleft - app_adata.sleft) {
@@ -150,7 +152,6 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 102:
-  g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
         app_adata.idlecount = 0;
         app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.edown - app_adata.sdown) {
@@ -167,7 +168,6 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 103:
-  g_print("DEBUG: walkTicks: %d, walkcurrent: %d\n", app_adata.walkTicks, app_adata.walkcurrent);
         app_adata.idlecount = 0;
         app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eright - app_adata.sright) {
@@ -239,14 +239,14 @@ gboolean deliver_signal(GIOChannel *source, GIOCondition cond, gpointer d) {
       continue;
     }
 
-    // deal with signal
+    /* deal with signal */
     if (buf.signal == SIGINT) {
-      // g_print("Recieved SIGINT!\n");
-      // g_application_quit(G_APPLICATION(app));
+      /* g_print("Recieved SIGINT!\n"); */
+      /* g_application_quit(G_APPLICATION(app)); */
       app_adata.current = 0;
       app_adata.currentstate = 254;
     }
-    // according to IPC spec, these are per WASD
+    /* according to IPC spec, these are per WASD */
     else if (buf.signal == SIGRTMIN) {
       app_adata.currentstate = 100;
       dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 0, 10);
@@ -277,7 +277,7 @@ gboolean deliver_signal(GIOChannel *source, GIOCondition cond, gpointer d) {
   return (TRUE);
 }
 
-// events
+/* events */
 static void on_right_click(GtkGestureClick *gesture, int n_press, double x,
                            double y, gpointer user_data) {
   app_adata.currentstate = 1;
@@ -302,19 +302,19 @@ static void on_drag_begin(GtkGestureClick *gesture, int n_press, double x,
   gdk_toplevel_begin_move(GDK_TOPLEVEL(surface), device, button, x, y, time);
 }
 
-// UNIX signal handler
+/* UNIX signal handler */
 void pipe_signals(int signal) {
   if (write(pipe_fd[1], &signal, sizeof(int)) != sizeof(int)) {
     fprintf(stderr, " [CRITICAL] unix signal %d lost", signal);
   }
 }
 
-// scary loading thing
+/* scary loading thing */
 static void loadf(void) {
   char filename[256];
   app_cdata.textures = g_ptr_array_new_with_free_func(g_object_unref);
 
-  // load all from 0-total in an array.
+  /* load all from 0-total in an array. */
   for (int i = 0; i < app_adata.total; ++i) {
     snprintf(filename, sizeof(filename),
              "/usr/share/desktop-gremlin-linux/assets/%s/%d.png",
@@ -328,7 +328,7 @@ static void loadf(void) {
   }
 }
 
-// free frames
+/* free frames */
 static void freef(void) { g_ptr_array_unref(app_cdata.textures); }
 
 static int handler(void *user, const char *section, const char *name,
@@ -344,7 +344,7 @@ static int handler(void *user, const char *section, const char *name,
     app_adata.ChaseIdleReq = atoi(value);
   } else if (INI_MATCH("Tweaks", "TickDelay")) {
     app_adata.TickDelay = atoi(value);
-  } // -- all the slow asset copy paste --
+  } /* -- all the slow asset copy paste -- */
   else if (INI_MATCH("TextureBounds", "ssleep")) {
     app_adata.ssleep = atoi(value);
   } else if (INI_MATCH("TextureBounds", "ssleep")) {
@@ -422,7 +422,7 @@ static int command_line(GApplication *app, GApplicationCommandLine *cmdline) {
 
   app_cdata.validated = true;
 
-  // activate or smth idk
+  /* activate or smth idk */
   g_application_activate(app);
   return 0;
 }
@@ -444,13 +444,13 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_window_set_title(GTK_WINDOW(window), "desktop-gremlin-linux v3.x");
   gtk_window_set_default_size(GTK_WINDOW(window), 320, 320);
   gtk_widget_set_opacity(window, 1.0);
-  // style
-  // css stuff
+  /* style */
+  /* css stuff */
 
   css__ = gtk_css_provider_new();
   gtk_css_provider_load_from_string(
       css__,
-      // rbga, `a` set to 0.0 makes the window background transparent
+      /* rbga, `a` set to 0.0 makes the window background transparent */
       ".window { background-color: rgba(0, 0, 0, 0); background: none; border: "
       "none; }");
 
@@ -460,17 +460,19 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   gtk_widget_add_css_class(window, "window");
   gtk_widget_set_overflow(window, GTK_OVERFLOW_HIDDEN);
-  // end css stuff
+  /* end css stuff */
 
-  GtkWidget *image = gtk_image_new_from_file(
-      "/usr/share/desktop-gremlin-linux/desktop-gremlin-assets/0.png");
-
-  // more css stuff
+  GtkWidget *image = gtk_image_new();
+  gtk_image_set_pixel_size(GTK_IMAGE (image), 325);
+  /* more css stuff */
   gtk_widget_add_css_class(image, "window");
-  // gtk_widget_set_opacity(window, 0.0);
+  /* gtk_widget_set_opacity(window, 0.0); */
   gtk_widget_set_opacity(image, 1.0);
-
-  // funky block
+  gtk_widget_set_hexpand(image, TRUE);
+  gtk_widget_set_vexpand(image, TRUE);
+  gtk_widget_set_halign(image, GTK_ALIGN_BASELINE_FILL);
+  gtk_widget_set_valign(image, GTK_ALIGN_BASELINE_FILL);
+  /* funky block */
   if (app_cdata.validated == false) {
     g_print(" [error] command-line did not run\n");
     exit(1);
@@ -482,12 +484,12 @@ static void activate(GtkApplication *app, gpointer user_data) {
            "/usr/share/desktop-gremlin-linux/assets/%s/config.ini",
            app_cdata.assetpack);
   ini_parse(filename, handler,
-            NULL); // really jank, but we want to reduce typedefs so it's a BIT
-  // cleaner this way.
-  // printf("DEBUG: InitX: %d", app_adata.InitX);
+            NULL); /* really jank, but we want to reduce typedefs so it's a BIT */
+  /* cleaner this way. */
+  /* printf("DEBUG: InitX: %d", app_adata.InitX); */
   loadf();
-  app_adata.current = 0; // reset stupid overengineered state machine
-  // cos u have to
+  app_adata.current = 0; /* reset stupid overengineered state machine */
+  /* cos u have to */
   app_adata.currentstate = 255;
   app_adata.idlecount = 0;
   app_adata.walkTicks = 0;
@@ -507,13 +509,14 @@ static void activate(GtkApplication *app, gpointer user_data) {
     exit(1);
   }
 
-  // add the SIGRT ones as well
+  /* add the SIGRT ones as well */
   signal(SIGINT, pipe_signals);
   signal(SIGRTMIN, pipe_signals);
   signal(SIGRTMIN + 1, pipe_signals);
   signal(SIGRTMIN + 2, pipe_signals);
   signal(SIGRTMIN + 3, pipe_signals);
-
+  /* additional one for blinking */
+  signal(SIGRTMIN + 4, pipe_signals);
   g_signal_in = g_io_channel_unix_new(pipe_fd[0]);
 
   g_io_channel_set_encoding(g_signal_in, NULL, &error);
@@ -538,14 +541,22 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_window_set_child(GTK_WINDOW(window), image);
 
   gtk_window_present(GTK_WINDOW(window));
+  GtkCssProvider *provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_string(provider, "* { all: initial; }");
+  gtk_style_context_add_provider_for_display(
+    gdk_display_get_default(),
+    GTK_STYLE_PROVIDER(provider),
+    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+  );
 
-  // right click controller
+
+  /* right click controller */
   GtkGestureClick *right_click = GTK_GESTURE_CLICK(gtk_gesture_click_new());
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(right_click), 3);
   g_signal_connect(right_click, "pressed", G_CALLBACK(on_right_click), NULL);
   gtk_widget_add_controller(image, GTK_EVENT_CONTROLLER(right_click));
 
-  // drag controller
+  /* drag controller */
   GtkGestureClick *drag = GTK_GESTURE_CLICK(gtk_gesture_click_new());
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(drag), 1);
   g_signal_connect(drag, "pressed", G_CALLBACK(on_drag_begin), window);
@@ -569,3 +580,4 @@ int main(int argc, char **argv) {
 
   return status;
 }
+//

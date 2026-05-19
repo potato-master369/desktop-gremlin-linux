@@ -5,6 +5,7 @@ GtkStringList *list;
 GPtrArray *pids;
 GtkStringList *model;
 uint16_t currenti;
+GtkStringList *assetpacks;
 
 static void
 update_reg (GtkWidget *widget, gpointer data)
@@ -25,19 +26,22 @@ update_reg (GtkWidget *widget, gpointer data)
 	snprintf(itembuffer, sizeof(itembuffer), "IPC ID: %s", token);
         gtk_string_list_append(model, itembuffer);
 	token = strtok(NULL, ":");
-	// stupid assumption that there will not be excess items
+	/* stupid assumption that there will not be excess items */
 	g_ptr_array_add(pids, GINT_TO_POINTER(atoi(token)));
   }
 
   fclose(fptr);
 }
 
+static void get_assetpacks() {
+  assetpacks = gtk_string_list_new(NULL);
+}
 static void on_dropdown_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
-    // Retrieve the selected item
+    /* Retrieve the selected item */
     GObject *selected_item = gtk_drop_down_get_selected_item(dropdown);
     
     if (selected_item != NULL) {
-        // Do something with the item (e.g., cast if it's a GtkStringObject)
+        /* Do something with the item (e.g., cast if it's a GtkStringObject) */
         const char *text = gtk_string_object_get_string(GTK_STRING_OBJECT(selected_item));
         g_print("Selected: %s\n", text);
 	currenti = gtk_string_list_find(list, text);
@@ -79,6 +83,14 @@ interrupt_degrli(GtkWidget *widgget, gpointer data)
   int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
   kill(pid, SIGINT);
 }
+
+static void
+kill_degrli(GtkWidget *widget, gpointer data)
+{
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGTERM);
+}
+
 static gboolean
 on_key_pressed (GtkEventControllerKey *controller,
                 guint                  keyval,
@@ -105,7 +117,7 @@ on_key_pressed (GtkEventControllerKey *controller,
 		break;
     }
 
-    return FALSE; // Key not handled, let it propagate
+    return FALSE; /* Key not handled, let it propagate */
 }
 
 static void
@@ -142,9 +154,10 @@ activate (GtkApplication *app, gpointer user_data)
   g_signal_connect(btn_left, "clicked", G_CALLBACK(go_left), NULL);
   g_signal_connect(btn_right, "clicked", G_CALLBACK(go_right), NULL);
   g_signal_connect(btn_kill, "clicked", G_CALLBACK(interrupt_degrli), NULL);
+  g_signal_connect(btn_term, "clicked", G_CALLBACK(kill_degrli), NULL);
   g_signal_connect(regchooser, "notify::selected-item", G_CALLBACK(on_dropdown_changed), NULL);
-  gtk_grid_attach(GTK_GRID (grid), button, 0, 0, 4, 1);
-  gtk_grid_attach(GTK_GRID (grid), regchooser, 4, 0, 1, 1);
+  gtk_grid_attach(GTK_GRID (grid), button, 0, 0, 2, 1);
+  gtk_grid_attach(GTK_GRID (grid), regchooser, 2, 0, 3, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_up, 1, 2, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_left, 0, 3, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_down, 1, 3, 1, 1);
@@ -155,8 +168,8 @@ activate (GtkApplication *app, gpointer user_data)
   GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 
   gtk_box_append (GTK_BOX (hbox), grid);
-  gtk_widget_set_halign (grid, GTK_ALIGN_START);	// left-align within hbox
-  gtk_widget_set_valign (grid, GTK_ALIGN_END);	// push to bottom
+  gtk_widget_set_halign (grid, GTK_ALIGN_START);	/* left-align within hbox */
+  gtk_widget_set_valign (grid, GTK_ALIGN_END);	/* push to bottom */
 
   gtk_widget_set_vexpand (vbox, TRUE);
   gtk_box_append (GTK_BOX (vbox), hbox);
