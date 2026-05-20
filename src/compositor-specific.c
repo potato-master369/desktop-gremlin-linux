@@ -130,6 +130,9 @@ void dgl_move_window(GtkWindow *window, unsigned char wmtype, int x_offset, int 
 			XGetWindowAttributes(d, w, &a);
 			XMoveWindow(d, w, a.x + x_offset, a.y + y_offset);
 			break;
+		case DGL_CS_KWIN:
+
+			break;
 		default:
 			printf("This compositor, code %02d, is not supported right now.", wmtype);
 	}

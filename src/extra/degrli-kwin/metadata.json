@@ -1,0 +1,21 @@
+{
+    "KPlugin": {
+        "Name": "degrli Move Window script",
+        "Description": "Script to move window of degrli",
+        "Icon": "preferences-system-windows",
+        
+        "Authors": [
+            {
+                "Email": "random.nonprivate.email@gmail.com",
+                "Name": "potato-master369"
+            }
+        ],
+        "Id": "degrli-move",
+        "Version": "1.0",
+        "License": "MIT",
+        "Website": "https://github.com/potato-master369/desktop-gremlin-linux/"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js",
+    "KPackageStructure": "KWin/Script"
+}

@@ -441,7 +441,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_window_set_titlebar(GTK_WINDOW(window), NULL);
   gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
   gtk_window_set_deletable(GTK_WINDOW(window), FALSE);
-  gtk_window_set_title(GTK_WINDOW(window), "desktop-gremlin-linux v3.x");
+  char title[256];
+  snprintf(title, 255, "degrli %d", app_cdata.ipcid);
+  gtk_window_set_title(GTK_WINDOW(window), title);
   gtk_window_set_default_size(GTK_WINDOW(window), 320, 320);
   gtk_widget_set_opacity(window, 1.0);
   /* style */
