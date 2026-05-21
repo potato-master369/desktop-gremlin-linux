@@ -21,7 +21,7 @@ degrli: $(OBJ)
 
 # Object rules
 dynamic.o: src/wayland.c src/ini.h
-	$(CC) $(CFLAGS) -DGREMLIN_DEBUG -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 ini.o: src/ini.c src/ini.h
 	$(CC) $(CFLAGS) -c $< -o $@ -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0

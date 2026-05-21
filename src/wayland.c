@@ -645,10 +645,10 @@ void cleanup(int sig) {
   //  - in future, a handler will be created using
   //    kill() to find the PID of this process and
   //    send SIGINT.
-  for (int i = 530; i < 670; ++i) {
+  for (int i = app_adata.soutro; i < app_adata.eoutro; ++i) {
     drawf(i);
     XFlush(d);
-    usleep(app_adata.TickDelay);
+    usleep(app_adata.TickDelay * 1000);
   }
 
   // start true cleanup
@@ -657,6 +657,7 @@ void cleanup(int sig) {
       if (frames[i] != None)
         XRenderFreePicture(d, frames[i]);
     }
+    unregister_ipc(app_cdata.ipcid);
     XFreeGC(d, gc);
     XDestroyWindow(d, w);
     XCloseDisplay(d);
@@ -929,7 +930,7 @@ int xmain(int argc, char **argv) {
   for (int i = app_adata.sintro; i < app_adata.eintro; ++i) {
     drawf(i);
     XFlush(d);
-    usleep(app_adata.TickDelay);
+    usleep(app_adata.TickDelay * 1000);
   }
   register_ipc(app_cdata.ipcid);
   while (1) {
@@ -969,7 +970,7 @@ int xmain(int argc, char **argv) {
         drawf(idx);
         XFlush(d);
         current = (current + 1) % 60;
-        usleep(app_adata.TickDelay);
+        usleep(app_adata.TickDelay * 1000);
 
         idle += 1;
         break;
@@ -985,12 +986,12 @@ int xmain(int argc, char **argv) {
 #endif
           idle = 0;
           // do the emote
-          for (int i = app_adata.sclick;
+          for (int i = 0;
                i < (app_adata.eclick - app_adata.sclick + 1); ++i) {
             idx = app_adata.sclick + i;
             drawf(idx);
             XFlush(d);
-            usleep(app_adata.TickDelay);
+            usleep(app_adata.TickDelay * 1000);
             XFlush(d);
           }
         } else if (e.xbutton.button == Button1) {
@@ -1017,7 +1018,7 @@ int xmain(int argc, char **argv) {
         drawf(idx);
         XFlush(d);
         current = (current + 1) % 60;
-        usleep(app_adata.TickDelay);
+        usleep(app_adata.TickDelay * 1000);
 
         idle += 1;
       }
@@ -1042,7 +1043,7 @@ int xmain(int argc, char **argv) {
             PtrState = 0;
           }
         }
-        usleep(app_adata.TickDelay);
+        usleep(app_adata.TickDelay * 1000);
       } else if (PtrState == 1) {
         // DRAG
         idx = app_adata.sgrab +
@@ -1059,7 +1060,7 @@ int xmain(int argc, char **argv) {
 #endif
         }
         XMoveWindow(d, w, root_x - 162, root_y - 162);
-        usleep(app_adata.TickDelay);
+        usleep(app_adata.TickDelay * 1000);
       }
       if (PtrState == 2) {
         if (XQueryPointer(d, root, &ret_root, &ret_child, &root_x, &root_y,
@@ -1110,7 +1111,7 @@ int xmain(int argc, char **argv) {
                    : (final_dir == 90)  ? app_adata.eup - app_adata.sup + 1
                                         : 0);
         XMoveWindow(d, w, new_x, new_y);
-        usleep(app_adata.TickDelay);
+        usleep(app_adata.TickDelay * 1000);
       } else if (PtrState == 0) {
 #ifdef GREMLIN_DEBUG
         printf("Main loop!\n");
@@ -1125,7 +1126,7 @@ int xmain(int argc, char **argv) {
 
         idle += 1;
 
-        usleep(app_adata.TickDelay);
+        usleep(app_adata.TickDelay * 1000);
 
         // have we been idle too long?
         //  - creates the illusion of natural movement and reaction. After
