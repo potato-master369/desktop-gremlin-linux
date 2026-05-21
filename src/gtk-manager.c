@@ -1,11 +1,16 @@
 #include <gtk/gtk.h>
 #include <signal.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 GtkStringList *list;
 GPtrArray *pids;
 GtkStringList *model;
 uint16_t currenti;
 GtkStringList *assetpacks;
+GPtrArray *ipcidlist;
 
 static void
 update_reg (GtkWidget *widget, gpointer data)
@@ -16,6 +21,7 @@ update_reg (GtkWidget *widget, gpointer data)
   char itembuffer[128];
   gtk_string_list_splice(model, 0, g_list_model_get_n_items(G_LIST_MODEL(model)), NULL);
   g_ptr_array_set_size(pids, 0);
+  g_ptr_array_set_size(ipcidlist, 0);
   char *token;
 
   if (fptr == NULL)
@@ -24,18 +30,83 @@ update_reg (GtkWidget *widget, gpointer data)
 	g_print("Found line!\n");
 	token = strtok(buffer, ":");
 	snprintf(itembuffer, sizeof(itembuffer), "IPC ID: %s", token);
+  g_ptr_array_add(ipcidlist, GINT_TO_POINTER(atoi(token)));
         gtk_string_list_append(model, itembuffer);
 	token = strtok(NULL, ":");
 	/* stupid assumption that there will not be excess items */
 	g_ptr_array_add(pids, GINT_TO_POINTER(atoi(token)));
   }
 
+  for (guint j = 0; j < ipcidlist->len; j++) {
+    g_print("Stored IPC ID: %d\n", GPOINTER_TO_INT(g_ptr_array_index(ipcidlist, j)));
+}
+
   fclose(fptr);
 }
 
-static void get_assetpacks() {
-  assetpacks = gtk_string_list_new(NULL);
+static gboolean int_equal_func(gconstpointer a, gconstpointer b) {
+    // Both pointers contain integer values directly
+    return GPOINTER_TO_INT(a) == GPOINTER_TO_INT(b);
 }
+
+
+static void spawn_degrli(GtkButton *btn, gpointer user_data) {
+	GtkDropDown *dd = GTK_DROP_DOWN (user_data);
+	int selected_idx = gtk_drop_down_get_selected(dd);
+
+	GtkStringList *model = GTK_STRING_LIST (gtk_drop_down_get_model (dd));
+	const char *selected_str = gtk_string_list_get_string (model, selected_idx);
+
+	int i = 0;
+	int position;
+  char buf[48];
+	for (;; ++i) {
+    sprintf(buf, "IPC ID: %d", i);
+		if (!g_ptr_array_find_with_equal_func(
+    ipcidlist, 
+    GINT_TO_POINTER(i), 
+    int_equal_func, 
+    NULL
+)) {
+			break;
+		}
+	}
+
+	/* spawn child process */
+	pid_t pid = fork();
+
+	if (pid < 0) {
+		fprintf(stderr, "Fork failed!\n");
+		exit(1);
+	}
+	else if (pid == 0) {
+		char abuf[20];
+		sprintf(abuf, "%d", i); 
+		execlp("/usr/local/bin/degrli", "degrli", selected_str, abuf, NULL);
+		perror("Exec failed");
+		exit(1);
+	}
+
+}
+static void get_assetpacks() {
+  struct dirent *entry;
+  assetpacks = gtk_string_list_new(NULL);
+  DIR *dp = opendir("/usr/share/desktop-gremlin-linux/assets/");
+
+  if (dp == NULL) {
+  	fprintf(stderr, "Opendir failed!\n");
+	exit(1);
+  }
+
+  while ((entry = readdir(dp))) {
+  	if (entry->d_type == DT_DIR) {
+		/* assume that if it is a folder, it is an assetpack. */
+			gtk_string_list_append(assetpacks, entry->d_name);
+    
+	}
+  }
+}
+
 static void on_dropdown_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
     /* Retrieve the selected item */
     GObject *selected_item = gtk_drop_down_get_selected_item(dropdown);
@@ -123,9 +194,11 @@ on_key_pressed (GtkEventControllerKey *controller,
 static void
 activate (GtkApplication *app, gpointer user_data)
 {
+  get_assetpacks();
   GtkWidget *window;
   GtkWidget *button;
   pids = g_ptr_array_new();
+  ipcidlist = g_ptr_array_new();
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "desktop-gremlin-linux manager");
   gtk_window_set_default_size (GTK_WINDOW (window), 300, 400);
@@ -147,8 +220,27 @@ activate (GtkApplication *app, gpointer user_data)
   GtkWidget *btn_right = gtk_button_new_with_label ("D");
   GtkWidget *btn_kill = gtk_button_new_with_label ("Kill (end)"); 
   GtkWidget *btn_term = gtk_button_new_with_label ("Terminate (may corrupt registry)");
+  get_assetpacks();
+  GtkWidget *menudropdown = gtk_drop_down_new(G_LIST_MODEL (assetpacks), NULL);
+  GtkWidget *menubutton = gtk_button_new_with_label("Spawn new gremlin");
+  GtkWidget *menubox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+  gtk_widget_set_margin_start(menubox, 15);
+  gtk_widget_set_margin_end(menubox, 15);
+  gtk_widget_set_margin_top(menubox, 15);
+  gtk_widget_set_margin_bottom(menubox, 15);
+  gtk_box_append(GTK_BOX(menubox), menudropdown);
+  gtk_box_append(GTK_BOX(menubox), menubutton);
+  
+  GtkWidget *popover = gtk_popover_new();
+  gtk_popover_set_child(GTK_POPOVER (popover), menubox);
+  
+  GtkWidget *btn_new = gtk_menu_button_new();
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(btn_new), "New...");
+  gtk_menu_button_set_popover (GTK_MENU_BUTTON(btn_new), popover);
   GtkWidget *regchooser = gtk_drop_down_new(G_LIST_MODEL( list ), NULL);
   model = GTK_STRING_LIST(gtk_drop_down_get_model(GTK_DROP_DOWN(regchooser)));
+  
+  g_signal_connect(menubutton, "clicked", G_CALLBACK(spawn_degrli), menudropdown); 
   g_signal_connect(btn_up, "clicked", G_CALLBACK (go_up), NULL);
   g_signal_connect(btn_down, "clicked", G_CALLBACK (go_down), NULL);
   g_signal_connect(btn_left, "clicked", G_CALLBACK(go_left), NULL);
@@ -164,6 +256,7 @@ activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), btn_right, 2, 3, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_kill, 0, 4, 2, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_term, 2, 4, 4, 1);
+  gtk_grid_attach (GTK_GRID (grid), btn_new, 0, 5, 1, 1);
   GtkWidget *vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 

@@ -219,6 +219,14 @@ static int tick_cb(gpointer user_data) {
       app_adata.walkTicks = 0;
     }
     break;
+  case 104:
+    if (current >= 5) {
+      app_adata.currentstate = 0;
+      gtk_widget_set_visible(GTK_WIDGET(image), true);
+    }
+    gtk_image_set_from_file(image, "/usr/share/desktop-gremlin-linux/assets/blanktexture.png");
+    current++;
+    break;
   case 254:
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
@@ -295,6 +303,9 @@ gboolean deliver_signal(GIOChannel *source, GIOCondition cond, gpointer d) {
     } else if (buf.signal == SIGRTMIN + 3) {
       app_adata.currentstate = 103;
       dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 10, 0);
+    } else if (buf.signal == SIGRTMIN + 4) {
+      current = 0;
+      app_adata.currentstate = 104;
     }
   }
   if (error != NULL) {
@@ -692,6 +703,18 @@ void sigrthandler(int sig) {
     XGetWindowAttributes(d, w, &wa);
     XMoveWindow(d, w, wa.x + 10, wa.y);
     break;
+   case 4:
+        XSetWindowBackground(d, w, WhitePixel(d, DefaultScreen(d)));
+    XClearWindow(d, w);
+    XFlush(d);
+    usleep(100000);
+
+    // Set to another color
+    XSetWindowBackground(d, w, BlackPixel(d, DefaultScreen(d)));
+    XClearWindow(d, w);
+    XFlush(d);
+    usleep(100000);
+    goto endignore;
   default:
     // gracefully exit without issues
     break;
@@ -711,6 +734,8 @@ void sigrthandler(int sig) {
   ++current;
   drawf(idx);
   handlerwait = 10;
+endignore:
+  ;
 }
 
 int xmain(int argc, char **argv) {
@@ -720,7 +745,6 @@ int xmain(int argc, char **argv) {
   signal(SIGRTMIN + 1, sigrthandler);
   signal(SIGRTMIN + 2, sigrthandler);
   signal(SIGRTMIN + 3, sigrthandler);
-
   // READ ARGV
   if (argc != 3) {
     g_print(" [error] Please launch the application with the following syntax: "

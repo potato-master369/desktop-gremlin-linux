@@ -40,6 +40,7 @@ install:
 	mkdir -p /usr/share/desktop-gremlin-linux/assets
 	cp -r manhattancafe /usr/share/desktop-gremlin-linux/assets
 	#cp desktop-gremlin-linux-manager /usr/local/bin
+	cp blanktexture.png /usr/share/desktop-gremlin-linux/assets
 	cp degrli /usr/local/bin
 	cp desktop-gremlin-linux-manager.desktop /usr/share/applications
 
