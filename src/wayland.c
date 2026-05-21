@@ -5,11 +5,46 @@
 /* Copyright (C) Ben Hoyt */
 /* used under the BSD License (see licenses/BSD3-LICENSE) */
 #include "ini.h"
+#ifndef DGL_NO_GTK
 #include "compositor-specific.h"
 #include <cairo.h>
 #include <fcntl.h>
 #include <gtk-4.0/gtk/gtk.h>
+#endif
 #include <signal.h>
+
+/* Extra block for X11 libs */
+#ifndef DGL_NO_XORG
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/extensions/Xrender.h>
+#include <X11/extensions/shape.h>
+#include <X11/xpm.h>
+#include <math.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include <string.h>
+#define WIDTH 325
+#define HEIGHT 325
+#ifndef M_PI
+#define M_PI 3.14
+#endif
+// def globals
+Display *d = NULL;
+Window w = 0;
+GC gc = 0;
+XRenderPictFormat *fmt;
+Picture *frames;
+Pixmap *masks;
+Picture dst;
+// move to top-level to allow referencing in sigrthandler
+int current = 0;
+int handlerwait = 0;
+#endif
 struct {
   char *assetpack;
   int ipcid;
@@ -61,6 +96,7 @@ void unregister_ipc(int ipc_id) {
   rename("/tmp/degrli-ipc.txt.tmp", "/tmp/degrli-ipc.txt");
 }
 
+#ifndef DGL_NO_GTK
 int pipe_fd[2];
 GtkApplication *app;
 GtkWidget *window;
@@ -116,71 +152,71 @@ static int tick_cb(gpointer user_data) {
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.sgrab));
-  
+
     break;
   case 100:
     app_adata.idlecount = 0;
     app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eup - app_adata.sup) {
       app_adata.walkcurrent = 0;
-    }
-    else {
+    } else {
       app_adata.walkcurrent++;
     }
-    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+    gtk_image_set_from_paintable(
+        image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sup));
-    
+
     if (app_adata.walkTicks >= DGL_MAXWT) {
-        app_adata.currentstate = 0;
-        app_adata.walkTicks = 0;
+      app_adata.currentstate = 0;
+      app_adata.walkTicks = 0;
     }
     break;
   case 101:
-        app_adata.idlecount = 0;
-        app_adata.walkTicks++;
+    app_adata.idlecount = 0;
+    app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eleft - app_adata.sleft) {
       app_adata.walkcurrent = 0;
-    }
-    else {
+    } else {
       app_adata.walkcurrent++;
     }
-    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+    gtk_image_set_from_paintable(
+        image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sleft));
     if (app_adata.walkTicks >= DGL_MAXWT) {
-        app_adata.currentstate = 0;
-        app_adata.walkTicks = 0;
+      app_adata.currentstate = 0;
+      app_adata.walkTicks = 0;
     }
     break;
   case 102:
-        app_adata.idlecount = 0;
-        app_adata.walkTicks++;
+    app_adata.idlecount = 0;
+    app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.edown - app_adata.sdown) {
       app_adata.walkcurrent = 0;
-    }
-    else {
+    } else {
       app_adata.walkcurrent++;
     }
-    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+    gtk_image_set_from_paintable(
+        image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sdown));
     if (app_adata.walkTicks >= DGL_MAXWT) {
-        app_adata.currentstate = 0;
-        app_adata.walkTicks = 0;
+      app_adata.currentstate = 0;
+      app_adata.walkTicks = 0;
     }
     break;
   case 103:
-        app_adata.idlecount = 0;
-        app_adata.walkTicks++;
+    app_adata.idlecount = 0;
+    app_adata.walkTicks++;
     if (app_adata.walkcurrent >= app_adata.eright - app_adata.sright) {
       app_adata.walkcurrent = 0;
-    }
-    else {
+    } else {
       app_adata.walkcurrent++;
     }
-    gtk_image_set_from_paintable(image, g_ptr_array_index(app_cdata.textures, 
+    gtk_image_set_from_paintable(
+        image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sright));
     if (app_adata.walkTicks >= DGL_MAXWT) {
-        app_adata.currentstate = 0;
-        app_adata.walkTicks = 0;
+      app_adata.currentstate = 0;
+      app_adata.walkTicks = 0;
     }
     break;
   case 254:
@@ -250,16 +286,13 @@ gboolean deliver_signal(GIOChannel *source, GIOCondition cond, gpointer d) {
     else if (buf.signal == SIGRTMIN) {
       app_adata.currentstate = 100;
       dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 0, 10);
-    }
-    else if (buf.signal == SIGRTMIN + 1) {
+    } else if (buf.signal == SIGRTMIN + 1) {
       app_adata.currentstate = 101;
       dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, -10, 0);
-    }
-    else if (buf.signal == SIGRTMIN + 2) {
+    } else if (buf.signal == SIGRTMIN + 2) {
       app_adata.currentstate = 102;
       dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 0, -10);
-    }
-    else if (buf.signal == SIGRTMIN + 3) {
+    } else if (buf.signal == SIGRTMIN + 3) {
       app_adata.currentstate = 103;
       dgl_move_window(GTK_WINDOW(window), app_cdata.wmtype, 10, 0);
     }
@@ -330,6 +363,7 @@ static void loadf(void) {
 
 /* free frames */
 static void freef(void) { g_ptr_array_unref(app_cdata.textures); }
+#endif
 
 static int handler(void *user, const char *section, const char *name,
                    const char *value) {
@@ -398,6 +432,7 @@ static int handler(void *user, const char *section, const char *name,
   return 1;
 }
 
+#ifndef DGL_NO_GTK
 static int command_line(GApplication *app, GApplicationCommandLine *cmdline) {
   gchar **argv;
   gint argc;
@@ -465,7 +500,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   /* end css stuff */
 
   GtkWidget *image = gtk_image_new();
-  gtk_image_set_pixel_size(GTK_IMAGE (image), 325);
+  gtk_image_set_pixel_size(GTK_IMAGE(image), 325);
   /* more css stuff */
   gtk_widget_add_css_class(image, "window");
   /* gtk_widget_set_opacity(window, 0.0); */
@@ -485,8 +520,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
   snprintf(filename, sizeof(filename),
            "/usr/share/desktop-gremlin-linux/assets/%s/config.ini",
            app_cdata.assetpack);
-  ini_parse(filename, handler,
-            NULL); /* really jank, but we want to reduce typedefs so it's a BIT */
+  ini_parse(
+      filename, handler,
+      NULL); /* really jank, but we want to reduce typedefs so it's a BIT */
   /* cleaner this way. */
   /* printf("DEBUG: InitX: %d", app_adata.InitX); */
   loadf();
@@ -537,7 +573,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   register_ipc(app_cdata.ipcid);
   app_cdata.wmtype = dgl_detect_session();
-  
+
   g_io_add_watch(g_signal_in, G_IO_IN | G_IO_PRI, deliver_signal, NULL);
 
   gtk_window_set_child(GTK_WINDOW(window), image);
@@ -546,11 +582,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_string(provider, "* { all: initial; }");
   gtk_style_context_add_provider_for_display(
-    gdk_display_get_default(),
-    GTK_STYLE_PROVIDER(provider),
-    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
-  );
-
+      gdk_display_get_default(), GTK_STYLE_PROVIDER(provider),
+      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
   /* right click controller */
   GtkGestureClick *right_click = GTK_GESTURE_CLICK(gtk_gesture_click_new());
@@ -568,18 +601,588 @@ static void activate(GtkApplication *app, gpointer user_data) {
   g_timeout_add(app_adata.TickDelay, tick_cb, image);
   g_timeout_add(2000, tickresetcstate, NULL);
 }
+#endif
+
+// 2nd X11 block
+
+#ifndef DGL_NO_XORG
+static void drawf(short fid) {
+  dst = XRenderCreatePicture(d, w, fmt, 0, NULL);
+  if (!dst) {
+    fprintf(stderr, "dst failed\n");
+    return;
+  }
+  XRenderColor clear = {0, 0, 0, 0}; // transparent black
+  Picture fill = XRenderCreateSolidFill(d, &clear);
+  XRenderComposite(d, PictOpSrc, fill, None, dst, 0, 0, 0, 0, 0, 0, WIDTH,
+                   HEIGHT);
+  XRenderFreePicture(d, fill);
+
+  // 请用这个function来解决后来发生的某事比如：
+  // 关于XWayland或X11有些超大的区别
+  if (!frames[fid]) {
+    fprintf(stderr, "src failed\n");
+    return;
+  }
+
+  XShapeCombineMask(d, w, ShapeBounding, 0, 0, masks[fid], ShapeSet);
+  XShapeCombineMask(d, w, ShapeInput, 0, 0, masks[fid], ShapeSet);
+
+  XRenderComposite(d, PictOpOver, frames[fid], None, dst, 0, 0, 0, 0, 0, 0,
+                   WIDTH, HEIGHT);
+
+  // FREEEEEEEEEEEEEEEEEEEEEEEEEEEEBIRD
+  XRenderFreePicture(d, dst);
+}
+
+void cleanup(int sig) {
+#ifdef GREMLIN_DEBUG
+  printf("Cleanup time!\n");
+#endif
+
+  // Goodbye, cruel world!
+  //  - our outro animation goes here!
+  //  - in future, a handler will be created using
+  //    kill() to find the PID of this process and
+  //    send SIGINT.
+  for (int i = 530; i < 670; ++i) {
+    drawf(i);
+    XFlush(d);
+    usleep(app_adata.TickDelay);
+  }
+
+  // start true cleanup
+  if (d) {
+    for (int i = 0; i < app_adata.total; i++) {
+      if (frames[i] != None)
+        XRenderFreePicture(d, frames[i]);
+    }
+    XFreeGC(d, gc);
+    XDestroyWindow(d, w);
+    XCloseDisplay(d);
+  }
+  fflush(stdout);
+  _exit(0);
+}
+
+void sigrthandler(int sig) {
+  XWindowAttributes wa;
+#ifdef GREMLIN_DEBUG
+  printf("Recieved signal: %d", sig);
+#endif
+  switch (sig - SIGRTMIN) {
+  case 0:
+    // w
+    XGetWindowAttributes(d, w, &wa);
+    XMoveWindow(d, w, wa.x, wa.y - 10);
+    break;
+  case 1:
+    // a
+    XGetWindowAttributes(d, w, &wa);
+    XMoveWindow(d, w, wa.x - 10, wa.y);
+    break;
+  case 2:
+    // s
+    XGetWindowAttributes(d, w, &wa);
+    XMoveWindow(d, w, wa.x, wa.y + 10);
+    break;
+  case 3:
+    // d
+    XGetWindowAttributes(d, w, &wa);
+    XMoveWindow(d, w, wa.x + 10, wa.y);
+    break;
+  default:
+    // gracefully exit without issues
+    break;
+  }
+  int base = (sig - SIGRTMIN == 2)   ? app_adata.sdown
+             : (sig - SIGRTMIN == 3) ? app_adata.sright
+             : (sig - SIGRTMIN == 1) ? app_adata.sleft
+             : (sig - SIGRTMIN == 0) ? app_adata.sup
+                                     : 0;
+  int idx =
+      base + (current %
+              ((sig - SIGRTMIN == 2)   ? app_adata.edown - app_adata.sdown + 1
+               : (sig - SIGRTMIN == 3) ? app_adata.eright - app_adata.sright + 1
+               : (sig - SIGRTMIN == 1) ? app_adata.eleft - app_adata.sleft + 1
+               : (sig - SIGRTMIN == 0) ? app_adata.eup - app_adata.sup + 1
+                                       : 0));
+  ++current;
+  drawf(idx);
+  handlerwait = 10;
+}
+
+int xmain(int argc, char **argv) {
+  signal(SIGINT, cleanup);
+  signal(SIGTERM, cleanup);
+  signal(SIGRTMIN, sigrthandler);
+  signal(SIGRTMIN + 1, sigrthandler);
+  signal(SIGRTMIN + 2, sigrthandler);
+  signal(SIGRTMIN + 3, sigrthandler);
+
+  // READ ARGV
+  if (argc != 3) {
+    g_print(" [error] Please launch the application with the following syntax: "
+            "[PROGRAM] [ASSETPACK] [IPC ID]\n");
+    exit(1);
+  }
+
+  app_cdata.assetpack = argv[1];
+  gchar *endptr;
+  app_cdata.ipcid = g_ascii_strtoll(argv[2], &endptr, 10);
+
+  if (*endptr != '\0') {
+    g_print(" [error] invalid IPC ID; conversion to int failed\n");
+    exit(1);
+  }
+
+  app_cdata.validated = true;
+
+  // Detect $HOME
+  char filename[256];
+
+  snprintf(filename, sizeof(filename),
+           "/usr/share/desktop-gremlin-linux/assets/%s/config.ini",
+           app_cdata.assetpack);
+
+  ini_parse(filename, handler, 0);
+
+  d = XOpenDisplay(NULL);
+  if (!d) {
+    fprintf(stderr, "Failed to open display\n");
+    return 1;
+  }
+
+  int screen = DefaultScreen(d);
+#ifdef GREMLIN_DEBUG
+  printf("Hello we loaded da screen things\n");
+#endif
+
+  // visual info
+
+  XVisualInfo vinfo;
+  XMatchVisualInfo(d,                // display
+                   DefaultScreen(d), // default screen
+                   32,               // 32-bit depth
+                   TrueColor,        // class
+                   &vinfo            // a valid visual on success
+  );
+
+  Colormap colormap =
+      XCreateColormap(d, RootWindow(d, vinfo.screen), vinfo.visual, AllocNone);
+  XSetWindowAttributes swa;
+  swa.override_redirect = True;
+  swa.colormap = colormap;
+
+  // don't forget to check the result!
+
+  w = XCreateWindow(
+      d, RootWindow(d, screen), app_adata.InitX, app_adata.InitY, WIDTH, HEIGHT,
+      0, vinfo.depth, InputOutput, vinfo.visual,
+      CWColormap | CWBackPixel | CWBorderPixel | CWOverrideRedirect, &swa);
+  if (!w) {
+    fprintf(stderr, "Failed to create window\n");
+    cleanup(0);
+  }
+  XSelectInput(d, w,
+               ButtonPressMask | ButtonReleaseMask | PointerMotionHintMask);
+
+  XMapWindow(d, w);
+  gc = XCreateGC(d, w, 0, NULL);
+  XSetGraphicsExposures(d, gc, False);
+
+#ifdef GREMLIN_DEBUG
+  printf("Loading our frames i guess\n");
+#endif
+  int width, height, channels;
+  unsigned char *data;
+  XImage *tmp;
+  Pixmap tmpp;
+
+  // alloc them
+  frames = calloc(app_adata.total, sizeof(Picture));
+  masks = calloc(app_adata.total, sizeof(Pixmap));
+
+  fmt = XRenderFindStandardFormat(d, PictStandardARGB32);
+  for (int i = 0; i < app_adata.total; ++i) {
+#ifdef GREMLIN_DEBUG
+    printf("Loading from file: %s\n", filename);
+#endif
+    masks[i] = XCreatePixmap(d, w, WIDTH, HEIGHT, 1);
+    GC gc_mask = XCreateGC(d, masks[i], 0, NULL);
+    XSetForeground(d, gc_mask, 0);
+    XFillRectangle(d, masks[i], gc_mask, 0, 0, WIDTH, HEIGHT);
+    frames[i] = None;
+#ifdef GREMLIN_DEBUG
+    printf("Loading frame %d\n", i);
+#endif
+    snprintf(filename, sizeof(filename),
+             "/usr/share/desktop-gremlin-linux/assets/%s/%d.png",
+             app_cdata.assetpack, i);
+
+    data = stbi_load(filename, &width, &height, &channels, 4);
+    if (!data) {
+      fprintf(stderr, "Failed to load PNG: %s\n", filename);
+      exit(1);
+    }
+    // pre-multiply alphas
+    for (int i = 0; i < width * height; i++) {
+      // swap ABGR -> RGBA
+      unsigned char r = data[4 * i + 0];
+      unsigned char g = data[4 * i + 1];
+      unsigned char b = data[4 * i + 2];
+      unsigned char a = data[4 * i + 3];
+      data[4 * i + 0] = b;
+      data[4 * i + 1] = g;
+      data[4 * i + 2] = r;
+      data[4 * i + 3] = a; // alpha
+      r = data[4 * i + 0];
+      g = data[4 * i + 1];
+      b = data[4 * i + 2];
+      a = data[4 * i + 3];
+      data[4 * i + 0] = (data[4 * i + 0] * a) / 255; // red
+      data[4 * i + 1] = (data[4 * i + 1] * a) / 255; // green
+      data[4 * i + 2] = (data[4 * i + 2] * a) / 255; // blue
+                                                     // alpha stays as-is
+    }
+    tmpp = XCreatePixmap(d, w, 325, 325, vinfo.depth);
+    tmp = XCreateImage(d, vinfo.visual, vinfo.depth, ZPixmap, 0, (char *)data,
+                       WIDTH, HEIGHT, 32, 0);
+    GC gc2 = XCreateGC(d, tmpp, 0, NULL);
+    XPutImage(d, tmpp, gc2, tmp, 0, 0, 0, 0, WIDTH, HEIGHT);
+    XFreeGC(d, gc2);
+
+    frames[i] = XRenderCreatePicture(d, tmpp, fmt, 0, NULL);
+    XImage *mask_img =
+        XCreateImage(d, DefaultVisual(d, screen), 1, ZPixmap, 0,
+                     calloc(WIDTH * HEIGHT, 1), WIDTH, HEIGHT, 8, 0);
+
+    for (int y = 0; y < HEIGHT; ++y) {
+      for (int x = 0; x < WIDTH; ++x) {
+        unsigned char a = data[4 * (y * WIDTH + x) + 3]; // alpha
+        if (a > 128) {
+          XPutPixel(mask_img, x, y, 1);
+        }
+      }
+    }
+    XPutImage(d, masks[i], gc_mask, mask_img, 0, 0, 0, 0, WIDTH, HEIGHT);
+    XDestroyImage(mask_img);
+    XFreeGC(d, gc_mask);
+
+    XDestroyImage(tmp);
+    XFreePixmap(d, tmpp);
+
+#ifdef GREMLIN_DEBUG
+    printf("Loaded frame %d successfully!\n", i);
+#endif
+  }
+
+  drawf(0);
+  XFlush(d);
+
+  //    Cleaned up by clanker so idk if this is wrong
+  short idx;
+  // State tracking
+
+  short idle = app_adata.InitIdle;
+  char PtrState = 0;
+  short final_dir = 0;
+
+  // Direction and motion
+  double tmp_dir = 0.0;
+  int dx = 0, dy = 0;
+  int new_x = 0, new_y = 0;
+
+  // Pointer and window info
+  int root_x = 0, root_y = 0;
+  int win_x = 0, win_y = 0;
+  unsigned int mask = 0;
+
+  // idle
+  int cachePX, cachePY;
+
+  // X11 handles
+  Window root = DefaultRootWindow(d);
+  Window ret_root = 0;
+  Window ret_child = 0;
+  XWindowAttributes wa; // NOTE: if ur stupid or blind (or both), wa stands for
+                        // Window Attributes
+
+  XGetWindowAttributes(d, w, &wa);
+#ifdef GREMLIN_DEBUG
+  printf("Window mapped at %d,%d size %dx%d\n", wa.x, wa.y, wa.width,
+         wa.height);
+#endif
+#ifdef GREMLIN_DEBUG
+  printf("Starting loop...");
+#endif
+// put our intro here
+//  - Must be after the loading, yet also before the main loop, so the audio
+//  will sync up properly!!
+//  - do note that here we must try not to use X11 things in the other branch of
+//  fork() (in future as
+//    of time of writing so it will be added later)
+// EDIT PER 1/2/2026: its been like 2 months and im still too lazy to add audio.
+#ifdef GREMLIN_DEBUG
+  printf("HELLO WORLD!");
+#endif
+  for (int i = app_adata.sintro; i < app_adata.eintro; ++i) {
+    drawf(i);
+    XFlush(d);
+    usleep(app_adata.TickDelay);
+  }
+  register_ipc(app_cdata.ipcid);
+  while (1) {
+    if (handlerwait > 0) {
+      handlerwait--; // skip drawing this tick
+      usleep(20000);
+      continue;
+    }
+#ifdef GREMLIN_DEBUG
+    XGetWindowAttributes(d, w, &wa);
+    printf("New tick: %d, XPending: %d, PtrState: %d, winx: %d, winy: %d, "
+           "wa.x: %d, wa.y: %d, rootx: %d, rooty: %d, delay: %d\n",
+           idle, XPending(d), PtrState, win_x, win_y, wa.x, wa.y, root_x,
+           root_y, app_adata.TickDelay);
+#endif
+    // new thingy
+    if (XPending(d) > 0) { // is something going on? - IMPT; as XNextEvent will
+                           // stall if there is no event
+      XEvent e;            // NOTE: e is created multiple times; to allow for
+                // e to be reset, in case some attributes are not updated
+                // by XNextEvent
+      // The XNextEvent() function copies the first event from the event
+      // queue into the specified XEvent structure and then removes it
+      // from the queue.
+      XNextEvent(d, &e); // wtf is going on -> e
+#ifdef GREMLIN_DEBUG
+      printf("Event type: %d\n", e.type);
+#endif
+
+      switch (e.type) {
+      case Expose:
+#ifdef GREMLIN_DEBUG
+        printf("Expose call!\n");
+#endif
+        // play idle anim
+        idx = app_adata.sidle + (current % (app_adata.eidle - app_adata.sidle));
+        drawf(idx);
+        XFlush(d);
+        current = (current + 1) % 60;
+        usleep(app_adata.TickDelay);
+
+        idle += 1;
+        break;
+      case ButtonPress:
+#ifdef GREMLIN_DEBUG
+        printf("Button click: ");
+#endif
+        // le button click
+        // is it RMB?
+        if (e.xbutton.button == Button3) {
+#ifdef GREMLIN_DEBUG
+          printf("RMB\n");
+#endif
+          idle = 0;
+          // do the emote
+          for (int i = app_adata.sclick;
+               i < (app_adata.eclick - app_adata.sclick + 1); ++i) {
+            idx = app_adata.sclick + i;
+            drawf(idx);
+            XFlush(d);
+            usleep(app_adata.TickDelay);
+            XFlush(d);
+          }
+        } else if (e.xbutton.button == Button1) {
+          // LMB
+          // start drag
+          PtrState = 1;
+          idle = 0;
+        }
+        break;
+      case ButtonRelease:
+        // reset drag state machine
+        PtrState = 0;
+        break;
+
+      // else
+      default:
+        // there is an unknown input; can occur such as ~~a hover~~ etc
+        // NOTE: now, due to the removal of PointerMotionMask, that is
+        // no longer of concern.
+
+        // play idle anim
+        idx = app_adata.sidle +
+              (current % (app_adata.eidle - app_adata.sidle + 1));
+        drawf(idx);
+        XFlush(d);
+        current = (current + 1) % 60;
+        usleep(app_adata.TickDelay);
+
+        idle += 1;
+      }
+    } else {
+      if (PtrState == 3) {
+        // Hover animation
+        //  - Same as the idle animation but with different offset
+        //  - PtrState for this is controlled by if (XPending(d) > 0)
+        //    so this should not interrupt the main input loop.
+
+        idx = app_adata.shover +
+              (current % (app_adata.ehover - app_adata.shover + 1));
+        drawf(idx);
+        XFlush(d);
+        current = (current + 1) % 50;
+
+        if (XQueryPointer(d, w, &ret_root, &ret_child, &root_x, &root_y, &win_x,
+                          &win_y, &mask)) {
+          XGetWindowAttributes(d, w, &wa);
+          if (!(root_x >= wa.x + 80 && root_x <= wa.x + 245 &&
+                root_y >= wa.y + 0 && root_y <= wa.y + 325)) {
+            PtrState = 0;
+          }
+        }
+        usleep(app_adata.TickDelay);
+      } else if (PtrState == 1) {
+        // DRAG
+        idx = app_adata.sgrab +
+              (current % (app_adata.egrab - app_adata.sgrab + 1));
+        drawf(idx);
+        XFlush(d);
+        current = (current + 1) % 50;
+
+        if (XQueryPointer(d, root, &ret_root, &ret_child, &root_x, &root_y,
+                          &win_x, &win_y, &mask)) {
+#ifdef GREMLIN_DEBUG
+          printf("Mouse at: %d,%d, dx %d, dy %d, current %d\n", root_x, root_y,
+                 dx, dy, current);
+#endif
+        }
+        XMoveWindow(d, w, root_x - 162, root_y - 162);
+        usleep(app_adata.TickDelay);
+      }
+      if (PtrState == 2) {
+        if (XQueryPointer(d, root, &ret_root, &ret_child, &root_x, &root_y,
+                          &win_x, &win_y, &mask)) {
+#ifdef GREMLIN_DEBUG
+          printf("Mouse at: %d,%d, dx %d, dy %d\n", cachePX, cachePY, dx, dy);
+#endif
+        }
+        // dir & distance
+        XGetWindowAttributes(d, w, &wa);
+        // delta from window center to mouse
+        dx = cachePX - wa.x;
+        dy = cachePY - wa.y;
+        // angle in radians double
+        tmp_dir = atan2(-dy, dx);
+        short tmp_dir2 = (int)(tmp_dir * 180.0 / M_PI);
+        double dist = sqrt(dx * dx + dy * dy);
+        if (tmp_dir2 < 0)
+          tmp_dir2 += 360;
+        final_dir = ((tmp_dir2 + 45) / 90) * 90 % 360;
+        if (dist > 40) {
+          new_x = wa.x + dx / 12;
+          new_y = wa.y + dy / 12;
+        } else {
+          new_x = wa.x + dx;
+          new_y = wa.y + dy;
+          idle = 0;
+          PtrState = 0;
+        }
+        int base = (final_dir == 270)   ? app_adata.sdown
+                   : (final_dir == 0)   ? app_adata.sright
+                   : (final_dir == 180) ? app_adata.sleft
+                   : (final_dir == 900) ? app_adata.sup
+                                        : 0;
+        int idx = base +
+                  (current %
+                   ((final_dir == 270) ? app_adata.edown - app_adata.sdown + 1
+                    : (final_dir == 0) ? app_adata.eright - app_adata.sright + 1
+                    : (final_dir == 180) ? app_adata.eleft - app_adata.sleft + 1
+                    : (final_dir == 90)  ? app_adata.eup - app_adata.sup + 1
+                                         : 0));
+        drawf(idx);
+        XFlush(d);
+        current = (current + 1) %
+                  ((final_dir == 270) ? app_adata.edown - app_adata.sdown + 1
+                   : (final_dir == 0) ? app_adata.eright - app_adata.sright + 1
+                   : (final_dir == 180) ? app_adata.eleft - app_adata.sleft + 1
+                   : (final_dir == 90)  ? app_adata.eup - app_adata.sup + 1
+                                        : 0);
+        XMoveWindow(d, w, new_x, new_y);
+        usleep(app_adata.TickDelay);
+      } else if (PtrState == 0) {
+#ifdef GREMLIN_DEBUG
+        printf("Main loop!\n");
+#endif
+        // continue like nothing happened because nothing happened :p
+
+        idx = app_adata.sidle +
+              (current % (app_adata.eidle - app_adata.sidle + 1));
+        drawf(idx);
+        XFlush(d);
+        current = (current + 1) % (app_adata.eidle - app_adata.sidle + 1);
+
+        idle += 1;
+
+        usleep(app_adata.TickDelay);
+
+        // have we been idle too long?
+        //  - creates the illusion of natural movement and reaction. After
+        //    all, if you were bored doing nothing, wouldn't you want to
+        //    pester someone?
+        if (idle >= 600) {
+          // take cursor location
+          if (XQueryPointer(d, root, &ret_root, &ret_child, &root_x, &root_y,
+                            &win_x, &win_y, &mask)) {
+#ifdef GREMLIN_DEBUG
+            printf("Mouse at: %d,%d, dx %d, dy %d\n", root_x, root_y, dx, dy);
+#endif
+          }
+          cachePX = root_x;
+          cachePY = root_y;
+          PtrState = 2;
+        }
+        if (XQueryPointer(d, w, &ret_root, &ret_child, &root_x, &root_y, &win_x,
+                          &win_y, &mask)) {
+          if (win_x >= 80 && win_x <= 245 && win_y >= 0 && win_y <= 325) {
+            PtrState = 3;
+          }
+        }
+      }
+    }
+    XFlush(d);
+  }
+
+  // Not reached, but in case:
+  cleanup(0);
+  return 0;
+}
+#endif
 
 int main(int argc, char **argv) {
   app_cdata.validated = false;
-
+#ifndef DGL_NO_XORG
+  char *XDG_SESSION_TYPE = getenv("XDG_SESSION_TYPE");
+#ifndef DGL_NO_GTK
+  if (strcmp(XDG_SESSION_TYPE, "x11") == 0) {
+#endif
+    return xmain(argc, argv);
+#ifndef DGL_NO_GTK
+  }
+#endif
+#endif
+#ifndef DGL_NO_GTK
   int status;
 
   app = gtk_application_new("io.github.potato-master369.desktop-gremlin-linux",
-                            G_APPLICATION_HANDLES_COMMAND_LINE | G_APPLICATION_NON_UNIQUE);
+                            G_APPLICATION_HANDLES_COMMAND_LINE |
+                                G_APPLICATION_NON_UNIQUE);
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
   g_signal_connect(app, "command-line", G_CALLBACK(command_line), NULL);
   status = g_application_run(G_APPLICATION(app), argc, argv);
 
   return status;
+#endif
 }
 //

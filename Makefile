@@ -5,7 +5,7 @@ CC      = gcc
 CFLAGS  = $(shell pkg-config --cflags gtk4) -O2 
 LDFLAGS = -Wl,--gc-sections
 # MC_EFLAGS = $( pkg-config --cflags-only-I gtk4 )
-LDLIBS  = $(shell pkg-config --libs gtk4)
+LDLIBS  = $(shell pkg-config --libs gtk4) -lm -lX11 -lXext -lXpm -lXrender
 NCURSES = -lncursesw
 
 MANAGER = degrli-manager
@@ -21,7 +21,7 @@ degrli: $(OBJ)
 
 # Object rules
 dynamic.o: src/wayland.c src/ini.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -DGREMLIN_DEBUG -c $< -o $@
 
 ini.o: src/ini.c src/ini.h
 	$(CC) $(CFLAGS) -c $< -o $@ -DINI_MAX_LINE=83 -DINI_ALLOW_INLINE_COMMENTS=0
