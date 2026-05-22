@@ -10,7 +10,7 @@ GPtrArray *pids;
 GtkStringList *model;
 uint16_t currenti;
 GtkStringList *assetpacks;
-GPtrArray *ipcidlist;
+int ipcid;
 
 static void
 update_reg (GtkWidget *widget, gpointer data)
@@ -21,7 +21,7 @@ update_reg (GtkWidget *widget, gpointer data)
   char itembuffer[128];
   gtk_string_list_splice(model, 0, g_list_model_get_n_items(G_LIST_MODEL(model)), NULL);
   g_ptr_array_set_size(pids, 0);
-  g_ptr_array_set_size(ipcidlist, 0);
+  //g_ptr_array_set_size(ipcidlist, 0);
   char *token;
 
   if (fptr == NULL)
@@ -30,25 +30,19 @@ update_reg (GtkWidget *widget, gpointer data)
 	g_print("Found line!\n");
 	token = strtok(buffer, ":");
 	snprintf(itembuffer, sizeof(itembuffer), "IPC ID: %s", token);
-  g_ptr_array_add(ipcidlist, GINT_TO_POINTER(atoi(token)));
+ // g_ptr_array_add(ipcidlist, GINT_TO_POINTER(atoi(token)));
         gtk_string_list_append(model, itembuffer);
 	token = strtok(NULL, ":");
 	/* stupid assumption that there will not be excess items */
 	g_ptr_array_add(pids, GINT_TO_POINTER(atoi(token)));
   }
 
-  for (guint j = 0; j < ipcidlist->len; j++) {
-    g_print("Stored IPC ID: %d\n", GPOINTER_TO_INT(g_ptr_array_index(ipcidlist, j)));
-}
+  //for (guint j = 0; j < ipcidlist->len; j++) {
+    //g_print("Stored IPC ID: %d\n", GPOINTER_TO_INT(g_ptr_array_index(ipcidlist, j)));
+  //}
 
   fclose(fptr);
 }
-
-static gboolean int_equal_func(gconstpointer a, gconstpointer b) {
-    // Both pointers contain integer values directly
-    return GPOINTER_TO_INT(a) == GPOINTER_TO_INT(b);
-}
-
 
 static void spawn_degrli(GtkButton *btn, gpointer user_data) {
 	GtkDropDown *dd = GTK_DROP_DOWN (user_data);
@@ -60,17 +54,7 @@ static void spawn_degrli(GtkButton *btn, gpointer user_data) {
 	int i = 0;
 	int position;
   char buf[48];
-	for (;; ++i) {
-    sprintf(buf, "IPC ID: %d", i);
-		if (!g_ptr_array_find_with_equal_func(
-    ipcidlist, 
-    GINT_TO_POINTER(i), 
-    int_equal_func, 
-    NULL
-)) {
-			break;
-		}
-	}
+  	ipcid++;
 
 	/* spawn child process */
 	pid_t pid = fork();
@@ -81,7 +65,7 @@ static void spawn_degrli(GtkButton *btn, gpointer user_data) {
 	}
 	else if (pid == 0) {
 		char abuf[20];
-		sprintf(abuf, "%d", i); 
+		sprintf(abuf, "%d", ipcid);	
 		execlp("/usr/local/bin/degrli", "degrli", selected_str, abuf, NULL);
 		perror("Exec failed");
 		exit(1);
@@ -162,6 +146,11 @@ kill_degrli(GtkWidget *widget, gpointer data)
   kill(pid, SIGTERM);
 }
 
+static void do_blink(GtkWidget *widget, gpointer data) {
+  int pid = GPOINTER_TO_INT (g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 4);
+}
+
 static gboolean
 on_key_pressed (GtkEventControllerKey *controller,
                 guint                  keyval,
@@ -198,7 +187,8 @@ activate (GtkApplication *app, gpointer user_data)
   GtkWidget *window;
   GtkWidget *button;
   pids = g_ptr_array_new();
-  ipcidlist = g_ptr_array_new();
+  //ipcidlist = g_ptr_array_new();
+  ipcid = 0;
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "desktop-gremlin-linux manager");
   gtk_window_set_default_size (GTK_WINDOW (window), 300, 400);
@@ -220,6 +210,7 @@ activate (GtkApplication *app, gpointer user_data)
   GtkWidget *btn_right = gtk_button_new_with_label ("D");
   GtkWidget *btn_kill = gtk_button_new_with_label ("Kill (end)"); 
   GtkWidget *btn_term = gtk_button_new_with_label ("Terminate (may corrupt registry)");
+  GtkWidget *btn_blink = gtk_button_new_with_label("Identify");
   get_assetpacks();
   GtkWidget *menudropdown = gtk_drop_down_new(G_LIST_MODEL (assetpacks), NULL);
   GtkWidget *menubutton = gtk_button_new_with_label("Spawn new gremlin");
@@ -247,6 +238,7 @@ activate (GtkApplication *app, gpointer user_data)
   g_signal_connect(btn_right, "clicked", G_CALLBACK(go_right), NULL);
   g_signal_connect(btn_kill, "clicked", G_CALLBACK(interrupt_degrli), NULL);
   g_signal_connect(btn_term, "clicked", G_CALLBACK(kill_degrli), NULL);
+  g_signal_connect(btn_blink, "clicked", G_CALLBACK (do_blink), NULL);
   g_signal_connect(regchooser, "notify::selected-item", G_CALLBACK(on_dropdown_changed), NULL);
   gtk_grid_attach(GTK_GRID (grid), button, 0, 0, 2, 1);
   gtk_grid_attach(GTK_GRID (grid), regchooser, 2, 0, 3, 1);
@@ -256,6 +248,7 @@ activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), btn_right, 2, 3, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_kill, 0, 4, 2, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_term, 2, 4, 4, 1);
+  gtk_grid_attach(GTK_GRID (grid), btn_blink, 3, 2, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_new, 0, 5, 1, 1);
   GtkWidget *vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
