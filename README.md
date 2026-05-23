@@ -38,6 +38,9 @@ To build the thing, just run:
 
 (as of 2.3.0)
 You can install `desktop-gremlin-linux` using `sudo make install` (starting v2.3.1). This will copy the assets and config as well.
+
+For some reason there's also `sudo make install32` but that installs a 32-bit version (if you use 32-bit linux for whatever reason) but it will not be updated, just please use 64-bit...
+
 ## Configuration
 `vim ~/Desktop/desktop-gremlin-assets/gremlin_config.ini` (For &lt;2.3.0)
 `vim ~/.local/share/desktop-gremlin-linux/gremlin_config.ini` (For 2.3.0)
