@@ -42,10 +42,10 @@ install:
 	#cp desktop-gremlin-linux-manager /usr/local/bin
 	cp blanktexture.png /usr/share/desktop-gremlin-linux/assets
 	cp degrli /usr/local/bin
+	cp degrli-manager /usr/local/bin
 	cp desktop-gremlin-linux-manager.desktop /usr/share/applications
-
 uninstall:
 	rm -rf /usr/share/desktop-gremlin-linux
-	rm -f /usr/local/bin/desktop-gremlin-linux-manager
+	rm -f /usr/local/bin/degrli-manager
 	rm -f /usr/local/bin/degrli
 	rm -f /usr/share/applications/desktop-gremlin-linux-manager.desktop
