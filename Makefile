@@ -5,7 +5,7 @@ CC      = gcc
 CFLAGS  = $(shell pkg-config --cflags gtk4) -O2 
 LDFLAGS = -Wl,--gc-sections
 # MC_EFLAGS = $( pkg-config --cflags-only-I gtk4 )
-LDLIBS  = $(shell pkg-config --libs gtk4) -lm -lX11 -lXext -lXpm -lXrender
+LDLIBS  = $(shell pkg-config --libs gtk4) -lm -lX11 -lXext -lXrender
 NCURSES = -lncursesw
 
 MANAGER = degrli-manager
@@ -44,6 +44,13 @@ install:
 	cp degrli /usr/local/bin
 	cp degrli-manager /usr/local/bin
 	cp desktop-gremlin-linux-manager.desktop /usr/share/applications
+
+install32:
+	mkdir -p /usr/share/desktop-gremlin-linux
+	mkdir -p /usr/share/desktop-gremlin-linux/assets
+	cp -r /usr/share/desktop-gremlin-linux/assets
+	cp blanktexture.png /usr/share/desktop-gremlin-linux/assets
+	cp degrli-32 /usr/local/bin
 uninstall:
 	rm -rf /usr/share/desktop-gremlin-linux
 	rm -f /usr/local/bin/degrli-manager

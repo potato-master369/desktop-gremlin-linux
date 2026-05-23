@@ -6,6 +6,17 @@ A fork of Desktop_Gremlin made for linux, initially meant for learning Xlib with
 ## Prerequisites
 * a C compiler supporting at least C99 (you probably already have this try typing `gcc` or `clang`)
 * libgtk4-dev
+* A resolution of at LEAST 640x480
+
+## Compositor support (Wayland)
+| Compositor | Supported? | Extra information                             |
+|------------|------------|-----------------------------------------------|
+| Sway[FX]   | Yes        | Sway & Derivatives                            |
+| KWin       | WIP        | Compositor for KDE Plasma                     |
+| Mutter     | No         | Compositor for GNOME                          |
+| Hyprland   | WIP        | Wlroots tiling window manager                 |
+
+It is quite impossible, for us to support Mutter without extensions, as GNOME devs are let's just say, quite opinionated, so it does not have a call to move windows that are not focused. If it is really popular, then I might as well just write a shell extension I guess...
 
 ## Uninstallation (v2.3.1+)
 
@@ -39,9 +50,7 @@ Configuration is not needed on the Wayland client as packs are preconfigured and
 > Are you gonna add more features?
 
 yeah, I would love to follow `Desktop_Gremlin` in terms of general direction, but I'd also like to add my own features, and/or remove features if I deem them bad or just find them difficult to port over to Xlib + C.
-> When is v3?
 
-Idk bro
 > Are you gonna be working on this forever?
 
 no but it's a passion project so I'll check back on it once in a while

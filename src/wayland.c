@@ -19,7 +19,7 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/Xrender.h>
 #include <X11/extensions/shape.h>
-#include <X11/xpm.h>
+//#include <X11/xpm.h>
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
@@ -45,6 +45,7 @@ Picture dst;
 int current = 0;
 int handlerwait = 0;
 #endif
+#ifndef DGL_NO_GTK
 struct {
   char *assetpack;
   int ipcid;
@@ -52,7 +53,15 @@ struct {
   GPtrArray *textures;
   unsigned char wmtype;
 } app_cdata;
-
+#endif
+#ifdef DGL_NO_GTK
+struct {
+  char *assetpack;
+  int ipcid;
+  bool validated;
+  unsigned char wmtpype;
+} app_cdata;
+#endif
 struct {
   int ssleep, esleep, sidle, eidle, sclick, eclick, sgrab, egrab, shover,
       ehover, sintro, eintro, soutro, eoutro, sdown, edown, sright, eright,
@@ -747,17 +756,17 @@ int xmain(int argc, char **argv) {
   signal(SIGRTMIN + 3, sigrthandler);
   // READ ARGV
   if (argc != 3) {
-    g_print(" [error] Please launch the application with the following syntax: "
+    printf(" [error] Please launch the application with the following syntax: "
             "[PROGRAM] [ASSETPACK] [IPC ID]\n");
     exit(1);
   }
 
   app_cdata.assetpack = argv[1];
-  gchar *endptr;
-  app_cdata.ipcid = g_ascii_strtoll(argv[2], &endptr, 10);
+  char *endptr;
+  app_cdata.ipcid = strtoll(argv[2], &endptr, 10);
 
   if (*endptr != '\0') {
-    g_print(" [error] invalid IPC ID; conversion to int failed\n");
+    printf(" [error] invalid IPC ID; conversion to int failed\n");
     exit(1);
   }
 
