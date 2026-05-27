@@ -1,6 +1,7 @@
 /* wayland.c */
 /* main source file. */
 #define DGL_MAXWT 5
+#define DGL_FID_CACHE 60
 /* The following library, INIH: */
 /* Copyright (C) Ben Hoyt */
 /* used under the BSD License (see licenses/BSD3-LICENSE) */
@@ -19,7 +20,7 @@
 #include <X11/Xutil.h>
 #include <X11/extensions/Xrender.h>
 #include <X11/extensions/shape.h>
-//#include <X11/xpm.h>
+// #include <X11/xpm.h>
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
@@ -65,8 +66,10 @@ struct {
 struct {
   int ssleep, esleep, sidle, eidle, sclick, eclick, sgrab, egrab, shover,
       ehover, sintro, eintro, soutro, eoutro, sdown, edown, sright, eright,
-      sleft, eleft, sup, eup, InitX, InitY, InitIdle, ChaseIdleReq, TickDelay,
-      total, current, currentstate, walkcurrent, idlecount, walkTicks;
+      sleft, eleft, sup, eup, semote1, eemote1, semote2, eemote2, semote3,
+      eemote3, semote4, eemote4, InitX, InitY, InitIdle, ChaseIdleReq,
+      TickDelay, total, current, currentstate, walkcurrent, idlecount,
+      walkTicks;
 } app_adata;
 
 /* Stuff for IPC
@@ -110,6 +113,74 @@ int pipe_fd[2];
 GtkApplication *app;
 GtkWidget *window;
 /* most stuff will go here. */
+
+static int fid_cache[DGL_FID_CACHE];
+static int fid_cachen = 0;
+
+/* helper functions */
+static void hloadf(int n) {
+  if (n < 0 || n >= app_adata.total)
+    return;
+
+  char filename[256];
+  snprintf(filename, sizeof(filename),
+           "/usr/share/desktop-gremlin-linux/assets/%s/%d.png",
+           app_cdata.assetpack, n);
+  GdkTexture *tmp = gdk_texture_new_from_filename(filename, NULL);
+  g_ptr_array_index(app_cdata.textures, n) = tmp;
+}
+
+static void hfreef(int n) {
+  if (n < 0 || n >= app_adata.total)
+    return;
+
+  gpointer ptr = g_ptr_array_index(app_cdata.textures, n);
+  if (ptr) {
+    g_object_unref(ptr);
+    g_ptr_array_index(app_cdata.textures, n) = NULL;
+  }
+}
+
+static int hfindframe(int n) {
+  for (int i = 0; i < fid_cachen; ++i) {
+    if (fid_cache[i] == n)
+      return i;
+  }
+  return -1;
+}
+
+static void request_frame(int n) {
+  if (n < 0 || n >= app_adata.total)
+    return;
+
+  int x = hfindframe(n);
+
+  if (x != -1) {
+    for (int i = x; i > 0; --i) {
+      fid_cache[i] = fid_cache[i - 1];
+    }
+    fid_cache[0] = n;
+    return;
+  }
+
+  if (fid_cachen < DGL_FID_CACHE) {
+    for (int i = fid_cachen; i > 0; --i) {
+      fid_cache[i] = fid_cache[i - 1];
+    }
+    fid_cache[0] = n;
+    hloadf(n);
+    fid_cachen++;
+  } else {
+    int evict = fid_cache[fid_cachen - 1];
+    hfreef(evict);
+    for (int i = fid_cachen - 1; i > 0; --i) {
+      fid_cache[i] = fid_cache[i - 1];
+    }
+    fid_cache[0] = n;
+    hloadf(n);
+  }
+}
+
 static int tick_cb(gpointer user_data) {
   GtkImage *image = (GtkImage *)user_data;
   switch (app_adata.currentstate) {
@@ -124,6 +195,7 @@ static int tick_cb(gpointer user_data) {
       } else {
         app_adata.current++;
       }
+      request_frame(app_adata.current + app_adata.sidle);
       gtk_image_set_from_paintable(
           image, g_ptr_array_index(app_cdata.textures,
                                    app_adata.current + app_adata.sidle));
@@ -133,6 +205,7 @@ static int tick_cb(gpointer user_data) {
       } else {
         app_adata.current++;
       }
+      request_frame(app_adata.current + app_adata.ssleep);
       gtk_image_set_from_paintable(
           image, g_ptr_array_index(app_cdata.textures,
                                    app_adata.current + app_adata.ssleep));
@@ -147,6 +220,7 @@ static int tick_cb(gpointer user_data) {
     } else {
       app_adata.current++;
     }
+    request_frame(app_adata.current + app_adata.sclick);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.sclick));
@@ -158,6 +232,7 @@ static int tick_cb(gpointer user_data) {
     } else {
       app_adata.current++;
     }
+    request_frame(app_adata.current + app_adata.sgrab);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.sgrab));
@@ -171,6 +246,7 @@ static int tick_cb(gpointer user_data) {
     } else {
       app_adata.walkcurrent++;
     }
+    request_frame(app_adata.walkcurrent + app_adata.sup);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sup));
@@ -188,6 +264,7 @@ static int tick_cb(gpointer user_data) {
     } else {
       app_adata.walkcurrent++;
     }
+    request_frame(app_adata.walkcurrent + app_adata.sleft);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sleft));
@@ -204,6 +281,7 @@ static int tick_cb(gpointer user_data) {
     } else {
       app_adata.walkcurrent++;
     }
+    request_frame(app_adata.walkcurrent + app_adata.sdown);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sdown));
@@ -220,6 +298,7 @@ static int tick_cb(gpointer user_data) {
     } else {
       app_adata.walkcurrent++;
     }
+    request_frame(app_adata.walkcurrent + app_adata.sright);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.walkcurrent + app_adata.sright));
@@ -233,10 +312,12 @@ static int tick_cb(gpointer user_data) {
       app_adata.currentstate = 0;
       gtk_widget_set_visible(GTK_WIDGET(image), true);
     }
-    gtk_image_set_from_file(image, "/usr/share/desktop-gremlin-linux/assets/blanktexture.png");
+    gtk_image_set_from_file(
+        image, "/usr/share/desktop-gremlin-linux/assets/blanktexture.png");
     current++;
     break;
   case 254:
+    request_frame(app_adata.current + app_adata.soutro);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.soutro));
@@ -248,6 +329,7 @@ static int tick_cb(gpointer user_data) {
     }
     break;
   case 255:
+    request_frame(app_adata.current + app_adata.sintro);
     gtk_image_set_from_paintable(
         image, g_ptr_array_index(app_cdata.textures,
                                  app_adata.current + app_adata.sintro));
@@ -367,17 +449,11 @@ static void loadf(void) {
   char filename[256];
   app_cdata.textures = g_ptr_array_new_with_free_func(g_object_unref);
 
-  /* load all from 0-total in an array. */
+  /* load all from 0-total in an array.
+   * Will put NULL so that frames can be later
+   * requested through hloadf */
   for (int i = 0; i < app_adata.total; ++i) {
-    snprintf(filename, sizeof(filename),
-             "/usr/share/desktop-gremlin-linux/assets/%s/%d.png",
-             app_cdata.assetpack, i);
-    GdkTexture *tex = gdk_texture_new_from_filename(filename, NULL);
-
-    if (tex) {
-      g_ptr_array_add(app_cdata.textures, g_object_ref(tex));
-      g_object_unref(tex);
-    }
+    g_ptr_array_add(app_cdata.textures, (void *)NULL);
   }
 }
 
@@ -447,6 +523,22 @@ static int handler(void *user, const char *section, const char *name,
     app_adata.sup = atoi(value);
   } else if (INI_MATCH("TextureBounds", "eup")) {
     app_adata.eup = atoi(value);
+  } else if (INI_MATCH("TexutreBounds", "semote1")) {
+    app_adata.semote1 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "eemote1")) {
+    app_adata.eemote1 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "semote2")) {
+    app_adata.semote2 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "eemote2")) {
+    app_adata.eemote2 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "semote3")) {
+    app_adata.semote3 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "eemote3")) {
+    app_adata.eemote3 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "semote4")) {
+    app_adata.semote4 = atoi(value);
+  } else if (INI_MATCH("TextureBounds", "eemote4")) {
+    app_adata.eemote4 = atoi(value);
   }
 
   return 1;
@@ -712,8 +804,8 @@ void sigrthandler(int sig) {
     XGetWindowAttributes(d, w, &wa);
     XMoveWindow(d, w, wa.x + 10, wa.y);
     break;
-   case 4:
-        XSetWindowBackground(d, w, WhitePixel(d, DefaultScreen(d)));
+  case 4:
+    XSetWindowBackground(d, w, WhitePixel(d, DefaultScreen(d)));
     XClearWindow(d, w);
     XFlush(d);
     usleep(100000);
@@ -743,8 +835,7 @@ void sigrthandler(int sig) {
   ++current;
   drawf(idx);
   handlerwait = 10;
-endignore:
-  ;
+endignore:;
 }
 
 int xmain(int argc, char **argv) {
@@ -757,7 +848,7 @@ int xmain(int argc, char **argv) {
   // READ ARGV
   if (argc != 3) {
     printf(" [error] Please launch the application with the following syntax: "
-            "[PROGRAM] [ASSETPACK] [IPC ID]\n");
+           "[PROGRAM] [ASSETPACK] [IPC ID]\n");
     exit(1);
   }
 
@@ -1019,8 +1110,7 @@ int xmain(int argc, char **argv) {
 #endif
           idle = 0;
           // do the emote
-          for (int i = 0;
-               i < (app_adata.eclick - app_adata.sclick + 1); ++i) {
+          for (int i = 0; i < (app_adata.eclick - app_adata.sclick + 1); ++i) {
             idx = app_adata.sclick + i;
             drawf(idx);
             XFlush(d);
