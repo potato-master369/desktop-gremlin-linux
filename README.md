@@ -59,7 +59,7 @@ yeah, I would love to follow `Desktop_Gremlin` in terms of general direction, bu
 no but it's a passion project so I'll check back on it once in a while
 
 ## Thanks to:
-* [KirtValesco](https://github.com/KurtVelasco) for the [original](https://github.com/KurtVelasco/Desktop_Gremlin), inspiration, and assets (sowwy for stealing them I can't figure umaViewer out)
+* [KurtValesco](https://github.com/kritzkingvoid) for the [original](https://github.com/kritzkingvoid/Desktop_Gremlin), inspiration, and assets (sowwy for stealing them I can't figure umaViewer out)
 * ImageMagick team: ~~stealing~~ repurposing KurtValesco's assets would have been impossible without this umazing (pun intended) tool.
 * Ben Hoyt for INIH
 * and of course, YOU for being interested in this project of mine!
