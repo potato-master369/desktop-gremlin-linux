@@ -10,7 +10,7 @@ NCURSES = -lncursesw
 
 MANAGER = degrli-manager
 TARGETS = degrli
-OBJ     = ini.o cs.o dynamic.o
+OBJ     = ini.o cs.o dynamic.o audio.o
 
 # Default target
 all: $(TARGETS) $(MANAGER)
@@ -29,6 +29,9 @@ degrli-manager: src/gtk-manager.c
 	$(CC) $< -o $@ $(CFLAGS) $(LDLIBS)
 
 cs.o: src/compositor-specific.c src/compositor-specific.h
+	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS)
+
+audio.o: src/audio.c src/audio.h
 	$(CC) -c $< -o $@ $(CFLAGS) $(LDFLAGS)
 
 # Clean
