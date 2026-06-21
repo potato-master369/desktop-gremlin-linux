@@ -1510,7 +1510,7 @@ xmain (int argc, char **argv)
 	      //  - Same as the idle animation but with different offset
 	      //  - PtrState for this is controlled by if (XPending(d) > 0)
 	      //    so this should not interrupt the main input loop.
-	      degrli_play_sound_assetpack(app_cdata.assetpack, "hover");
+	      
 
 	      idx = app_adata.shover +
 		(current % (app_adata.ehover - app_adata.shover + 1));
@@ -1653,10 +1653,63 @@ xmain (int argc, char **argv)
 		  if (win_x >= 80 && win_x <= 245 && win_y >= 0
 		      && win_y <= 325)
 		    {
+          degrli_play_sound_assetpack(app_cdata.assetpack, "hover");
 		      PtrState = 3;
 		    }
 		}
 	    }
+      else if (PtrState == 100) {
+        #ifdef GREMLIN_DEBUG
+          printf("emote 1")
+        #endif
+        idx = app_adata.semote1 +
+          (current % (app_adata.eemote1 - app_adata.semote1 + 1));
+        if (idx == app_adata.eemote1) {
+          PtrState = 0;
+        }
+        drawf (idx);
+        XFlush (d);
+        usleep (app_adata.TickDelay * 1000);
+      }
+      else if (PtrState == 101) {
+        #ifdef GREMLIN_DEBUG
+          printf("emote 2")
+        #endif
+        idx = app_adata.semote2 +
+          (current % (app_adata.eemote2 - app_adata.semote2 + 1));
+        if (idx == app_adata.eemote2) {
+          PtrState = 0;
+        }
+        drawf (idx);
+        XFlush (d);
+        usleep (app_adata.TickDelay * 1000);
+      }
+      else if (PtrState == 102) {
+        #ifdef GREMLIN_DEBUG
+          printf("emote 3")
+        #endif
+        idx = app_adata.semote3 +
+          (current % (app_adata.eemote3 - app_adata.semote3 + 1));
+        if (idx == app_adata.eemote3) {
+          PtrState = 0;
+        }
+        drawf (idx);
+        XFlush (d);
+        usleep (app_adata.TickDelay * 1000);
+      }
+      else if (PtrState == 103) {
+        #ifdef GREMLIN_DEBUG
+          printf("emote 4")
+        #endif
+        idx = app_adata.semote4 +
+          (current % (app_adata.eemote4 - app_adata.semote4 + 1));
+        if (idx == app_adata.eemote4) {
+          PtrState = 0;
+        }
+        drawf (idx);
+        XFlush (d);
+        usleep (app_adata.TickDelay * 1000);
+      }
 	}
       XFlush (d);
     }
