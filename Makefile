@@ -2,10 +2,10 @@
 # Copyright (C) potato-master369 2026
 
 CC      = gcc
-CFLAGS  = $(shell pkg-config --cflags gtk4) -O2 
+CFLAGS  = $(shell pkg-config --cflags gtk4) -O2 -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include/
 LDFLAGS = -Wl,--gc-sections
 # MC_EFLAGS = $( pkg-config --cflags-only-I gtk4 )
-LDLIBS  = $(shell pkg-config --libs gtk4) -lm -lX11 -lXext -lXrender
+LDLIBS  = $(shell pkg-config --libs gtk4) -lm -lX11 -lXext -lXrender -ldbus-1
 NCURSES = -lncursesw
 
 MANAGER = degrli-manager

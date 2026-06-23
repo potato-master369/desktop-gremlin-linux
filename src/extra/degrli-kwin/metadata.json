@@ -3,7 +3,6 @@
         "Name": "degrli Move Window script",
         "Description": "Script to move window of degrli",
         "Icon": "preferences-system-windows",
-        
         "Authors": [
             {
                 "Email": "random.nonprivate.email@gmail.com",
@@ -15,7 +14,7 @@
         "License": "MIT",
         "Website": "https://github.com/potato-master369/desktop-gremlin-linux/"
     },
-    "X-Plasma-API": "javascript",
-    "X-Plasma-MainScript": "code/main.js",
+    "X-Plasma-API": "declarative",
+    "X-Plasma-MainScript": "code/main.qml",
     "KPackageStructure": "KWin/Script"
 }

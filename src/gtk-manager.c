@@ -112,6 +112,34 @@ go_left (GtkWidget *widget, gpointer data)
 }
 
 static void
+send_sig1 (GtkWidget *widget, gpointer data)
+{
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 5);
+}
+
+static void
+send_sig2 (GtkWidget *widget, gpointer data)
+{
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 6);
+}
+
+static void
+send_sig3 (GtkWidget *widget, gpointer data)
+{
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 7);
+}
+
+static void
+send_sig4 (GtkWidget *widget, gpointer data)
+{
+  int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
+  kill(pid, SIGRTMIN + 8);
+}
+
+static void
 go_right (GtkWidget *widget, gpointer data)
 {
   int pid = GPOINTER_TO_INT(g_ptr_array_index(pids, currenti));
@@ -175,6 +203,22 @@ on_key_pressed (GtkEventControllerKey *controller,
 		go_right(NULL, NULL);
 		return TRUE;
 		break;
+    case GDK_KEY_1:
+      send_sig1(NULL, NULL);
+      return TRUE;
+      break;
+    case GDK_KEY_2:
+      send_sig2(NULL, NULL);
+      return TRUE;
+      break;
+    case GDK_KEY_3:
+      send_sig3(NULL, NULL);
+      return TRUE;
+      break;
+    case GDK_KEY_4:
+      send_sig4(NULL, NULL);
+      return TRUE;
+      break;
     }
 
     return FALSE; /* Key not handled, let it propagate */
@@ -201,13 +245,22 @@ activate (GtkApplication *app, gpointer user_data)
   g_signal_connect (controller, "key-pressed", G_CALLBACK (on_key_pressed), NULL);
   gtk_widget_add_controller (window, controller);
 
-  GtkWidget *grid = gtk_grid_new ();
-  gtk_grid_set_row_spacing (GTK_GRID (grid), 10);
+  GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+  GtkWidget *hbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  gtk_widget_set_margin_start(vbox, 15);
+  gtk_widget_set_margin_end(vbox, 15);
+  gtk_widget_set_margin_top(vbox, 15);
+  gtk_widget_set_margin_bottom(vbox, 15);
+
   list = gtk_string_list_new(NULL);
   GtkWidget *btn_up = gtk_button_new_with_label ("W");
   GtkWidget *btn_left = gtk_button_new_with_label ("A");
   GtkWidget *btn_down = gtk_button_new_with_label ("S");
   GtkWidget *btn_right = gtk_button_new_with_label ("D");
+  GtkWidget *btn_1 = gtk_button_new_with_label ("1");
+  GtkWidget *btn_2 = gtk_button_new_with_label ("2");
+  GtkWidget *btn_3 = gtk_button_new_with_label ("3");
+  GtkWidget *btn_4 = gtk_button_new_with_label ("4");
   GtkWidget *btn_kill = gtk_button_new_with_label ("Kill (end)"); 
   GtkWidget *btn_term = gtk_button_new_with_label ("Terminate (may corrupt registry)");
   GtkWidget *btn_blink = gtk_button_new_with_label("Identify");
@@ -236,29 +289,34 @@ activate (GtkApplication *app, gpointer user_data)
   g_signal_connect(btn_down, "clicked", G_CALLBACK (go_down), NULL);
   g_signal_connect(btn_left, "clicked", G_CALLBACK(go_left), NULL);
   g_signal_connect(btn_right, "clicked", G_CALLBACK(go_right), NULL);
+  g_signal_connect(btn_1, "clicked", G_CALLBACK(send_sig1), NULL);
+  g_signal_connect(btn_2, "clicked", G_CALLBACK(send_sig2), NULL);
+  g_signal_connect(btn_3, "clicked", G_CALLBACK(send_sig3), NULL);
+  g_signal_connect(btn_4, "clicked", G_CALLBACK(send_sig4), NULL);
   g_signal_connect(btn_kill, "clicked", G_CALLBACK(interrupt_degrli), NULL);
   g_signal_connect(btn_term, "clicked", G_CALLBACK(kill_degrli), NULL);
   g_signal_connect(btn_blink, "clicked", G_CALLBACK (do_blink), NULL);
   g_signal_connect(regchooser, "notify::selected-item", G_CALLBACK(on_dropdown_changed), NULL);
-  gtk_grid_attach(GTK_GRID (grid), button, 0, 0, 2, 1);
-  gtk_grid_attach(GTK_GRID (grid), regchooser, 2, 0, 3, 1);
+  gtk_box_append(GTK_BOX(vbox), hbox1);
+  gtk_box_append(GTK_BOX(hbox1), button);
+  gtk_box_append(GTK_BOX(hbox1), regchooser);
+  GtkWidget *grid = gtk_grid_new();
+  gtk_grid_attach (GTK_GRID (grid), btn_1, 0, 1, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), btn_2, 1, 1, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), btn_3, 2, 1, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), btn_4, 3, 1, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_up, 1, 2, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_left, 0, 3, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_down, 1, 3, 1, 1);
   gtk_grid_attach (GTK_GRID (grid), btn_right, 2, 3, 1, 1);
-  gtk_grid_attach (GTK_GRID (grid), btn_kill, 0, 4, 2, 1);
-  gtk_grid_attach (GTK_GRID (grid), btn_term, 2, 4, 4, 1);
-  gtk_grid_attach(GTK_GRID (grid), btn_blink, 3, 2, 1, 1);
-  gtk_grid_attach (GTK_GRID (grid), btn_new, 0, 5, 1, 1);
-  GtkWidget *vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-  GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
-
-  gtk_box_append (GTK_BOX (hbox), grid);
-  gtk_widget_set_halign (grid, GTK_ALIGN_START);	/* left-align within hbox */
-  gtk_widget_set_valign (grid, GTK_ALIGN_END);	/* push to bottom */
+  gtk_box_append(GTK_BOX(vbox), grid);
+  gtk_box_append(GTK_BOX(vbox), btn_blink);
+  gtk_box_append(GTK_BOX(vbox), btn_kill);
+  gtk_box_append(GTK_BOX(vbox), btn_term);
+  gtk_box_append(GTK_BOX(vbox), btn_new);
 
   gtk_widget_set_vexpand (vbox, TRUE);
-  gtk_box_append (GTK_BOX (vbox), hbox);
+  gtk_widget_set_hexpand (vbox, FALSE);
   gtk_window_set_child (GTK_WINDOW (window), vbox);
 
   gtk_window_present (GTK_WINDOW (window));

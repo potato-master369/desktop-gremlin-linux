@@ -389,8 +389,8 @@ tick_cb (gpointer user_data)
       break;
       /* emotes */
     case 150:
+      g_print("debug: emote1 frame %d\n", app_adata.current + app_adata.semote1);
       request_frame (app_adata.current + app_adata.semote1);
-      degrli_play_sound_assetpack(app_cdata.assetpack, "emote1");
       gtk_image_set_from_paintable (image,
 				    g_ptr_array_index (app_cdata.textures,
 						       app_adata.current +
@@ -408,11 +408,11 @@ tick_cb (gpointer user_data)
 
     case 151:
       request_frame (app_adata.current + app_adata.semote2);
-      degrli_play_sound_assetpack(app_cdata.assetpack, "emote2");
+      g_print("debug: emote2 frame %d\n", app_adata.current + app_adata.semote2);
       gtk_image_set_from_paintable (image,
 				    g_ptr_array_index (app_cdata.textures,
 						       app_adata.current +
-						       app_adata.semote1));
+						       app_adata.semote2));
       if (app_adata.current == app_adata.eemote2 - app_adata.semote2)
 	{
 	  app_adata.currentstate = 0;
@@ -425,11 +425,10 @@ tick_cb (gpointer user_data)
       break;
     case 152:
       request_frame (app_adata.current + app_adata.semote3);
-      degrli_play_sound_assetpack(app_cdata.assetpack, "emote3");
       gtk_image_set_from_paintable (image,
 				    g_ptr_array_index (app_cdata.textures,
 						       app_adata.current +
-						       app_adata.semote1));
+						       app_adata.semote3));
       if (app_adata.current == app_adata.eemote3 - app_adata.semote3)
 	{
 	  app_adata.currentstate = 0;
@@ -442,11 +441,10 @@ tick_cb (gpointer user_data)
       break;
     case 153:
       request_frame (app_adata.current + app_adata.semote4);
-      degrli_play_sound_assetpack(app_cdata.assetpack, "emote4");
       gtk_image_set_from_paintable (image,
 				    g_ptr_array_index (app_cdata.textures,
 						       app_adata.current +
-						       app_adata.semote1));
+						       app_adata.semote4));
       if (app_adata.current == app_adata.eemote4 - app_adata.semote4)
 	{
 	  app_adata.currentstate = 0;
@@ -467,7 +465,7 @@ tick_cb (gpointer user_data)
       if (app_adata.current == app_adata.eoutro - app_adata.soutro)
 	{
 	  unregister_ipc (app_cdata.ipcid);
-	  degrli_destroy_audio();
+	  degrli_destroy_audio ();
 	  g_application_quit (G_APPLICATION (app));
 	}
       else
@@ -537,7 +535,7 @@ deliver_signal (GIOChannel *source, GIOCondition cond, gpointer d)
 	{
 	  /* g_print("Recieved SIGINT!\n"); */
 	  /* g_application_quit(G_APPLICATION(app)); */
-    degrli_play_sound_assetpack(app_cdata.assetpack, "outro");
+	  degrli_play_sound_assetpack (app_cdata.assetpack, "outro");
 	  app_adata.current = 0;
 	  app_adata.currentstate = 254;
 	}
@@ -569,25 +567,25 @@ deliver_signal (GIOChannel *source, GIOCondition cond, gpointer d)
 	}			/* for the emotes */
       else if (buf.signal == SIGRTMIN + 5 && !(app_adata.currentstate >= 150))
 	{
-    degrli_play_sound_assetpack(app_cdata.assetpack, "emote1");
+	  degrli_play_sound_assetpack (app_cdata.assetpack, "emote1");
 	  app_adata.current = 0;
 	  app_adata.currentstate = 150;
 	}
       else if (buf.signal == SIGRTMIN + 6 && !(app_adata.currentstate >= 150))
 	{
-    degrli_play_sound_assetpack(app_cdata.assetpack, "emote2");
+	  degrli_play_sound_assetpack (app_cdata.assetpack, "emote2");
 	  app_adata.current = 0;
 	  app_adata.currentstate = 151;
 	}
       else if (buf.signal == SIGRTMIN + 7 && !(app_adata.currentstate >= 150))
 	{
-    degrli_play_sound_assetpack(app_cdata.assetpack, "emote3");
+	  degrli_play_sound_assetpack (app_cdata.assetpack, "emote3");
 	  app_adata.current = 0;
 	  app_adata.currentstate = 152;
 	}
       else if (buf.signal == SIGRTMIN + 8 && !(app_adata.currentstate >= 150))
 	{
-    degrli_play_sound_assetpack(app_cdata.assetpack, "emote4");
+	  degrli_play_sound_assetpack (app_cdata.assetpack, "emote4");
 	  app_adata.current = 0;
 	  app_adata.currentstate = 153;
 	}
@@ -613,7 +611,7 @@ static void
 on_right_click (GtkGestureClick *gesture, int n_press, double x,
 		double y, gpointer user_data)
 {
-  degrli_play_sound_assetpack(app_cdata.assetpack, "mambo");
+  degrli_play_sound_assetpack (app_cdata.assetpack, "mambo");
   app_adata.currentstate = 1;
   app_adata.current = 0;
 }
@@ -622,7 +620,7 @@ static void
 on_drag_begin (GtkGestureClick *gesture, int n_press, double x,
 	       double y, gpointer user_data)
 {
-  degrli_play_sound_assetpack(app_cdata.assetpack, "grab");
+  degrli_play_sound_assetpack (app_cdata.assetpack, "grab");
   GtkWindow *window = GTK_WINDOW (user_data);
   GdkSurface *surface = gtk_native_get_surface (GTK_NATIVE (window));
 
@@ -796,7 +794,7 @@ handler (void *user, const char *section, const char *name, const char *value)
     {
       app_adata.eup = atoi (value);
     }
-  else if (INI_MATCH ("TexutreBounds", "semote1"))
+  else if (INI_MATCH ("TextureBounds", "semote1"))
     {
       app_adata.semote1 = atoi (value);
     }
@@ -931,7 +929,7 @@ activate (GtkApplication *app, gpointer user_data)
   /* cleaner this way. */
   /* printf("DEBUG: InitX: %d", app_adata.InitX); */
   loadf ();
-  degrli_init_audio();
+  degrli_init_audio ();
   app_adata.current = 0;	/* reset stupid overengineered state machine */
   /* cos u have to */
   app_adata.currentstate = 255;
@@ -1015,7 +1013,7 @@ activate (GtkApplication *app, gpointer user_data)
   g_signal_connect (drag, "pressed", G_CALLBACK (on_drag_begin), window);
 
   gtk_widget_add_controller (image, GTK_EVENT_CONTROLLER (drag));
-  degrli_play_sound_assetpack(app_cdata.assetpack, "intro");
+  degrli_play_sound_assetpack (app_cdata.assetpack, "intro");
 
   g_timeout_add (app_adata.TickDelay, tick_cb, image);
   g_timeout_add (2000, tickresetcstate, NULL);
@@ -1070,7 +1068,7 @@ cleanup (int sig)
   //  - in future, a handler will be created using
   //    kill() to find the PID of this process and
   //    send SIGINT.
-  degrli_play_sound_assetpack(app_cdata.assetpack, "outro");
+  degrli_play_sound_assetpack (app_cdata.assetpack, "outro");
   for (int i = app_adata.soutro; i < app_adata.eoutro; ++i)
     {
       drawf (i);
@@ -1342,7 +1340,7 @@ xmain (int argc, char **argv)
   XFlush (d);
 
   // audio.h part
-  degrli_init_audio();
+  degrli_init_audio ();
 
   //    Cleaned up by clanker so idk if this is wrong
   short idx;
@@ -1392,7 +1390,7 @@ xmain (int argc, char **argv)
   printf ("HELLO WORLD!");
 #endif
   // play intro
-  degrli_play_sound_assetpack(app_cdata.assetpack, "intro");
+  degrli_play_sound_assetpack (app_cdata.assetpack, "intro");
   for (int i = app_adata.sintro; i < app_adata.eintro; ++i)
     {
       drawf (i);
@@ -1458,7 +1456,7 @@ xmain (int argc, char **argv)
 #ifdef GREMLIN_DEBUG
 		  printf ("RMB\n");
 #endif
-		  degrli_play_sound_assetpack(app_cdata.assetpack, "mambo");
+		  degrli_play_sound_assetpack (app_cdata.assetpack, "mambo");
 		  idle = 0;
 		  // do the emote
 		  for (int i = 0;
@@ -1473,7 +1471,7 @@ xmain (int argc, char **argv)
 		}
 	      else if (e.xbutton.button == Button1)
 		{
-		  degrli_play_sound_assetpack(app_cdata.assetpack, "grab");
+		  degrli_play_sound_assetpack (app_cdata.assetpack, "grab");
 		  // LMB
 		  // start drag
 		  PtrState = 1;
@@ -1510,7 +1508,7 @@ xmain (int argc, char **argv)
 	      //  - Same as the idle animation but with different offset
 	      //  - PtrState for this is controlled by if (XPending(d) > 0)
 	      //    so this should not interrupt the main input loop.
-	      
+
 
 	      idx = app_adata.shover +
 		(current % (app_adata.ehover - app_adata.shover + 1));
@@ -1653,63 +1651,72 @@ xmain (int argc, char **argv)
 		  if (win_x >= 80 && win_x <= 245 && win_y >= 0
 		      && win_y <= 325)
 		    {
-          degrli_play_sound_assetpack(app_cdata.assetpack, "hover");
+		      degrli_play_sound_assetpack (app_cdata.assetpack,
+						   "hover");
 		      PtrState = 3;
 		    }
 		}
 	    }
-      else if (PtrState == 100) {
-        #ifdef GREMLIN_DEBUG
-          printf("emote 1")
-        #endif
-        idx = app_adata.semote1 +
-          (current % (app_adata.eemote1 - app_adata.semote1 + 1));
-        if (idx == app_adata.eemote1) {
-          PtrState = 0;
-        }
-        drawf (idx);
-        XFlush (d);
-        usleep (app_adata.TickDelay * 1000);
-      }
-      else if (PtrState == 101) {
-        #ifdef GREMLIN_DEBUG
-          printf("emote 2")
-        #endif
-        idx = app_adata.semote2 +
-          (current % (app_adata.eemote2 - app_adata.semote2 + 1));
-        if (idx == app_adata.eemote2) {
-          PtrState = 0;
-        }
-        drawf (idx);
-        XFlush (d);
-        usleep (app_adata.TickDelay * 1000);
-      }
-      else if (PtrState == 102) {
-        #ifdef GREMLIN_DEBUG
-          printf("emote 3")
-        #endif
-        idx = app_adata.semote3 +
-          (current % (app_adata.eemote3 - app_adata.semote3 + 1));
-        if (idx == app_adata.eemote3) {
-          PtrState = 0;
-        }
-        drawf (idx);
-        XFlush (d);
-        usleep (app_adata.TickDelay * 1000);
-      }
-      else if (PtrState == 103) {
-        #ifdef GREMLIN_DEBUG
-          printf("emote 4")
-        #endif
-        idx = app_adata.semote4 +
-          (current % (app_adata.eemote4 - app_adata.semote4 + 1));
-        if (idx == app_adata.eemote4) {
-          PtrState = 0;
-        }
-        drawf (idx);
-        XFlush (d);
-        usleep (app_adata.TickDelay * 1000);
-      }
+	  else if (PtrState == 100)
+	    {
+#ifdef GREMLIN_DEBUG
+	      printf ("emote 1")
+#endif
+		idx = app_adata.semote1 +
+		(current % (app_adata.eemote1 - app_adata.semote1 + 1));
+	      if (idx == app_adata.eemote1)
+		{
+		  PtrState = 0;
+		}
+	      drawf (idx);
+	      XFlush (d);
+	      usleep (app_adata.TickDelay * 1000);
+	    }
+	  else if (PtrState == 101)
+	    {
+#ifdef GREMLIN_DEBUG
+	      printf ("emote 2")
+#endif
+		idx = app_adata.semote2 +
+		(current % (app_adata.eemote2 - app_adata.semote2 + 1));
+	      if (idx == app_adata.eemote2)
+		{
+		  PtrState = 0;
+		}
+	      drawf (idx);
+	      XFlush (d);
+	      usleep (app_adata.TickDelay * 1000);
+	    }
+	  else if (PtrState == 102)
+	    {
+#ifdef GREMLIN_DEBUG
+	      printf ("emote 3")
+#endif
+		idx = app_adata.semote3 +
+		(current % (app_adata.eemote3 - app_adata.semote3 + 1));
+	      if (idx == app_adata.eemote3)
+		{
+		  PtrState = 0;
+		}
+	      drawf (idx);
+	      XFlush (d);
+	      usleep (app_adata.TickDelay * 1000);
+	    }
+	  else if (PtrState == 103)
+	    {
+#ifdef GREMLIN_DEBUG
+	      printf ("emote 4")
+#endif
+		idx = app_adata.semote4 +
+		(current % (app_adata.eemote4 - app_adata.semote4 + 1));
+	      if (idx == app_adata.eemote4)
+		{
+		  PtrState = 0;
+		}
+	      drawf (idx);
+	      XFlush (d);
+	      usleep (app_adata.TickDelay * 1000);
+	    }
 	}
       XFlush (d);
     }

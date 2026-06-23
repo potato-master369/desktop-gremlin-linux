@@ -3,7 +3,9 @@
 // functions.
 
 #include <gtk-4.0/gtk/gtk.h>
+#ifdef X11_SUPPORT
 #include <gdk/x11/gdkx.h>
+#endif
 
 // our header
 #include "compositor-specific.h"
@@ -12,6 +14,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+// for KWin
+#ifndef DGL_NO_DBUS
+#include <dbus/dbus.h>
+#endif
+// remove the following line to ignore X11
 #define X11_SUPPORT
 #ifdef X11_SUPPORT
 #include <X11/X.h>
@@ -96,6 +103,14 @@ void send_sway_command(const char *command) {
     read(socket_fd, reply, sizeof(reply));
 
     close(socket_fd);
+}
+
+void kwin_ipc_init() {
+
+}
+
+void kwin_move_window(int pid, int offset_x, int offset_y) {
+
 }
 
 void dgl_move_window(GtkWindow *window, unsigned char wmtype, int x_offset, int y_offset) {
