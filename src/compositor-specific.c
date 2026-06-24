@@ -16,7 +16,7 @@
 #include <sys/un.h>
 // for KWin
 #ifndef DGL_NO_DBUS
-#include <dbus/dbus.h>
+#include <systemd/sd-bus.h>
 #endif
 // remove the following line to ignore X11
 #define X11_SUPPORT
@@ -37,10 +37,14 @@ int dgl_is_running(const char *process) {
 }
 unsigned char dgl_detect_session(void) {
 	char *XDG_SESSION_TYPE = getenv("XDG_SESSION_TYPE");
+	char *XDG_CURRENT_DESKTOP = getenv("XDG_CURRENT_DESKTOP");
 	if (strcmp(XDG_SESSION_TYPE, "x11") == 0) {
 		return DGL_CS_X11;
+	} else if (XDG_CURRENT_DESKTOP != NULL && strcmp(XDG_CURRENT_DESKTOP, "GNOME") == 0) {
+		return DGL_CS_MUTTER;
+	} else if (XDG_CURRENT_DESKTOP != NULL && strcmp(XDG_CURRENT_DESKTOP, "KDE") == 0) {
+		return DGL_CS_KWIN;
 	} else if (strcmp(XDG_SESSION_TYPE, "wayland") == 0) {
-		// wayland
 		if (dgl_is_running("sway"))
 			return DGL_CS_SWAY;
 		if (dgl_is_running("gnome-shell"))
@@ -52,7 +56,9 @@ unsigned char dgl_detect_session(void) {
 		return 255;
 	} else {
 		return 255;
+
 	}
+	g_print("Detected compositor code: %02d\n", dgl_detect_session());
 }
 
 #ifdef X11_SUPPORT
@@ -88,7 +94,6 @@ void send_sway_command(const char *command) {
         return;
     }
 
-    // IPC Header: Magic string + Payload Length + Payload Type
     char magic[] = "i3-ipc";
     uint32_t payload_len = strlen(command);
     uint32_t payload_type = 0; // RUN_COMMAND
@@ -98,19 +103,95 @@ void send_sway_command(const char *command) {
     write(socket_fd, &payload_type, 4);
     write(socket_fd, command, payload_len);
 
-    // Read reply (optional but recommended)
     char reply[1024];
     read(socket_fd, reply, sizeof(reply));
 
     close(socket_fd);
 }
 
-void kwin_ipc_init() {
-
+void stupid_helper(sd_bus *bus, char* p, char* x, char* y) {
+    // Simplified representation: This writes the 3 string attributes straight to the KWin configuration service
+	sd_bus_call_method(bus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "setUserConfig", NULL, NULL, "sss", "DevMover", "TargetPID", p);
+	sd_bus_call_method(bus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "setUserConfig", NULL, NULL, "sss", "DevMover", "OffsetX", x);
+	sd_bus_call_method(bus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "setUserConfig", NULL, NULL, "sss", "DevMover", "OffsetY", y);
 }
 
 void kwin_move_window(int pid, int offset_x, int offset_y) {
+    static sd_bus *bus = NULL;
+    static int bus_failed = 0;
 
+    if (bus_failed) return;
+
+    if (!bus) {
+        int r = sd_bus_open_user(&bus);
+        if (r < 0) {
+            bus_failed = 1;
+            return;
+        }
+    }
+
+    // Convert values safely to strings for KWin's internal config mapping
+    char pid_str[32], x_str[32], y_str[32];
+    snprintf(pid_str, sizeof(pid_str), "%d", pid);
+    snprintf(x_str, sizeof(x_str), "%d", offset_x);
+    snprintf(y_str, sizeof(y_str), "%d", offset_y);
+
+	// Update state keys via asynchronous pipeline loops
+	// setUserConfig parameter types: ModuleName (s), Key (s), Value (s)
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	int ret;
+
+	ret = sd_bus_call_method(bus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "setUserConfig", &error, NULL, "sss", "DevMover", "TargetPID", pid_str);
+	if (ret < 0) {
+		fprintf(stderr, "kwin_move_window: setUserConfig TargetPID failed: %s\n", error.message ? error.message : "(no message)");
+		sd_bus_error_free(&error);
+	}
+
+	ret = sd_bus_call_method(bus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "setUserConfig", &error, NULL, "sss", "DevMover", "OffsetX", x_str);
+	if (ret < 0) {
+		fprintf(stderr, "kwin_move_window: setUserConfig OffsetX failed: %s\n", error.message ? error.message : "(no message)");
+		sd_bus_error_free(&error);
+	}
+
+	ret = sd_bus_call_method(bus, "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "setUserConfig", &error, NULL, "sss", "DevMover", "OffsetY", y_str);
+	if (ret < 0) {
+		fprintf(stderr, "kwin_move_window: setUserConfig OffsetY failed: %s\n", error.message ? error.message : "(no message)");
+		sd_bus_error_free(&error);
+	}
+
+	// Fire the execution event completely asynchronously via invokeShortcut
+	sd_bus_message *msg = NULL;
+	ret = sd_bus_message_new_method_call(
+		bus,
+		&msg,
+		"org.kde.kglobalaccel",
+		"/component/kwin",
+		"org.kde.kglobalaccel.Component",
+		"invokeShortcut"
+	);
+
+	if (ret < 0) {
+		fprintf(stderr, "kwin_move_window: sd_bus_message_new_method_call failed: %d\n", ret);
+		if (msg) sd_bus_message_unref(msg);
+		sd_bus_flush(bus);
+		return;
+	}
+
+	ret = sd_bus_message_append(msg, "s", "degrli_mover");
+	if (ret < 0) {
+		fprintf(stderr, "kwin_move_window: sd_bus_message_append failed: %d\n", ret);
+		sd_bus_message_unref(msg);
+		sd_bus_flush(bus);
+		return;
+	}
+
+	ret = sd_bus_send(bus, msg, NULL);
+	if (ret < 0) {
+		fprintf(stderr, "kwin_move_window: sd_bus_send failed: %d\n", ret);
+	}
+
+	sd_bus_message_unref(msg);
+	sd_bus_flush(bus);
 }
 
 void dgl_move_window(GtkWindow *window, unsigned char wmtype, int x_offset, int y_offset) {
@@ -146,7 +227,7 @@ void dgl_move_window(GtkWindow *window, unsigned char wmtype, int x_offset, int 
 			XMoveWindow(d, w, a.x + x_offset, a.y + y_offset);
 			break;
 		case DGL_CS_KWIN:
-
+			kwin_move_window(getpid(), x_offset, y_offset);
 			break;
 		default:
 			printf("This compositor, code %02d, is not supported right now.", wmtype);

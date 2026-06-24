@@ -988,6 +988,8 @@ activate (GtkApplication *app, gpointer user_data)
 
   register_ipc (app_cdata.ipcid);
   app_cdata.wmtype = dgl_detect_session ();
+  g_print (" [info] detected session type: %02d\n",
+app_cdata.wmtype);
 
   g_io_add_watch (g_signal_in, G_IO_IN | G_IO_PRI, deliver_signal, NULL);
 
@@ -1093,6 +1095,8 @@ cleanup (int sig)
   _exit (0);
 }
 
+// put at the top so it will be seen by sigrthandler
+char PtrState = 0;
 void
 sigrthandler (int sig)
 {
@@ -1134,6 +1138,22 @@ sigrthandler (int sig)
       XFlush (d);
       usleep (100000);
       goto endignore;
+    case 5:
+      degrli_play_sound_assetpack(app_cdata.assetpack, "emote1");
+      PtrState = 100;
+      goto endignore;
+    case 6:
+      degrli_play_sound_assetpack(app_cdata.assetpack, "emote2");
+      PtrState = 101;
+      goto endignore;
+    case 7:
+      degrli_play_sound_assetpack(app_cdata.assetpack, "emote3");
+      PtrState = 102;
+      goto endignore;
+    case 8:
+      degrli_play_sound_assetpack(app_cdata.assetpack, "emote4");
+      PtrState = 103;
+      goto endignore;
     default:
       // gracefully exit without issues
       break;
@@ -1164,6 +1184,12 @@ xmain (int argc, char **argv)
   signal (SIGRTMIN + 1, sigrthandler);
   signal (SIGRTMIN + 2, sigrthandler);
   signal (SIGRTMIN + 3, sigrthandler);
+  signal (SIGRTMIN + 4, sigrthandler);
+  signal (SIGRTMIN + 5, sigrthandler);
+  signal (SIGRTMIN + 6, sigrthandler);
+  signal (SIGRTMIN + 7, sigrthandler);
+  signal (SIGRTMIN + 8, sigrthandler);
+
   // READ ARGV
   if (argc != 3)
     {
@@ -1347,7 +1373,7 @@ xmain (int argc, char **argv)
   // State tracking
 
   short idle = app_adata.InitIdle;
-  char PtrState = 0;
+  
   short final_dir = 0;
 
   // Direction and motion
@@ -1668,6 +1694,7 @@ xmain (int argc, char **argv)
 		{
 		  PtrState = 0;
 		}
+        current++;
 	      drawf (idx);
 	      XFlush (d);
 	      usleep (app_adata.TickDelay * 1000);
@@ -1683,6 +1710,7 @@ xmain (int argc, char **argv)
 		{
 		  PtrState = 0;
 		}
+        current++;
 	      drawf (idx);
 	      XFlush (d);
 	      usleep (app_adata.TickDelay * 1000);
@@ -1698,6 +1726,7 @@ xmain (int argc, char **argv)
 		{
 		  PtrState = 0;
 		}
+        current++;
 	      drawf (idx);
 	      XFlush (d);
 	      usleep (app_adata.TickDelay * 1000);
@@ -1713,6 +1742,7 @@ xmain (int argc, char **argv)
 		{
 		  PtrState = 0;
 		}
+        current++;
 	      drawf (idx);
 	      XFlush (d);
 	      usleep (app_adata.TickDelay * 1000);
