@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage: ./startkwindaemon.sh <PID> <OFFSET_X> <OFFSET_Y>
+# Example: ./startkwindaemon.sh 12345 100 -50
+
+if [ $# -lt 3 ]; then
+    echo "Usage: $0 <PID> <OFFSET_X> <OFFSET_Y>"
+    exit 1
+fi
+
+TARGET_PID="$1"
+OFFSET_X="$2"
+OFFSET_Y="$3"
+
+# validate: must be integers (protects against injecting garbage into the
+# heredoc below, and catches typos early instead of failing silently)
+for val in "$TARGET_PID" "$OFFSET_X" "$OFFSET_Y"; do
+    if ! [[ "$val" =~ ^-?[0-9]+$ ]]; then
+        echo "Error: '$val' is not an integer." >&2
+        exit 1
+    fi
+done
+
+SCRIPT_NAME="MoverP6"
+TMP_FILE="/tmp/kwin_mover_p6.js"
+
+if ! command -v qdbus6 >/dev/null 2>&1; then
+    echo "qdbus6 not found. Try 'qdbus-qt6' or install qt6-tools." >&2
+    exit 1
+fi
+
+# --- ensure the kwin_scripting debug category is actually enabled --------
+# print() in a KWin script routes through qCDebug(kwin_scripting), and Qt
+# disables debug-level output for most categories by default. If the rule
+# below isn't present, print() calls execute fine but never produce any
+# journal output at all -- this is what was happening before.
+QTLOGGING_INI="${XDG_CONFIG_HOME:-$HOME/.config}/QtProject/qtlogging.ini"
+NEEDS_RESTART=0
+
+if [ ! -f "$QTLOGGING_INI" ] || ! grep -q "kwin_scripting.debug=true" "$QTLOGGING_INI" 2>/dev/null; then
+    mkdir -p "$(dirname "$QTLOGGING_INI")"
+    if [ -f "$QTLOGGING_INI" ] && grep -q "^\[Rules\]" "$QTLOGGING_INI"; then
+        # append under existing [Rules] section
+        sed -i '/^\[Rules\]/a kwin_scripting.debug=true' "$QTLOGGING_INI"
+    else
+        printf '[Rules]\nkwin_scripting.debug=true\n' >> "$QTLOGGING_INI"
+    fi
+    NEEDS_RESTART=1
+fi
+
+if [ "$NEEDS_RESTART" = "1" ]; then
+    echo "Enabled kwin_scripting debug logging in $QTLOGGING_INI."
+    echo "This only takes effect after KWin restarts. On X11 you can run:"
+    echo "    kwin_x11 --replace >/dev/null 2>&1 &"
+    echo "On Wayland you'll need to log out and back in once."
+    echo "Re-run this script after that."
+    exit 0
+fi
+
+# --- write the JS with the values baked in directly ----------------------
+# No registerShortcut / kglobalaccel round-trip: we just want this to run
+# once, right now, so we do the move at the top level of the script body.
+# It executes as soon as loadScript + Script.run happen.
+#
+# Also: KWin 6 uses workspace.windows (a property, array of Window objects),
+# NOT workspace.windowList() -- that's the old KWin 5 API and calling it
+# throws inside the script's JS engine. That exception is swallowed and
+# only shows up in the systemd journal, never in qdbus's own exit status --
+# which is why the old version could "succeed" while doing nothing.
+
+cat << EOF > "$TMP_FILE"
+(function() {
+    var targetpid = ${TARGET_PID};
+    var offset_x = ${OFFSET_X};
+    var offset_y = ${OFFSET_Y};
+
+    var windows = workspace.windows;
+    var found = false;
+
+    for (var i = 0; i < windows.length; i++) {
+        if (windows[i].pid === targetpid) {
+            found = true;
+            var w = windows[i];
+            var geo = w.frameGeometry;
+            var beforeX = geo.x, beforeY = geo.y;
+
+            geo.x += offset_x;
+            geo.y += offset_y;
+            w.frameGeometry = geo;
+
+            var after = w.frameGeometry;
+            print("DEGRLI_MOVER_RESULT: found pid=" + targetpid +
+                  " caption=\\"" + w.caption + "\\"" +
+QTLOGGING_INI="${XDG_CONFIG_HOME:-$HOME/.config}/QtProject/qtlogging.ini"
+NEEDS_RESTART=0
+
+                  " before=" + beforeX + "," + beforeY +
+                  " after=" + after.x + "," + after.y +
+                  " maximized=" + (w.maximizeMode !== 0) +
+                  " fullscreen=" + w.fullScreen);
+            break;
+        }
+    }
+
+    if (!found) {
+        var pids = windows.map(function(w) { return w.pid; }).join(",");
+        print("DEGRLI_MOVER_RESULT: no window with pid=" + targetpid +
+              " visible_pids=" + pids);
+    }
+})();
+EOF
+
+# unload any stale previous instance so scripts don't pile up
+EXISTING=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.isScriptLoaded "$SCRIPT_NAME" 2>/dev/null || echo "false")
+if [ "$EXISTING" = "true" ]; then
+    qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.unloadScript "$SCRIPT_NAME" >/dev/null 2>&1 || true
+fi
+
+echo "Loading script into KWin 6..."
+SCRIPT_ID=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$TMP_FILE" "$SCRIPT_NAME")
+
+if [ -z "$SCRIPT_ID" ] || [ "$SCRIPT_ID" = "-1" ]; then
+    echo "Failed to load script." >&2
+    exit 1
+fi
+
+REAL_PATH="/Scripting/Script${SCRIPT_ID}"
+qdbus6 org.kde.KWin "$REAL_PATH" org.kde.kwin.Script.run
+
+# give journald a moment to flush the entry, then pull the actual result
+sleep 0.3
+RESULT=$(journalctl --user -n 50 --no-pager 2>/dev/null | grep "DEGRLI_MOVER_RESULT" | tail -n 1)
+
+if [ -n "$RESULT" ]; then
+    echo "$RESULT"
+else
+    echo "No result line found in the journal. Either:"
+    echo "  - the logging rule hasn't taken effect yet (did you restart KWin"
+    echo "    after the last run enabled it?), or"
+    echo "  - the script failed to load/run at all (check \$SCRIPT_ID above)."
+fi
+
+echo "done!"
