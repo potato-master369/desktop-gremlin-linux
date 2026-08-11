@@ -2,6 +2,7 @@
 
 static int requested_monitor = 0;
 #include <gtk/gtk.h>
+#include <gtk4-layer-shell.h>
 #include <stdint.h>
 #include <cairo.h>
 // These are global for a pretty good reason
@@ -97,8 +98,9 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offs
 	degrli_move_input_region(x, y, width, height);
 }
 
-static void on_r_click(
+static void on_r_click() {
 
+}
 // This function runs when program is started.
 static void activate(GtkApplication *app, gpointer user_data) {
   // Basic settings for the window
@@ -129,6 +131,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   gtk_window_present(GTK_WINDOW(w));
   g_print("still alive!\n");
+
+  // Make it stay on top (Wayland)
+  gtk_layer_init_for_window(w); // dont forget to init
+  gtk_layer_set_layer(w, GTK_LAYER_SHELL_LAYER_OVERLAY);
 
   // Fixed container - is ok because we arent using text
   fcontainer = gtk_fixed_new();
