@@ -10,7 +10,7 @@ NCURSES = -lncursesw
 
 MANAGER = degrli-manager
 TARGETS = degrli
-OBJ     = dynamic.o
+OBJ     = dynamic.o config.o
 
 # Default target
 all: $(TARGETS) $(MANAGER)
@@ -20,6 +20,9 @@ degrli: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDLIBS) -lX11
 
 dynamic.o: src/main.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+config.o: src/config.c src/config.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean

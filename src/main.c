@@ -1,10 +1,25 @@
 // main file for the thing
 
 static int requested_monitor = 0;
+#include <cairo.h>
+#include <gdk/wayland/gdkwayland.h>
 #include <gtk/gtk.h>
 #include <gtk4-layer-shell.h>
 #include <stdint.h>
-#include <cairo.h>
+#include <signal.h>
+// Degrli stuff
+#include "defines.h"
+#include "config.h"
+// X11-specific
+// If you encounter problems building because
+//   - a) GTK devs fully deprecated GDK X11
+//   - b) system does not have X libraries
+//
+// use -DDEGRLI_NO_X11.
+#ifndef DEGRLI_NO_X11
+#include <X11/X.h>
+#include <gdk/x11/gdkx.h>
+#endif
 // These are global for a pretty good reason
 int32_t sprite_x = 400;
 int32_t sprite_y = 400;
@@ -30,76 +45,79 @@ cairo_region_t *input_region = NULL;
 cairo_rectangle_int_t crect = {0, 0, 0, 0};
 GdkSurface *surface_cache;
 static void degrli_input_region_init(void) {
-	input_region = cairo_region_create(); // empty region
+  input_region = cairo_region_create(); // empty region
 
-	crect.x = 0;
-	crect.y = 0;
-	crect.width = 0;
-	crect.height = 0;
+  crect.x = 0;
+  crect.y = 0;
+  crect.width = 0;
+  crect.height = 0;
 
-	surface_cache = gtk_native_get_surface(GTK_NATIVE(w));
+  surface_cache = gtk_native_get_surface(GTK_NATIVE(w));
 }
 // actual function to move input region. Params are self explanatory.
-// Sets the input region to a rectangle of size wx by wy, positioned with the top left corner at
-// x, y.
-// w stands for width.
-static void degrli_move_input_region(int32_t x, int32_t y, int32_t wx, int32_t wy) {
-	if (crect.x == x && crect.y == y && crect.width == wx && crect.height ==wy) {
-		//g_print("Unnecessary call of degrli_move_input_region. Please fix this shit.\n");
-		return; // mis-call: Idiot called this function unnecessarily.
-	}
+// Sets the input region to a rectangle of size wx by wy, positioned with the
+// top left corner at x, y. w stands for width.
+static void degrli_move_input_region(int32_t x, int32_t y, int32_t wx,
+                                     int32_t wy) {
+  if (crect.x == x && crect.y == y && crect.width == wx && crect.height == wy) {
+    // g_print("Unnecessary call of degrli_move_input_region. Please fix this
+    // shit.\n");
+    return; // mis-call: Idiot called this function unnecessarily.
+  }
 
-	if (!surface_cache) {
-		surface_cache = gtk_native_get_surface(GTK_NATIVE(w));
-		return; // Surface not realized!
-	}
+  if (!surface_cache) {
+    surface_cache = gtk_native_get_surface(GTK_NATIVE(w));
+    return; // Surface not realized!
+  }
 
-	cairo_rectangle_int_t extents;
-	cairo_region_get_extents(input_region, &extents);
-	cairo_region_subtract_rectangle(input_region, &extents);
+  cairo_rectangle_int_t extents;
+  cairo_region_get_extents(input_region, &extents);
+  cairo_region_subtract_rectangle(input_region, &extents);
 
-	crect.x = x;
-	crect.y = y;
-	crect.width = wx;
-	crect.height = wy;
+  crect.x = x;
+  crect.y = y;
+  crect.width = wx;
+  crect.height = wy;
 
-	cairo_region_union_rectangle(input_region, &crect);
+  cairo_region_union_rectangle(input_region, &crect);
 
-	gdk_surface_set_input_region(surface_cache, input_region);
+  gdk_surface_set_input_region(surface_cache, input_region);
 }
 
 // Cleanup function. CALL ME WHEN DESTROYED.
 static void degrli_input_region_cleanup(void) {
-	if (input_region) {
-		cairo_region_destroy(input_region);
-		input_region = NULL;
-	}
+  if (input_region) {
+    cairo_region_destroy(input_region);
+    input_region = NULL;
+  }
 }
 
 static int32_t ddsx, ddsy;
 // Functions to move input region with drag
-static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp, gpointer user_data) {
-	ddsx = sprite_x;
-	ddsy = sprite_y;
+static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
+                          gpointer user_data) {
+  ddsx = sprite_x;
+  ddsy = sprite_y;
 }
 
-static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offset_y, gpointer user_data) {
-	int32_t x = ddsx + (int32_t)(offset_x);
-	int32_t y = ddsy + (int32_t)(offset_y);
+static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
+                           double offset_y, gpointer user_data) {
+  int32_t x = ddsx + (int32_t)(offset_x);
+  int32_t y = ddsy + (int32_t)(offset_y);
 
-	gtk_fixed_move(GTK_FIXED(fcontainer), sprite, x, y);
-	
-	sprite_x = x;
-	sprite_y = y;
+  gtk_fixed_move(GTK_FIXED(fcontainer), sprite, x, y);
 
-	int width = gtk_widget_get_width(sprite);
-	int height = gtk_widget_get_height(sprite);
+  sprite_x = x;
+  sprite_y = y;
 
-	degrli_move_input_region(x, y, width, height);
+  int width = gtk_widget_get_width(sprite);
+  int height = gtk_widget_get_height(sprite);
+
+  degrli_move_input_region(x, y, width, height);
 }
 
 static void on_r_click() {
-
+  g_print("Right mouse button clicked!\n");
 }
 // This function runs when program is started.
 static void activate(GtkApplication *app, gpointer user_data) {
@@ -133,13 +151,63 @@ static void activate(GtkApplication *app, gpointer user_data) {
   g_print("still alive!\n");
 
   // Make it stay on top (Wayland)
-  gtk_layer_init_for_window(w); // dont forget to init
-  gtk_layer_set_layer(w, GTK_LAYER_SHELL_LAYER_OVERLAY);
+  if (GDK_IS_WAYLAND_DISPLAY(gdk_display_get_default())) {
+    gtk_layer_init_for_window(w); // dont forget to init
+    gtk_layer_set_layer(w, GTK_LAYER_SHELL_LAYER_OVERLAY);
+  }
+  // Make it stay on top (X11)
+#ifndef DEGRLI_NO_X11
+  else if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+    GtkNative *native = gtk_widget_get_native(GTK_WIDGET(w));
+    if (!native) {
+      g_print("Warning: Could not resolve native for Window. Skipping staying "
+              "on top.\n");
+      goto skiptop;
+    }
+
+    GdkSurface *surface = gtk_native_get_surface(native);
+    if (!surface) {
+      g_print("Warning: Could not resolve surface for native. Skipping staying "
+              "on top.\n");
+      goto skiptop;
+    }
+
+    Display *xd = gdk_x11_display_get_xdisplay(gdk_display_get_default());
+    Window xw = gdk_x11_surface_get_xid(surface);
+
+    XEvent ev;
+    Atom wm_state = XInternAtom(xd, "_NET_WM_STATE", false);
+    Atom state_above = XInternAtom(xd, "_NET_WM_STATE_ABOVE", false);
+
+    memset(&ev, 0, sizeof(ev));
+    memset(&ev, 0, sizeof(ev));
+    ev.xclient.type = ClientMessage;
+    ev.xclient.serial = 0;
+    ev.xclient.send_event = true;
+    ev.xclient.display = xd;
+    ev.xclient.window = xw;
+    ev.xclient.message_type = wm_state;
+    ev.xclient.format = 32;
+
+    // Action payload data rules: 1 = Add property, 0 = Remove property
+    ev.xclient.data.l[0] = 1;
+    ev.xclient.data.l[1] = state_above;
+    ev.xclient.data.l[2] = 0;
+    ev.xclient.data.l[3] = 1; // Application source indication
+    ev.xclient.data.l[4] = 0;
+
+    XSendEvent(xd, DefaultRootWindow(xd), False,
+               SubstructureNotifyMask | SubstructureRedirectMask, &ev);
+
+    XFlush(xd);
+  }
+#endif
+skiptop:
 
   // Fixed container - is ok because we arent using text
   fcontainer = gtk_fixed_new();
   gtk_window_set_child(w, fcontainer);
-  
+
   degrli_input_region_init();
   sprite = gtk_image_new_from_file("blanktexture.png");
   gtk_image_set_pixel_size(GTK_IMAGE(sprite), 325);
@@ -154,16 +222,27 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(drag), GDK_BUTTON_PRIMARY);
 
   gtk_widget_add_controller(fcontainer, GTK_EVENT_CONTROLLER(drag));
+
+  // set up right click
+  GtkGesture *click = gtk_gesture_click_new();
+  gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 3);
+  g_signal_connect(click, "pressed", G_CALLBACK(on_r_click), NULL);
+  gtk_widget_add_controller(sprite, GTK_EVENT_CONTROLLER(click));
 }
 
 // This function is called before the Application is closed.
 // All cleanup should go here.
 static void cleanup() {
-	g_print("Exiting...\n");
-	degrli_input_region_cleanup();
+  g_print("Exiting...\n");
+  degrli_input_region_cleanup();
 }
 
+static void cleanup_sig(int sig) {
+  cleanup();
+  exit(0);
+}
 int main(int argc, char **argv) {
+  signal(SIGINT, cleanup_sig);
   // parse options
   for (int i = 0; i < argc; ++i) {
     if (g_strcmp0(argv[i], "--monitor") == 0 && (i + 1) < argc) {
@@ -174,10 +253,14 @@ int main(int argc, char **argv) {
           "(GitHub). Source code available on request. Compile time: %s %s\n "
           "GCC version: %d\n",
           __DATE__, __TIME__, __GNUC__);
-
-  GtkApplication *app =
-      gtk_application_new("io.github.potato-master369.desktop-gremlin-linux",
-                          G_APPLICATION_DEFAULT_FLAGS | G_APPLICATION_NON_UNIQUE);
+  g_print("Distributed by: %s\n", DEGRLI_DIST);
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print("WARNING: This is a debug version of Desktop-gremlin-linux. USE AT YOUR OWN RISK.\n");
+#endif
+  degrli_init_readconf();
+  GtkApplication *app = gtk_application_new(
+      "io.github.potato-master369.desktop-gremlin-linux",
+      G_APPLICATION_DEFAULT_FLAGS | G_APPLICATION_NON_UNIQUE);
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
 
   int status = g_application_run(G_APPLICATION(app), argc, argv);
