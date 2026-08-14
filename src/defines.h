@@ -20,7 +20,9 @@
 #define DEFINES_H
 
 // standard
+// FOR PATHS, remember to add "/" to the BACK!!!
 #define DEGRLI_DIST "potato-master369"
+// if ~ is put here, it will resolve to $HOME. However, only at the start
 #define DEGRLI_LOCALCONFPREFIX "~/.config/desktop-gremlin-linux/"
 #define DEGRLI_ASSET_DIR       "/usr/share/desktop-gremlin-linux/"
 #define DEGRLI_DEBUG 0

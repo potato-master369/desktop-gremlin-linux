@@ -8,12 +8,11 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-shell-0) -lm -lX11 -lXext -lXrender
 NCURSES = -lncursesw
 
-MANAGER = degrli-manager
 TARGETS = degrli
-OBJ     = dynamic.o config.o
+OBJ     = dynamic.o config.o sounds.o
 
 # Default target
-all: $(TARGETS) $(MANAGER)
+all: $(TARGETS)
 
 # NEW WAYLAND CLIENT11111!!!
 degrli: $(OBJ)
@@ -23,6 +22,9 @@ dynamic.o: src/main.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 config.o: src/config.c src/config.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+sounds.o: src/sounds.c src/sounds.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean

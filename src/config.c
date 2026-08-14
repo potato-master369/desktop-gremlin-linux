@@ -205,3 +205,7 @@ void degrli_init_readconf(void) {
 
   fclose(conf);
 }
+
+degrli_conf_t *degrli_request_localconf(void) {
+	return local_config;
+}

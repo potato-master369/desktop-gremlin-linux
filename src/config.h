@@ -43,4 +43,5 @@ typedef struct {
 } degrli_conf_t;
 
 void degrli_init_readconf(void);
+degrli_conf_t *degrli_request_localconf(void);
 #endif
