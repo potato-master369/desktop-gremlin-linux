@@ -8,8 +8,9 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-shell-0) -lm -lX11 -lXext -lXrender
 NCURSES = -lncursesw
 
-TARGETS = degrli
+TARGETS = degrli degrli_options
 OBJ     = dynamic.o config.o sounds.o
+OPTOBJ  = options.o meme.o
 
 # Default target
 all: $(TARGETS)
@@ -27,6 +28,15 @@ config.o: src/config.c src/config.h
 sounds.o: src/sounds.c src/sounds.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Options program
+degrli_options: $(OPTOBJ)
+	$(CC) $(CFLAGS) -o $@ $(OPTOBJ) $(LDLIBS)
+
+meme.o: src/options/meme.c src/options/meme.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+options.o: src/options/main.c
+	$(CC) $(CFLAGS) -c $< -o $@
 # Clean
 clean:
 	rm -f $(OBJ) $(TARGETS)
