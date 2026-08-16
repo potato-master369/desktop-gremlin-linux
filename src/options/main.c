@@ -1,6 +1,9 @@
+#include <gio/gio.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkshortcut.h>
 #include "meme.h"
+#include "config.h"
+#include "../defines.h"
 // Made with GTK-4.0
 // Options program, designed to emulate Options.exe from Desktop_Gremlin
 
@@ -223,6 +226,11 @@ static void activate(GtkApplication *app, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print("WARNING: This is a pre-release version!\nCompiled on %s %s\n", __DATE__, __TIME__);
+#endif
+  config_t conf;
+  load_conf(&conf);
   g_resources_register(app_get_resource());
   GtkApplication *app = gtk_application_new(
       "io.github.potato-master369.degrli-options", G_APPLICATION_DEFAULT_FLAGS);

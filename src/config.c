@@ -63,7 +63,7 @@ void degrli_init_readconf(void) {
     const char *home = getenv("HOME");
     if (home != NULL) {
       char *localpref = DEGRLI_LOCALCONFPREFIX;
-      snprintf(filepath, sizeof(filepath), "%s%sconfig.txt", home,
+      res = snprintf(filepath, sizeof(filepath), "%s%sconfig.txt", home,
                localpref + 1);
     }
   }
