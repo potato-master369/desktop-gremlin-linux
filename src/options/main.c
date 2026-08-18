@@ -8,6 +8,47 @@
 // Options program, designed to emulate Options.exe from Desktop_Gremlin
 
 static GtkStringList *char_list = NULL;
+static config_t conf;
+
+// Moved these to toplevel so we can mess with them
+static GtkWidget *w_start_char = NULL;
+static GtkWidget *w_language_diff = NULL;
+static GtkWidget *w_enable_keyboard = NULL;
+static GtkWidget *w_show_taskbar = NULL;
+static GtkWidget *w_allow_error_messages = NULL;
+static GtkWidget *w_use_wpfplayer = NULL;
+static GtkWidget *w_volume_level = NULL;
+static GtkWidget *w_randomize_spawn = NULL;
+static GtkWidget *w_spawn_distance = NULL;
+static GtkWidget *w_sprite_framerate = NULL;
+static GtkWidget *w_sprite_speed = NULL;
+static GtkWidget *w_follow_radius = NULL;
+static GtkWidget *w_enable_gravity = NULL;
+static GtkWidget *w_gravity_strength = NULL;
+static GtkWidget *w_start_buttom = NULL;
+static GtkWidget *w_sleep_time = NULL;
+static GtkWidget *w_allow_random_actions = NULL;
+static GtkWidget *w_min_interval = NULL;
+static GtkWidget *w_max_interval = NULL;
+static GtkWidget *w_walk_distance = NULL;
+static GtkWidget *w_random_move_distance = NULL;
+static GtkWidget *w_allow_color_hotspot = NULL;
+static GtkWidget *w_disable_hotspots = NULL;
+static GtkWidget *w_enable_min_resize = NULL;
+static GtkWidget *w_force_center = NULL;
+static GtkWidget *w_enable_manual_resize = NULL;
+static GtkWidget *w_force_fake_transparent = NULL;
+static GtkWidget *w_allow_cache = NULL;
+static GtkWidget *w_current_acceleration = NULL;
+static GtkWidget *w_follow_acceleration = NULL;
+static GtkWidget *w_max_acceleration = NULL;
+
+static GtkAdjustment *a_volume_level = NULL;
+static GtkAdjustment *a_sprite_speed = NULL;
+static GtkAdjustment *a_follow_radius = NULL;
+static GtkAdjustment *a_gravity_strength = NULL;
+static GtkAdjustment *a_current_acceleration = NULL;
+static GtkAdjustment *a_follow_acceleration = NULL;
 
 static void add_setting_row(GtkGrid *grid, int row, const char *name,
                             GtkWidget *control_widget, const char *desc_text) {
@@ -34,6 +75,107 @@ static void add_setting_row(GtkGrid *grid, int row, const char *name,
   gtk_grid_attach(grid, lbl_desc, 2, row, 1, 1);
 }
 
+static void apply_to_conf(void) {
+  if (!conf.start_char[0]) {
+    strncpy(conf.start_char, "Cafe", sizeof(conf.start_char));
+    conf.start_char[sizeof(conf.start_char) - 1] = '\0';
+  }
+
+  conf.language_diff = gtk_switch_get_active(GTK_SWITCH(w_language_diff));
+  conf.enable_keyboard = gtk_switch_get_active(GTK_SWITCH(w_enable_keyboard));
+  conf.allow_error_messages = gtk_switch_get_active(GTK_SWITCH(w_allow_error_messages));
+  conf.show_taskbar = gtk_switch_get_active(GTK_SWITCH(w_show_taskbar));
+  conf.randomize_spawn = gtk_switch_get_active(GTK_SWITCH(w_randomize_spawn));
+  conf.use_wpfplayer = gtk_switch_get_active(GTK_SWITCH(w_use_wpfplayer));
+  conf.volume_level = gtk_adjustment_get_value(a_volume_level);
+  conf.spawn_distance = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_spawn_distance));
+  conf.sprite_framerate = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_sprite_framerate));
+  conf.sprite_speed = (int)gtk_adjustment_get_value(a_sprite_speed);
+  conf.follow_radius = (int)gtk_adjustment_get_value(a_follow_radius);
+  conf.enable_gravity = gtk_switch_get_active(GTK_SWITCH(w_enable_gravity));
+  conf.gravity_strength = (int)gtk_adjustment_get_value(a_gravity_strength);
+  conf.start_buttom = gtk_switch_get_active(GTK_SWITCH(w_start_buttom));
+  conf.sleep_time = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_sleep_time));
+  conf.allow_random_actions = gtk_switch_get_active(GTK_SWITCH(w_allow_random_actions));
+  conf.min_interval = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_min_interval));
+  conf.max_interval = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_max_interval));
+  conf.walk_distance = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_walk_distance));
+  conf.random_move_distance = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_random_move_distance));
+  conf.allow_color_hotspot = gtk_switch_get_active(GTK_SWITCH(w_allow_color_hotspot));
+  conf.disable_hotspots = gtk_switch_get_active(GTK_SWITCH(w_disable_hotspots));
+  conf.enable_min_resize = gtk_switch_get_active(GTK_SWITCH(w_enable_min_resize));
+  conf.force_center = gtk_switch_get_active(GTK_SWITCH(w_force_center));
+  conf.enable_manual_resize = gtk_switch_get_active(GTK_SWITCH(w_enable_manual_resize));
+  conf.force_fake_transparent = gtk_switch_get_active(GTK_SWITCH(w_force_fake_transparent));
+  conf.allow_cache = gtk_switch_get_active(GTK_SWITCH(w_allow_cache));
+  conf.current_acceleration = gtk_adjustment_get_value(a_current_acceleration);
+  conf.follow_acceleration = gtk_adjustment_get_value(a_follow_acceleration);
+  conf.max_acceleration = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_max_acceleration));
+
+  if (w_start_char != NULL && GTK_IS_DROP_DOWN(w_start_char)) {
+    guint selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(w_start_char));
+    GtkStringObject *item = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(gtk_drop_down_get_model(GTK_DROP_DOWN(w_start_char))), selected));
+    if (item != NULL) {
+      const char *name = gtk_string_object_get_string(item);
+      if (name != NULL && name[0] != '\0') {
+        strncpy(conf.start_char, name, sizeof(conf.start_char) - 1);
+        conf.start_char[sizeof(conf.start_char) - 1] = '\0';
+      }
+    }
+  }
+}
+
+static void apply_from_conf(void) {
+  gtk_switch_set_active(GTK_SWITCH(w_language_diff), conf.language_diff);
+  gtk_switch_set_active(GTK_SWITCH(w_enable_keyboard), conf.enable_keyboard);
+  gtk_switch_set_active(GTK_SWITCH(w_allow_error_messages), conf.allow_error_messages);
+  gtk_switch_set_active(GTK_SWITCH(w_show_taskbar), conf.show_taskbar);
+  gtk_switch_set_active(GTK_SWITCH(w_randomize_spawn), conf.randomize_spawn);
+  gtk_switch_set_active(GTK_SWITCH(w_use_wpfplayer), conf.use_wpfplayer);
+  gtk_adjustment_set_value(a_volume_level, conf.volume_level);
+  gtk_editable_set_text(GTK_EDITABLE(w_spawn_distance), g_strdup_printf("%d", conf.spawn_distance));
+  gtk_editable_set_text(GTK_EDITABLE(w_sprite_framerate), g_strdup_printf("%d", conf.sprite_framerate));
+  gtk_adjustment_set_value(a_sprite_speed, conf.sprite_speed);
+  gtk_adjustment_set_value(a_follow_radius, conf.follow_radius);
+  gtk_switch_set_active(GTK_SWITCH(w_enable_gravity), conf.enable_gravity);
+  gtk_adjustment_set_value(a_gravity_strength, conf.gravity_strength);
+  gtk_switch_set_active(GTK_SWITCH(w_start_buttom), conf.start_buttom);
+  gtk_editable_set_text(GTK_EDITABLE(w_sleep_time), g_strdup_printf("%d", conf.sleep_time));
+  gtk_switch_set_active(GTK_SWITCH(w_allow_random_actions), conf.allow_random_actions);
+  gtk_editable_set_text(GTK_EDITABLE(w_min_interval), g_strdup_printf("%d", conf.min_interval));
+  gtk_editable_set_text(GTK_EDITABLE(w_max_interval), g_strdup_printf("%d", conf.max_interval));
+  gtk_editable_set_text(GTK_EDITABLE(w_walk_distance), g_strdup_printf("%d", conf.walk_distance));
+  gtk_editable_set_text(GTK_EDITABLE(w_random_move_distance), g_strdup_printf("%d", conf.random_move_distance));
+  gtk_switch_set_active(GTK_SWITCH(w_allow_color_hotspot), conf.allow_color_hotspot);
+  gtk_switch_set_active(GTK_SWITCH(w_disable_hotspots), conf.disable_hotspots);
+  gtk_switch_set_active(GTK_SWITCH(w_enable_min_resize), conf.enable_min_resize);
+  gtk_switch_set_active(GTK_SWITCH(w_force_center), conf.force_center);
+  gtk_switch_set_active(GTK_SWITCH(w_enable_manual_resize), conf.enable_manual_resize);
+  gtk_switch_set_active(GTK_SWITCH(w_force_fake_transparent), conf.force_fake_transparent);
+  gtk_switch_set_active(GTK_SWITCH(w_allow_cache), conf.allow_cache);
+  gtk_adjustment_set_value(a_current_acceleration, conf.current_acceleration);
+  gtk_adjustment_set_value(a_follow_acceleration, conf.follow_acceleration);
+  gtk_editable_set_text(GTK_EDITABLE(w_max_acceleration), g_strdup_printf("%d", conf.max_acceleration));
+
+  gtk_editable_set_text(GTK_EDITABLE(w_start_char), conf.start_char);
+}
+
+static void revert_settings(GtkWidget *widget, gpointer data) {
+  g_print("Revert settings button was pressed\n");
+  // Reset to default... means application defaults? Sure i guess kurt
+  // tho setting to original before edits would make more sense;
+  conf_apply_default(&conf);
+  apply_from_conf();
+}
+
+static void save_defaults(GtkWidget *widget, gpointer data) {
+  g_print("Saving settings!\n");
+  // Save them to the file. Because we dont give a shit about kurt
+  // We will just save them in whatever format the C library wants
+  apply_to_conf();
+  write_conf(conf);
+}
+
 static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *w = gtk_application_window_new(app);
   gtk_window_set_title(GTK_WINDOW(w), "Desktop-gremlin-linux Options");
@@ -55,6 +197,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_append(GTK_BOX(menubox), b_save);
   gtk_box_append(GTK_BOX(menubox), b_spawn);
   gtk_box_append(GTK_BOX(menubox), b_horde);
+  g_signal_connect_swapped(b_revert, "clicked", G_CALLBACK(apply_from_conf), NULL);
+  g_signal_connect_swapped(b_save, "clicked", G_CALLBACK(apply_to_conf), NULL);
   GtkWidget *notebook = gtk_notebook_new();
   GtkWidget *l_tab_1 = gtk_label_new("General Settings");
   GtkWidget *g_tab_1 = gtk_grid_new();
@@ -64,72 +208,76 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_1), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_1), 20);
   char_list = gtk_string_list_new(NULL);
-  GtkWidget *t_tab_1_opt_1 = gtk_drop_down_new(G_LIST_MODEL(char_list), NULL);
-  add_setting_row(GTK_GRID(g_tab_1), 0, "Starting Character", t_tab_1_opt_1, "Available Characters in SpriteSheet/Gremlins");
-  GtkWidget *t_tab_1_opt_2 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_1), 1, "Language Difference", t_tab_1_opt_2, "Windows Machines with non-English locale will break the 'config.txt'. Leave this on.");
-  GtkWidget *t_tab_1_opt_3 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_1), 2, "Enable Keyboard", t_tab_1_opt_3, "Allow Keyboard control for the gremlin");
-  GtkWidget *t_tab_1_opt_4 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_1), 3, "Show Taskbar Icon", t_tab_1_opt_4, "Show the Program in the taskbar (Windows)");
-  GtkWidget *t_tab_1_opt_5 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_1), 4, "Allow Error Messages", t_tab_1_opt_5, "Display Error Messages (just check stdout i dont really do error messages)");
-  GtkWidget *t_tab_1_opt_6 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_1), 5, "Use WPF Player", t_tab_1_opt_6, "Switch between WPF and SoundPlayer. Some systems cannot use WPF Players, unless manually enabled. (Windows-only, linux use miniaudio.h");
-  GtkAdjustment *a_tab_1_opt_7 = gtk_adjustment_new(0.5, 0.00, 1.00, 0.05, 1.00, 0);
-  GtkWidget *t_tab_1_opt_7 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  GtkWidget *t_tab_1_opt_7_o1 = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_tab_1_opt_7);
-  gtk_widget_set_size_request(t_tab_1_opt_7_o1, 160, -1);
-  GtkWidget *t_tab_1_opt_7_o2 = gtk_spin_button_new(a_tab_1_opt_7, 0.05, 2);
-  gtk_box_append(GTK_BOX(t_tab_1_opt_7), t_tab_1_opt_7_o1);
-  gtk_box_append(GTK_BOX(t_tab_1_opt_7), t_tab_1_opt_7_o2);
-  add_setting_row(GTK_GRID(g_tab_1), 6, "Volume Level", t_tab_1_opt_7, "Volume can only be changed if using WPF Player (on Windows), but on Linux it works fine regardless.");
-  GtkWidget *t_tab_1_opt_8 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_1), 7, "Randomise Spawn", t_tab_1_opt_8, "[Disable force centre in Configuration first] Spawns the sprites in a random location upon initialisation. The 'start at bottom' in Sprite Settings, will be affected by this.");
-  GtkWidget *t_tab_1_opt_9 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_1_opt_9), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_1), 8, "Spawn Distance", t_tab_1_opt_9, "The Random Distance variance from the centre. [Higher = more spread] [Lower = Closer to the centre]");
+  w_start_char = gtk_drop_down_new(G_LIST_MODEL(char_list), NULL);
+  add_setting_row(GTK_GRID(g_tab_1), 0, "Starting Character", w_start_char, "Available Characters in SpriteSheet/Gremlins");
+  w_language_diff = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_1), 1, "Language Difference", w_language_diff, "Windows Machines with non-English locale will break the 'config.txt'. Leave this on.");
+  w_enable_keyboard = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_1), 2, "Enable Keyboard", w_enable_keyboard, "Allow Keyboard control for the gremlin");
+  w_show_taskbar = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_1), 3, "Show Taskbar Icon", w_show_taskbar, "Show the Program in the taskbar (Windows)");
+  w_allow_error_messages = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_1), 4, "Allow Error Messages", w_allow_error_messages, "Display Error Messages (just check stdout i dont really do error messages)");
+  w_use_wpfplayer = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_1), 5, "Use WPF Player", w_use_wpfplayer, "Switch between WPF and SoundPlayer. Some systems cannot use WPF Players, unless manually enabled. (Windows-only, linux use miniaudio.h");
+  a_volume_level = gtk_adjustment_new(0.5, 0.00, 1.00, 0.05, 1.00, 0);
+  GtkWidget *volume_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  GtkWidget *volume_scale = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_volume_level);
+  gtk_widget_set_size_request(volume_scale, 160, -1);
+  GtkWidget *volume_spin = gtk_spin_button_new(a_volume_level, 0.05, 2);
+  gtk_box_append(GTK_BOX(volume_box), volume_scale);
+  gtk_box_append(GTK_BOX(volume_box), volume_spin);
+  w_volume_level = volume_box;
+  add_setting_row(GTK_GRID(g_tab_1), 6, "Volume Level", w_volume_level, "Volume can only be changed if using WPF Player (on Windows), but on Linux it works fine regardless.");
+  w_randomize_spawn = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_1), 7, "Randomise Spawn", w_randomize_spawn, "[Disable force centre in Configuration first] Spawns the sprites in a random location upon initialisation. The 'start at bottom' in Sprite Settings, will be affected by this.");
+  w_spawn_distance = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_spawn_distance), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_1), 8, "Spawn Distance", w_spawn_distance, "The Random Distance variance from the centre. [Higher = more spread] [Lower = Closer to the centre]");
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_1, l_tab_1);
   
   GtkWidget *l_tab_2 = gtk_label_new("Sprite Settings");
   GtkWidget *g_tab_2 = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_2), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_2), 20);
-  GtkWidget *t_tab_2_opt_1 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_2_opt_1), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_2), 0, "FrameRate:", t_tab_2_opt_1, "Frames per second for the sprite player");
-  GtkAdjustment *a_tab_2_opt_2 = gtk_adjustment_new(10.0, 0.0, 30.0, 1.0, 1.0, 0);
-  GtkWidget *t_tab_2_opt_2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  GtkWidget *t_tab_2_opt_2_o1 = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_tab_2_opt_2);
-  gtk_widget_set_size_request(t_tab_2_opt_2_o1, 160, -1);
-  GtkWidget *t_tab_2_opt_2_o2 = gtk_spin_button_new(a_tab_2_opt_2, 1.0, 1);
-  gtk_box_append(GTK_BOX(t_tab_2_opt_2), t_tab_2_opt_2_o1);
-  gtk_box_append(GTK_BOX(t_tab_2_opt_2), t_tab_2_opt_2_o2);
-  add_setting_row(GTK_GRID(g_tab_2), 1, "Movement Speed", t_tab_2_opt_2, "The speed at which the Sprite follows your mouse");
+  w_sprite_framerate = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_sprite_framerate), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_2), 0, "FrameRate:", w_sprite_framerate, "Frames per second for the sprite player");
+  a_sprite_speed = gtk_adjustment_new(10.0, 0.0, 30.0, 1.0, 1.0, 0);
+  GtkWidget *sprite_speed_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  GtkWidget *sprite_speed_scale = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_sprite_speed);
+  gtk_widget_set_size_request(sprite_speed_scale, 160, -1);
+  GtkWidget *sprite_speed_spin = gtk_spin_button_new(a_sprite_speed, 1.0, 1);
+  gtk_box_append(GTK_BOX(sprite_speed_box), sprite_speed_scale);
+  gtk_box_append(GTK_BOX(sprite_speed_box), sprite_speed_spin);
+  w_sprite_speed = sprite_speed_box;
+  add_setting_row(GTK_GRID(g_tab_2), 1, "Movement Speed", w_sprite_speed, "The speed at which the Sprite follows your mouse");
 
-  GtkAdjustment *a_tab_2_opt_3 = gtk_adjustment_new(150.0, 0.0, 300.0, 10.0, 50.0, 0); 
-  GtkWidget *t_tab_2_opt_3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  GtkWidget *t_tab_2_opt_3_o1 = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_tab_2_opt_3);
-  gtk_widget_set_size_request(t_tab_2_opt_3_o1, 160, -1);
-  GtkWidget *t_tab_2_opt_3_o2 = gtk_spin_button_new(a_tab_2_opt_3, 10.0, 1);
-  gtk_box_append(GTK_BOX(t_tab_2_opt_3), t_tab_2_opt_3_o1);
-  gtk_box_append(GTK_BOX(t_tab_2_opt_3), t_tab_2_opt_3_o2);
-  add_setting_row(GTK_GRID(g_tab_2), 2, "Follow Radius", t_tab_2_opt_3, "Area size at which the Sprite will stop following our mouse.");
-  GtkWidget *t_tab_2_opt_4 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_2), 3, "Enable Gravity", t_tab_2_opt_4, "Allow the sprite to fall");
-  GtkAdjustment *a_tab_2_opt_5 = gtk_adjustment_new(20.0, 0.0, 30.0, 5.0, 30.0, 0);
-  GtkWidget *t_tab_2_opt_5 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  GtkWidget *t_tab_2_opt_5_o1 = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_tab_2_opt_5);
-  gtk_widget_set_size_request(t_tab_2_opt_5_o1, 160, -1);
-  GtkWidget *t_tab_2_opt_5_o2 = gtk_spin_button_new(a_tab_2_opt_5, 5.0, 1);
-  gtk_box_append(GTK_BOX(t_tab_2_opt_5), t_tab_2_opt_5_o1);
-  gtk_box_append(GTK_BOX(t_tab_2_opt_5), t_tab_2_opt_5_o2);
-  add_setting_row(GTK_GRID(g_tab_2), 4, "Gravity Strength", t_tab_2_opt_5, "How fast the sprite falls, Micmicking gravity");
-  GtkWidget *t_tab_2_opt_6 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_2), 5, "Start at Bottom", t_tab_2_opt_6, "Spawn the sprite at the bottom of your window screen");
-  GtkWidget *t_tab_2_opt_7 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_2_opt_7), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_2), 6, "Start Sleep", t_tab_2_opt_7, "Seconds before sprite sleeps");
+  a_follow_radius = gtk_adjustment_new(150.0, 0.0, 300.0, 10.0, 50.0, 0);
+  GtkWidget *follow_radius_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  GtkWidget *follow_radius_scale = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_follow_radius);
+  gtk_widget_set_size_request(follow_radius_scale, 160, -1);
+  GtkWidget *follow_radius_spin = gtk_spin_button_new(a_follow_radius, 10.0, 1);
+  gtk_box_append(GTK_BOX(follow_radius_box), follow_radius_scale);
+  gtk_box_append(GTK_BOX(follow_radius_box), follow_radius_spin);
+  w_follow_radius = follow_radius_box;
+  add_setting_row(GTK_GRID(g_tab_2), 2, "Follow Radius", w_follow_radius, "Area size at which the Sprite will stop following our mouse.");
+  w_enable_gravity = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_2), 3, "Enable Gravity", w_enable_gravity, "Allow the sprite to fall");
+  a_gravity_strength = gtk_adjustment_new(20.0, 0.0, 30.0, 5.0, 30.0, 0);
+  GtkWidget *gravity_strength_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  GtkWidget *gravity_strength_scale = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_gravity_strength);
+  gtk_widget_set_size_request(gravity_strength_scale, 160, -1);
+  GtkWidget *gravity_strength_spin = gtk_spin_button_new(a_gravity_strength, 5.0, 1);
+  gtk_box_append(GTK_BOX(gravity_strength_box), gravity_strength_scale);
+  gtk_box_append(GTK_BOX(gravity_strength_box), gravity_strength_spin);
+  w_gravity_strength = gravity_strength_box;
+  add_setting_row(GTK_GRID(g_tab_2), 4, "Gravity Strength", w_gravity_strength, "How fast the sprite falls, Micmicking gravity");
+  w_start_buttom = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_2), 5, "Start at Bottom", w_start_buttom, "Spawn the sprite at the bottom of your window screen");
+  w_sleep_time = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_sleep_time), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_2), 6, "Start Sleep", w_sleep_time, "Seconds before sprite sleeps");
   
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_2, l_tab_2);
 
@@ -137,36 +285,38 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *g_tab_3 = gtk_grid_new();
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_3), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_3), 20);
-  GtkWidget *t_tab_3_opt_1 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_3), 0, "Allow Random Actions", t_tab_3_opt_1, "Allow the sprite to perform random actions");
-  GtkWidget *t_tab_3_opt_2 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_3_opt_2), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_3), 1, "Minimum Interval", t_tab_3_opt_2, "Minimum random action interval (seconds) [It will crash if this is higher than Max, heh]");
-  GtkWidget *t_tab_3_opt_3 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_3_opt_3), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_3), 2, "Maximum Interval", t_tab_3_opt_3, "Maximum random action interval (seconds)");
-  GtkWidget *t_tab_3_opt_4 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_3_opt_4), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_3), 3, "Walk Distance", t_tab_3_opt_4, "Distance the sprite moves when walking"); 
-  GtkWidget *t_tab_3_opt_5 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_3_opt_5), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_3), 4, "Random Move Distance", t_tab_3_opt_5, "Distance for random movements [Walk speed]");
+  w_allow_random_actions = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_3), 0, "Allow Random Actions", w_allow_random_actions, "Allow the sprite to perform random actions");
+  w_min_interval = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_min_interval), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_3), 1, "Minimum Interval", w_min_interval, "Minimum random action interval (seconds) [It will crash if this is higher than Max, heh]");
+  w_max_interval = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_max_interval), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_3), 2, "Maximum Interval", w_max_interval, "Maximum random action interval (seconds)");
+  w_walk_distance = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_walk_distance), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_3), 3, "Walk Distance", w_walk_distance, "Distance the sprite moves when walking");
+  w_random_move_distance = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_random_move_distance), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_3), 4, "Random Move Distance", w_random_move_distance, "Distance for random movements [Walk speed]");
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_3, l_tab_3);
 
   GtkWidget *l_tab_4 = gtk_label_new("Configuration");
   GtkWidget *g_tab_4 = gtk_grid_new();
-  GtkWidget *t_tab_4_opt_1 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_4), 0, "Allow Color Hotspot", t_tab_4_opt_1, "Enable color hotspots for debugging");
-  GtkWidget *t_tab_4_opt_2 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_4), 1, "Disable hotspots", t_tab_4_opt_2, "Disable all sprite hotspots around the sprites [Can be disabled if you use Keyboard Controls]");
-  GtkWidget *t_tab_4_opt_3 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_4), 2, "Enable Minmum Resize", t_tab_4_opt_3, "Allow sprite to be resized minimally");
-  GtkWidget *t_tab_4_opt_4 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_4), 3, "Force Centre", t_tab_4_opt_4, "Keep sprite centered in window. Turn this off since this will override every positional setting");
-  GtkWidget *t_tab_4_opt_5 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_4), 4, "Force Fake Transparent", t_tab_4_opt_5, "Use fake transparency if needed. (Windows) On linux, transparency depends on a compositor (X11), and works natively on wayland.");
-  GtkWidget *t_tab_4_opt_6 = gtk_switch_new();
-  add_setting_row(GTK_GRID(g_tab_4), 5, "Allow Cache", t_tab_4_opt_6, "Enable memory caching for performance [Experimental] (Windows)");
+  w_allow_color_hotspot = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 0, "Allow Color Hotspot", w_allow_color_hotspot, "Enable color hotspots for debugging");
+  w_disable_hotspots = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 1, "Disable hotspots", w_disable_hotspots, "Disable all sprite hotspots around the sprites [Can be disabled if you use Keyboard Controls]");
+  w_enable_min_resize = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 2, "Enable Minmum Resize", w_enable_min_resize, "Allow sprite to be resized minimally");
+  w_force_center = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 3, "Force Centre", w_force_center, "Keep sprite centered in window. Turn this off since this will override every positional setting");
+  w_enable_manual_resize = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 4, "Enable Manual Resize", w_enable_manual_resize, "Allow manual resizing of the sprite window.");
+  w_force_fake_transparent = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 5, "Force Fake Transparent", w_force_fake_transparent, "Use fake transparency if needed. (Windows) On linux, transparency depends on a compositor (X11), and works natively on wayland.");
+  w_allow_cache = gtk_switch_new();
+  add_setting_row(GTK_GRID(g_tab_4), 6, "Allow Cache", w_allow_cache, "Enable memory caching for performance [Experimental] (Windows)");
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_4, l_tab_4);
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_4), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_4), 20);
@@ -175,24 +325,27 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *l_tab_5 = gtk_label_new("Quirks");
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_5), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_5), 20);
-  GtkWidget *t_tab_5_opt_1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  GtkAdjustment *a_tab_5_opt_1 = gtk_adjustment_new(0.3, 0.0, 1.0, 0.1, 1.0, 0);
-  GtkWidget *t_tab_5_opt_1_o1 = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_tab_5_opt_1);
-  gtk_widget_set_size_request(GTK_WIDGET(t_tab_5_opt_1_o1), 160, -1);
-  GtkWidget *t_tab_5_opt_1_o2 = gtk_spin_button_new(a_tab_5_opt_1, 0.1, 1);
-  gtk_box_append(GTK_BOX(t_tab_5_opt_1), t_tab_5_opt_1_o1);
-  gtk_box_append(GTK_BOX(t_tab_5_opt_1), t_tab_5_opt_1_o2);
-  add_setting_row(GTK_GRID(g_tab_5), 0, "Current Acceleration", t_tab_5_opt_1, "Acceleration when following food/item");
-  GtkAdjustment *a_tab_5_opt_2 = gtk_adjustment_new(0.2, 0.0, 1.0, 0.1, 1.0, 0);
-  GtkWidget *t_tab_5_opt_2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-  GtkWidget *t_tab_5_opt_2_o1 = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_tab_5_opt_2);
-  GtkWidget *t_tab_5_opt_2_o2 = gtk_spin_button_new(a_tab_5_opt_2, 0.1, 1);
-  gtk_box_append(GTK_BOX(t_tab_5_opt_2), t_tab_5_opt_2_o1);
-  gtk_box_append(GTK_BOX(t_tab_5_opt_2), t_tab_5_opt_2_o2);
-  add_setting_row(GTK_GRID(g_tab_5), 1, "Follow Acceleration", t_tab_5_opt_2, "Acceleration when following food/item");
-  GtkWidget *t_tab_5_opt_3 = gtk_entry_new();
-  gtk_entry_set_input_purpose(GTK_ENTRY(t_tab_5_opt_3), GTK_INPUT_PURPOSE_DIGITS);
-  add_setting_row(GTK_GRID(g_tab_5), 2, "Max Acceleration", t_tab_5_opt_3, "Maxmimum allowed acceleration");
+  GtkWidget *current_accel_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  a_current_acceleration = gtk_adjustment_new(0.3, 0.0, 1.0, 0.1, 1.0, 0);
+  GtkWidget *current_accel_scale = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_current_acceleration);
+  gtk_widget_set_size_request(GTK_WIDGET(current_accel_scale), 160, -1);
+  GtkWidget *current_accel_spin = gtk_spin_button_new(a_current_acceleration, 0.1, 1);
+  gtk_box_append(GTK_BOX(current_accel_box), current_accel_scale);
+  gtk_box_append(GTK_BOX(current_accel_box), current_accel_spin);
+  w_current_acceleration = current_accel_box;
+  add_setting_row(GTK_GRID(g_tab_5), 0, "Current Acceleration", w_current_acceleration, "Acceleration when following food/item");
+  GtkWidget *follow_accel_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  a_follow_acceleration = gtk_adjustment_new(0.2, 0.0, 1.0, 0.1, 1.0, 0);
+  GtkWidget *follow_accel_scale = gtk_scale_new(GTK_ORIENTATION_HORIZONTAL, a_follow_acceleration);
+  GtkWidget *follow_accel_spin = gtk_spin_button_new(a_follow_acceleration, 0.1, 1);
+  gtk_widget_set_size_request(GTK_WIDGET(follow_accel_scale), 160, -1);
+  gtk_box_append(GTK_BOX(follow_accel_box), follow_accel_scale);
+  gtk_box_append(GTK_BOX(follow_accel_box), follow_accel_spin);
+  w_follow_acceleration = follow_accel_box;
+  add_setting_row(GTK_GRID(g_tab_5), 1, "Follow Acceleration", w_follow_acceleration, "Acceleration when following food/item");
+  w_max_acceleration = gtk_entry_new();
+  gtk_entry_set_input_purpose(GTK_ENTRY(w_max_acceleration), GTK_INPUT_PURPOSE_DIGITS);
+  add_setting_row(GTK_GRID(g_tab_5), 2, "Max Acceleration", w_max_acceleration, "Maxmimum allowed acceleration");
   
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_5, l_tab_5);
 
@@ -221,7 +374,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_append(GTK_BOX(box), copyright_label);
   GtkWidget *gsw = gtk_scrolled_window_new();
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(gsw), box);
+  apply_from_conf();
   gtk_window_set_child(GTK_WINDOW(w), gsw);
+  g_signal_connect(b_revert, "clicked", G_CALLBACK(revert_settings), NULL);
+  g_signal_connect(b_save, "clicked", G_CALLBACK(save_defaults), NULL);
   gtk_window_present(GTK_WINDOW(w));
 }
 
@@ -229,7 +385,7 @@ int main(int argc, char **argv) {
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
   g_print("WARNING: This is a pre-release version!\nCompiled on %s %s\n", __DATE__, __TIME__);
 #endif
-  config_t conf;
+  conf_apply_default(&conf);
   load_conf(&conf);
   g_resources_register(app_get_resource());
   GtkApplication *app = gtk_application_new(

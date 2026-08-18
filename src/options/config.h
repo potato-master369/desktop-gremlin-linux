@@ -35,4 +35,6 @@ typedef struct {
 } config_t;
 
 void load_conf(config_t *ret);
+void conf_apply_default(config_t *ret);
+void write_conf(config_t conf);
 #endif

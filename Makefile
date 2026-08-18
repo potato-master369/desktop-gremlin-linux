@@ -10,7 +10,7 @@ NCURSES = -lncursesw
 
 TARGETS = degrli degrli_options
 OBJ     = dynamic.o config.o sounds.o
-OPTOBJ  = options.o meme.o
+OPTOBJ  = options.o meme.o config_opt.o
 
 # Default target
 all: $(TARGETS)
@@ -33,6 +33,9 @@ degrli_options: $(OPTOBJ)
 	$(CC) $(CFLAGS) -o $@ $(OPTOBJ) $(LDLIBS)
 
 meme.o: src/options/meme.c src/options/meme.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+config_opt.o: src/options/config.c src/options/config.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 options.o: src/options/main.c
