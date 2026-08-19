@@ -8,9 +8,10 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-shell-0) -lm -lX11 -lXext -lXrender
 NCURSES = -lncursesw
 
-TARGETS = degrli degrli_options
+TARGETS = degrli degrli_options degrli_installer
 OBJ     = dynamic.o config.o sounds.o
 OPTOBJ  = options.o meme.o config_opt.o
+INSTOBJ = installer.o
 
 # Default target
 all: $(TARGETS)
@@ -40,9 +41,16 @@ config_opt.o: src/options/config.c src/options/config.h
 
 options.o: src/options/main.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+degrli_installer: $(INSTOBJ)
+	$(CC) $(CFLAGS) -o $@ $(INSTOBJ) $(LDLIBS)
+
+installer.o: src/installer/main.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Clean
 clean:
-	rm -f $(OBJ) $(TARGETS)
+	rm -f $(OBJ) $(TARGETS) $(OPTOBJ)
 
 install:
 	mkdir -p /usr/share/desktop-gremlin-linux
