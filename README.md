@@ -24,6 +24,10 @@ make
 make install
 ```
 
+## Optimization
+
+For some reason, GTK4's defualt renderer is really heavy on RAM. Try `GSK_RENDERER=cairo` as an environment variable. Drops about 10MB of RAM usage.
+
 ## License
 
 Under MIT license. Source freely available and do what the hell you want with it.
