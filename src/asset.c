@@ -31,16 +31,16 @@ GdkTexture *asset_lru_load(int16_t id) {
   char filename[256];
   switch (id) {
     case DEGRLI_LRU_EMOTE_1:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     case DEGRLI_LRU_EMOTE_2:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/emote2.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote2.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     case DEGRLI_LRU_EMOTE_3:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/emote3.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote3.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     case DEGRLI_LRU_EMOTE_4:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     default:
       strncpy(filename, "/dev/null", 256);
