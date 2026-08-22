@@ -9,7 +9,7 @@ LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-s
 NCURSES = -lncursesw
 
 TARGETS = degrli degrli_options degrli_installer
-OBJ     = dynamic.o config.o sounds.o
+OBJ     = dynamic.o config.o sounds.o asset.o
 OPTOBJ  = options.o meme.o config_opt.o
 INSTOBJ = installer.o
 
@@ -27,6 +27,9 @@ config.o: src/config.c src/config.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 sounds.o: src/sounds.c src/sounds.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+asset.o: src/asset.c src/asset.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Options program

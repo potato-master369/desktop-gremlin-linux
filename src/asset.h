@@ -35,6 +35,9 @@ typedef struct {
   int width;
   int height;
   int column;
-  int scale;
+  float scale;
 } asset_conf_t;
+
+void asset_init(void);
+asset_conf_t *asset_request_conf(void);
 #endif

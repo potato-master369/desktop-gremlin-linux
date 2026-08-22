@@ -16,6 +16,7 @@ static int requested_monitor = 0;
 #include "config.h"
 #include "defines.h"
 #include "sounds.h"
+#include "asset.h"
 // X11-specific
 // If you encounter problems building because
 //   - a) GTK devs fully deprecated GDK X11
@@ -390,6 +391,7 @@ int main(int argc, char **argv) {
           "YOUR OWN RISK.\n");
 #endif
   degrli_init_readconf();
+  asset_init();
   local_config_main = degrli_request_localconf();
   GtkApplication *app = gtk_application_new(
       "io.github.potato-master369.desktop-gremlin-linux",
