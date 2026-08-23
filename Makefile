@@ -2,16 +2,20 @@
 # Copyright (C) potato-master369 2026
 
 CC      = gcc
-CFLAGS  = $(shell pkg-config --cflags gtk4) -O2 -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include/ $(shell pkg-config --cflags gtk4-layer-shell-0)
+CFLAGS_BASE  = $(shell pkg-config --cflags gtk4) -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include/ $(shell pkg-config --cflags gtk4-layer-shell-0)
 LDFLAGS = -Wl,--gc-sections
 # MC_EFLAGS = $( pkg-config --cflags-only-I gtk4 )
 LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-shell-0) -lm -lX11 -lXext -lXrender
 NCURSES = -lncursesw
 
 TARGETS = degrli degrli_options degrli_installer
-OBJ     = dynamic.o config.o sounds.o asset.o
+OBJ     = dynamic.o config.o sounds.o asset.o animation.o
 OPTOBJ  = options.o meme.o config_opt.o
 INSTOBJ = installer.o
+CFLAGS = $(CFLAGS_BASE) -O3
+
+debug: CFLAGS=$(CFLAGS_BASE) -g -O0 -DDEBUG
+debug: clean $(TARGETS)
 
 # Default target
 all: $(TARGETS)
@@ -30,6 +34,9 @@ sounds.o: src/sounds.c src/sounds.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 asset.o: src/asset.c src/asset.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+animation.o: src/animation.c src/animation.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Options program

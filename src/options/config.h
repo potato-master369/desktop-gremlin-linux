@@ -19,7 +19,7 @@ typedef struct {
   int gravity_strength;
   bool allow_random_actions;
   int max_interval;
-  bool min_interval;
+  int min_interval;
   int random_move_distance;
   int walk_distance;
   bool allow_color_hotspot;

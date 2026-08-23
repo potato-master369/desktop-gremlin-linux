@@ -1,5 +1,6 @@
 #include "defines.h"
 #include <gdk/gdk.h>
+#include <glib.h>
 #include <graphene.h>
 #include <gtk/gtk.h>
 #include <stdint.h>
@@ -29,13 +30,33 @@ typedef struct {
 asset_lru_t asset_texture_lru[DEGRLI_LRU_SIZE];
 
 void asset_lru_del_first(void) {
-  g_object_unref(asset_texture_lru[0].tex);
+  // Make sure we don't attempt to free nothing!
+  if (asset_texture_lru[0].tex != NULL) {
+    g_object_unref(asset_texture_lru[0].tex);
+  }
   for (int i = 0; i < DEGRLI_LRU_SIZE - 1; ++i) {
     asset_texture_lru[i] = asset_texture_lru[i+1];
   }
   // prevent stupid access
   asset_texture_lru[DEGRLI_LRU_SIZE - 1].id = DEGRLI_LRU_NULL;
   asset_texture_lru[DEGRLI_LRU_SIZE - 1].tex = NULL;
+}
+
+// Cleanup process - not NECESSARY, since GTK unrefs all assets with our app,
+// but good practice
+void asset_cleanup(void) {
+  #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print(" [ asset  ] Cleaning up...\n");
+  #endif
+  for (int i = 0; i < DEGRLI_LRU_SIZE; ++i) {
+    if (asset_texture_lru[i].tex != NULL) {
+      // Free it
+      g_object_unref(asset_texture_lru[i].tex);
+      #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+      g_print(" [ asset  ] Cleaned up: i = %d\n", i);
+      #endif
+    }
+  }
 }
 
 GdkTexture *asset_lru_load(int16_t id) {
@@ -197,13 +218,51 @@ void asset_init(void) {
     }
   }
   fclose(conf);
+  for (int i = 0; i < DEGRLI_LRU_SIZE; ++i) {
+    asset_texture_lru[i].id = DEGRLI_LRU_NULL;
+    asset_texture_lru[i].tex = NULL;
+  }
 }
 
 asset_conf_t *asset_request_conf(void) {
   return &local_asset_conf;
 }
 
-void asset_apply(int id, int fid) {
-  asset_lru_t a = asset_texture_lru[asset_lru_req_asset(id)];
-  GdkPaintable *s = GDK_PAINTABLE(a.tex);
+void asset_apply(int id, int fid, GtkWidget *image) {
+    asset_lru_t a = asset_texture_lru[asset_lru_req_asset(id)];
+
+    int width = local_asset_conf.width;
+    int height = local_asset_conf.height;
+    int start_x = (fid % local_asset_conf.column) * width;
+    int start_y = (fid / local_asset_conf.column) * height;
+
+    gsize dest_stride = width * 4;
+    gsize buffer_size = dest_stride * height;
+    guchar *buf = g_malloc(buffer_size);
+
+    GdkTextureDownloader *d = gdk_texture_downloader_new(a.tex);
+    gdk_texture_downloader_set_format(d, GDK_MEMORY_R8G8B8A8);
+
+    gsize src_stride = 0;
+    GBytes *src_bytes = gdk_texture_downloader_download_bytes(d, &src_stride);
+    gdk_texture_downloader_free(d);
+
+    const guchar *src_data = g_bytes_get_data(src_bytes, NULL);
+
+    for (int y = 0; y < height; y++) {
+        const guchar *src_row = src_data + ((start_y + y) * src_stride) + (start_x * 4);
+        guchar *dest_row = buf + (y * dest_stride);
+        memcpy(dest_row, src_row, dest_stride);
+    }
+
+    g_bytes_unref(src_bytes);
+
+    // 3. Create cropped memory texture & assign to GtkImage
+    GBytes *bytes = g_bytes_new_take(buf, buffer_size);
+    GdkTexture *crop = gdk_memory_texture_new(width, height, GDK_MEMORY_R8G8B8A8, bytes, dest_stride);
+
+    gtk_image_set_from_paintable(GTK_IMAGE(image), GDK_PAINTABLE(crop));
+
+    g_bytes_unref(bytes);
+    g_object_unref(crop);
 }

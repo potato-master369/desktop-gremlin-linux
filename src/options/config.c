@@ -206,7 +206,7 @@ void load_conf(config_t *conf) {
       } else if (MATCH("max_interval")) {
         conf->max_interval = atoi(value);
       } else if (MATCH("min_interval")) {
-        conf->min_interval = parse_bool_str(value);
+        conf->min_interval = atoi(value);
       } else if (MATCH("random_move_distance")) {
         conf->random_move_distance = atoi(value);
       } else if (MATCH("walk_distance")) {

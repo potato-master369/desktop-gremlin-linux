@@ -50,6 +50,16 @@ static GtkAdjustment *a_gravity_strength = NULL;
 static GtkAdjustment *a_current_acceleration = NULL;
 static GtkAdjustment *a_follow_acceleration = NULL;
 
+static int get_entry_int(GtkWidget *widget) {
+  return atoi(gtk_editable_get_text(GTK_EDITABLE(widget)));
+}
+
+static void set_entry_int(GtkWidget *widget, int value) {
+  char text[32];
+  snprintf(text, sizeof(text), "%d", value);
+  gtk_editable_set_text(GTK_EDITABLE(widget), text);
+}
+
 static void add_setting_row(GtkGrid *grid, int row, const char *name,
                             GtkWidget *control_widget, const char *desc_text) {
   GtkWidget *lbl_name = gtk_label_new(name);
@@ -88,19 +98,19 @@ static void apply_to_conf(void) {
   conf.randomize_spawn = gtk_switch_get_active(GTK_SWITCH(w_randomize_spawn));
   conf.use_wpfplayer = gtk_switch_get_active(GTK_SWITCH(w_use_wpfplayer));
   conf.volume_level = gtk_adjustment_get_value(a_volume_level);
-  conf.spawn_distance = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_spawn_distance));
-  conf.sprite_framerate = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_sprite_framerate));
+  conf.spawn_distance = get_entry_int(w_spawn_distance);
+  conf.sprite_framerate = get_entry_int(w_sprite_framerate);
   conf.sprite_speed = (int)gtk_adjustment_get_value(a_sprite_speed);
   conf.follow_radius = (int)gtk_adjustment_get_value(a_follow_radius);
   conf.enable_gravity = gtk_switch_get_active(GTK_SWITCH(w_enable_gravity));
   conf.gravity_strength = (int)gtk_adjustment_get_value(a_gravity_strength);
   conf.start_buttom = gtk_switch_get_active(GTK_SWITCH(w_start_buttom));
-  conf.sleep_time = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_sleep_time));
+  conf.sleep_time = get_entry_int(w_sleep_time);
   conf.allow_random_actions = gtk_switch_get_active(GTK_SWITCH(w_allow_random_actions));
-  conf.min_interval = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_min_interval));
-  conf.max_interval = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_max_interval));
-  conf.walk_distance = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_walk_distance));
-  conf.random_move_distance = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_random_move_distance));
+  conf.min_interval = get_entry_int(w_min_interval);
+  conf.max_interval = get_entry_int(w_max_interval);
+  conf.walk_distance = get_entry_int(w_walk_distance);
+  conf.random_move_distance = get_entry_int(w_random_move_distance);
   conf.allow_color_hotspot = gtk_switch_get_active(GTK_SWITCH(w_allow_color_hotspot));
   conf.disable_hotspots = gtk_switch_get_active(GTK_SWITCH(w_disable_hotspots));
   conf.enable_min_resize = gtk_switch_get_active(GTK_SWITCH(w_enable_min_resize));
@@ -110,7 +120,7 @@ static void apply_to_conf(void) {
   conf.allow_cache = gtk_switch_get_active(GTK_SWITCH(w_allow_cache));
   conf.current_acceleration = gtk_adjustment_get_value(a_current_acceleration);
   conf.follow_acceleration = gtk_adjustment_get_value(a_follow_acceleration);
-  conf.max_acceleration = (int)gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(w_max_acceleration));
+  conf.max_acceleration = get_entry_int(w_max_acceleration);
 
   if (w_start_char != NULL && GTK_IS_DROP_DOWN(w_start_char)) {
     guint selected = gtk_drop_down_get_selected(GTK_DROP_DOWN(w_start_char));
@@ -133,19 +143,19 @@ static void apply_from_conf(void) {
   gtk_switch_set_active(GTK_SWITCH(w_randomize_spawn), conf.randomize_spawn);
   gtk_switch_set_active(GTK_SWITCH(w_use_wpfplayer), conf.use_wpfplayer);
   gtk_adjustment_set_value(a_volume_level, conf.volume_level);
-  gtk_editable_set_text(GTK_EDITABLE(w_spawn_distance), g_strdup_printf("%d", conf.spawn_distance));
-  gtk_editable_set_text(GTK_EDITABLE(w_sprite_framerate), g_strdup_printf("%d", conf.sprite_framerate));
+  set_entry_int(w_spawn_distance, conf.spawn_distance);
+  set_entry_int(w_sprite_framerate, conf.sprite_framerate);
   gtk_adjustment_set_value(a_sprite_speed, conf.sprite_speed);
   gtk_adjustment_set_value(a_follow_radius, conf.follow_radius);
   gtk_switch_set_active(GTK_SWITCH(w_enable_gravity), conf.enable_gravity);
   gtk_adjustment_set_value(a_gravity_strength, conf.gravity_strength);
   gtk_switch_set_active(GTK_SWITCH(w_start_buttom), conf.start_buttom);
-  gtk_editable_set_text(GTK_EDITABLE(w_sleep_time), g_strdup_printf("%d", conf.sleep_time));
+  set_entry_int(w_sleep_time, conf.sleep_time);
   gtk_switch_set_active(GTK_SWITCH(w_allow_random_actions), conf.allow_random_actions);
-  gtk_editable_set_text(GTK_EDITABLE(w_min_interval), g_strdup_printf("%d", conf.min_interval));
-  gtk_editable_set_text(GTK_EDITABLE(w_max_interval), g_strdup_printf("%d", conf.max_interval));
-  gtk_editable_set_text(GTK_EDITABLE(w_walk_distance), g_strdup_printf("%d", conf.walk_distance));
-  gtk_editable_set_text(GTK_EDITABLE(w_random_move_distance), g_strdup_printf("%d", conf.random_move_distance));
+  set_entry_int(w_min_interval, conf.min_interval);
+  set_entry_int(w_max_interval, conf.max_interval);
+  set_entry_int(w_walk_distance, conf.walk_distance);
+  set_entry_int(w_random_move_distance, conf.random_move_distance);
   gtk_switch_set_active(GTK_SWITCH(w_allow_color_hotspot), conf.allow_color_hotspot);
   gtk_switch_set_active(GTK_SWITCH(w_disable_hotspots), conf.disable_hotspots);
   gtk_switch_set_active(GTK_SWITCH(w_enable_min_resize), conf.enable_min_resize);
@@ -155,9 +165,8 @@ static void apply_from_conf(void) {
   gtk_switch_set_active(GTK_SWITCH(w_allow_cache), conf.allow_cache);
   gtk_adjustment_set_value(a_current_acceleration, conf.current_acceleration);
   gtk_adjustment_set_value(a_follow_acceleration, conf.follow_acceleration);
-  gtk_editable_set_text(GTK_EDITABLE(w_max_acceleration), g_strdup_printf("%d", conf.max_acceleration));
+  set_entry_int(w_max_acceleration, conf.max_acceleration);
 
-  gtk_editable_set_text(GTK_EDITABLE(w_start_char), conf.start_char);
 }
 
 static void revert_settings(GtkWidget *widget, gpointer data) {
@@ -197,8 +206,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_append(GTK_BOX(menubox), b_save);
   gtk_box_append(GTK_BOX(menubox), b_spawn);
   gtk_box_append(GTK_BOX(menubox), b_horde);
-  g_signal_connect_swapped(b_revert, "clicked", G_CALLBACK(apply_from_conf), NULL);
-  g_signal_connect_swapped(b_save, "clicked", G_CALLBACK(apply_to_conf), NULL);
   GtkWidget *notebook = gtk_notebook_new();
   GtkWidget *l_tab_1 = gtk_label_new("General Settings");
   GtkWidget *g_tab_1 = gtk_grid_new();

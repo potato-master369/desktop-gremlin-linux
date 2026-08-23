@@ -168,6 +168,16 @@ By default, `desktop-gremlin-linux` adds some format extensions to the original 
 * DOS and UNIX newline support.
 * The misspelling for `START_BOTTOM` as `START_BUTTOM` can be fixed. Something I really hate.
 
+## Source options
+
+These changes require a recompile, and cannot be changed after install (will require a re-install).
+Change the following in the following places:
+
+* Debug/Release, demo options, etc `src/defines.h`
+* LRU Cache size `src/asset.h`
+
+Comments in source contain what altering these does.
+
 ## Mistakes
 
 If there are any mistakes in this document, open an issue, or email `random.nonprivate.email@gmail.com`. I will probably answer issues first.

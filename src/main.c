@@ -17,6 +17,7 @@ static int requested_monitor = 0;
 #include "defines.h"
 #include "sounds.h"
 #include "asset.h"
+#include "animation.h"
 // X11-specific
 // If you encounter problems building because
 //   - a) GTK devs fully deprecated GDK X11
@@ -359,13 +360,20 @@ skiptop:
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 3);
   g_signal_connect(click, "pressed", G_CALLBACK(on_r_click), NULL);
   gtk_widget_add_controller(fcontainer, GTK_EVENT_CONTROLLER(click));
+  // This is a test, initially used to test our player.
+  // This identified some non-null issues. Thanks to @potato-master369
+  // (me) for finding that out.
+#ifndef DEGRLI_NO_ANIM_DEMO
+  play_emote1(sprite);
+#endif
 }
 
 // This function is called before the Application is closed.
 // All cleanup should go here.
 static void cleanup() {
-  g_print("Exiting...\n");
+  g_print(" [  main  ] Exiting...\n");
   degrli_input_region_cleanup();
+  asset_cleanup();
   degrli_destroy_audio();
 }
 
@@ -392,6 +400,7 @@ int main(int argc, char **argv) {
 #endif
   degrli_init_readconf();
   asset_init();
+  animation_init();
   local_config_main = degrli_request_localconf();
   GtkApplication *app = gtk_application_new(
       "io.github.potato-master369.desktop-gremlin-linux",
