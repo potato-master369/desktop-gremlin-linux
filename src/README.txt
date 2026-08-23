@@ -62,6 +62,10 @@ src/
   config.h -- config handler header
   defines.h -- Defines -
   distributor/filepaths/etc
+  asset.c -- loading system for assets.
+  asset.h -- set LRU cache size here.
+  animation.c -- Animation loop handler
+  animation.h -- Animation loop header
   options/
     - the folder for Options dialog
     main.c -- main C program (GTK4)
@@ -72,6 +76,9 @@ src/
     GTK4 XML for resources. Use
     glib-compile-resources to generate
     meme.c and meme.h)
+  installer/
+    - the folder for GUI Installer
+    main.c -- main C program (GTK4)
 
 This folder structure is subject to
 change across versions. Read updates
