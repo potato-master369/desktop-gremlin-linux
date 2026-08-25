@@ -12,7 +12,7 @@ ma_result res;
 ma_engine engine;
 int engine_initialized = 0;
 degrli_conf_t *local_config_sounds = NULL;
-
+ma_sound cur_sound;
 // cache - improve performance by not requesting
 // filepath every time.
 struct {
@@ -55,6 +55,7 @@ int degrli_init_audio(void) {
   }
   engine_initialized = 1;
   local_config_sounds = degrli_request_localconf();
+  ma_engine_set_volume(&engine, local_config_sounds->volume_level);
   
   if (local_config_sounds == NULL) {
     return 2;
@@ -91,6 +92,23 @@ int degrli_destroy_audio(void) {
   return 0;
 }
 
+// helper for sound
+bool acts = false;
+ma_result degrli_play_exec(ma_engine *pEngine, const char *filepath) {
+  if (acts) {
+    ma_sound_stop(&cur_sound);
+    ma_sound_uninit(&cur_sound);
+    acts = false;
+  }
+
+  ma_result res = ma_sound_init_from_file(pEngine, filepath, 0, NULL, NULL, &cur_sound);
+  if (res == MA_SUCCESS) {
+    ma_sound_start(&cur_sound);
+    acts = true;
+  }
+  return MA_SUCCESS;
+}
+
 // function for sound! Osu!
 // メルト is a great song lowk listen to it
 void degrli_play_sound(const char *sound) {
@@ -98,68 +116,68 @@ void degrli_play_sound(const char *sound) {
   #define MATCH(a) (strncmp(sound, a, 8) == 0)
   if (MATCH("emote1")) {
     if (access(sounds_cache_paths.emote1, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.emote1, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.emote1);    
     }
   }
   if (MATCH("emote2")) {
     if (access(sounds_cache_paths.emote2, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.emote2, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.emote2);    
     }
   }
   if (MATCH("emote3")) {
     if (access(sounds_cache_paths.emote3, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.emote3, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.emote3);    
     }
   }
   if (MATCH("emote4")) {
     if (access(sounds_cache_paths.emote4, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.emote4, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.emote4);    
     }
   }
   if (MATCH("grab")) {
     if (access(sounds_cache_paths.grab, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.grab, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.grab);    
     }
   }
   if (MATCH("hover")) {
     if (access(sounds_cache_paths.hover, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.hover, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.hover);    
     }
   }
   if (MATCH("intro")) {
     if (access(sounds_cache_paths.intro, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.intro, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.intro);    
     }
   }
   if (MATCH("mambo")) {
     if (access(sounds_cache_paths.mambo, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.mambo, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.mambo);    
     }
   }
   if (MATCH("run")) {
     if (access(sounds_cache_paths.run, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.run, NULL);
+      res = degrli_play_exec(&engine, sounds_cache_paths.run);
     }
   }
   // Same here, additional sounds
   if (MATCH("eat")) {
     if (access(sounds_cache_paths.eat, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.eat, NULL);
+      res = degrli_play_exec(&engine, sounds_cache_paths.eat);
     }
   }
   if (MATCH("outro")) {
     if (access(sounds_cache_paths.outro, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.outro, NULL);
+      res = degrli_play_exec(&engine, sounds_cache_paths.outro);
     }
   }
   if (MATCH("sleep")) {
     if (access(sounds_cache_paths.sleep, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.sleep, NULL);
+      res = degrli_play_exec(&engine, sounds_cache_paths.sleep);
     }
   }
   if (MATCH("run")) {
     if (access(sounds_cache_paths.run, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.run, NULL);
+      res = degrli_play_exec(&engine, sounds_cache_paths.run);
     }
   }
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
@@ -173,17 +191,17 @@ void degrli_play_sound_comp(const char *sound) {
   #define MATCH(a) (strncmp(sound, a, 8) == 0)
   if (MATCH("grab")) {
     if (access(sounds_cache_paths_comp.grab, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths_comp.grab, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths_comp.grab);    
     }
   }
   if (MATCH("hover")) {
     if (access(sounds_cache_paths_comp.hover, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths_comp.hover, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths_comp.hover);    
     }
   }
   if (MATCH("intro")) {
     if (access(sounds_cache_paths_comp.intro, F_OK) == 0) {
-      res = ma_engine_play_sound(&engine, sounds_cache_paths.intro, NULL);    
+      res = degrli_play_exec(&engine, sounds_cache_paths.intro);    
     }
   }
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)

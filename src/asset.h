@@ -17,6 +17,10 @@
 #define DEGRLI_LRU_EMOTE_4 4
 #define DEGRLI_LRU_IDLE    5
 #define DEGRLI_LRU_GRAB    6
+#define DEGRLI_LRU_INTRO   7
+#define DEGRLI_LRU_OUTRO   8
+#define DEGRLI_LRU_CLICK   9
+
 typedef struct {
   int runup;
   int rundown;

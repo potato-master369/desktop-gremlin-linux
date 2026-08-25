@@ -10,10 +10,24 @@ void animation_cleanup(void);
 #define ANIM_STATE_EMOTE2 3
 #define ANIM_STATE_EMOTE3 4
 #define ANIM_STATE_EMOTE4 5
+#define ANIM_STATE_INTRO 6
+#define ANIM_STATE_CLICK 7
+#define ANIM_STATE_OUTRO 8
+
 #ifndef DEGRLI_NO_ANIM_DEMO
 void play_emote1(GtkWidget *a);
 #endif
 
 // Main loop
 void anim_start_loop(GtkWidget *a);
+
+// triggers
+void anim_trigger_drag_start(void);
+void anim_trigger_drag_end(void);
+void anim_trigger_emote_1(void);
+void anim_trigger_emote_2(void);
+void anim_trigger_emote_3(void);
+void anim_trigger_emote_4(void);
+void anim_trigger_rclick(void);
+void anim_trigger_quit(void (*a)(void));
 #endif

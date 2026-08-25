@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "config.h"
 #include "asset.h"
+#include "sounds.h"
 #include "gtk/gtk.h"
 #include <glib.h>
 degrli_conf_t *local_conf_animation;
@@ -55,13 +56,13 @@ void play_emote1(GtkWidget *a) {
     g_timeout_add(interval_ms, on_emote_frame_tick, data);
 }
 #endif
-
+typedef void (*cleanup_func)(void);
+cleanup_func cleanup;
 typedef struct {
   GtkWidget *img;
   int state;
   int cur;
   int maxf;
-  int lru_id;
 } animation_data_t;
 animation_data_t *data;
 static gboolean animation_tick(gpointer user_data) {
@@ -72,11 +73,59 @@ static gboolean animation_tick(gpointer user_data) {
       data->cur = ++data->cur % asset_conf_animation->idle;
       asset_apply(DEGRLI_LRU_IDLE, data->cur, data->img);
       return G_SOURCE_CONTINUE;
-      break;
     case ANIM_STATE_EMOTE1:
-      
-    asset_apply(data->lru_id, data->cur, data->img);
-    data->cur++;
+      data->cur = ++data->cur % asset_conf_animation->emote1;
+      asset_apply(DEGRLI_LRU_EMOTE_1, data->cur, data->img);
+      return G_SOURCE_CONTINUE;
+    case ANIM_STATE_EMOTE2:
+      data->cur = ++data->cur % asset_conf_animation->emote3;
+      asset_apply(DEGRLI_LRU_EMOTE_3, data->cur, data->img);
+      return G_SOURCE_CONTINUE;
+    case ANIM_STATE_EMOTE3:
+      asset_apply(DEGRLI_LRU_EMOTE_2, data->cur, data->img);
+      ++data->cur;
+      if (data->cur == asset_conf_animation->emote2) {
+        data->cur = 0;
+	data->state = 0;
+      }
+      return G_SOURCE_CONTINUE;
+    case ANIM_STATE_EMOTE4:
+      asset_apply(DEGRLI_LRU_EMOTE_4, data->cur, data->img);
+      ++data->cur;
+      if (data->cur == asset_conf_animation->emote4) {
+        data->cur = 0;
+	data->state = 0;
+      }
+      return G_SOURCE_CONTINUE;
+    case ANIM_STATE_DRAG:
+      data->cur = ++data->cur % asset_conf_animation->grab; // drag is called grab by kurt
+      asset_apply(DEGRLI_LRU_GRAB, data->cur, data->img);
+      return G_SOURCE_CONTINUE;
+      break;
+    case ANIM_STATE_INTRO:
+      asset_apply(DEGRLI_LRU_INTRO, data->cur, data->img);
+      ++data->cur;
+      if (data->cur == asset_conf_animation->intro) {
+        data->cur = 0;
+	data->state = 0;
+      }
+      return G_SOURCE_CONTINUE;
+    case ANIM_STATE_CLICK:
+      asset_apply(DEGRLI_LRU_CLICK, data->cur, data->img);
+      ++data->cur;
+      if (data->cur == asset_conf_animation->click) {
+        data->cur = 0;
+	data->state = 0;
+      }
+      return G_SOURCE_CONTINUE;
+    case ANIM_STATE_OUTRO:
+      asset_apply(DEGRLI_LRU_OUTRO, data->cur, data->img);
+      ++data->cur;
+      if (data->cur == asset_conf_animation->outro) {
+	cleanup();
+        return G_SOURCE_REMOVE;
+      }
+      return G_SOURCE_CONTINUE;
     default:
       g_print(" [  anim  ] Warn: invalid state! Resetting to idle...\n");
       data->state = ANIM_STATE_IDLE;
@@ -85,6 +134,53 @@ static gboolean animation_tick(gpointer user_data) {
   }
   
   return G_SOURCE_CONTINUE; // we will most LIKELY never quit the loop.
+}
+
+void anim_trigger_drag_start(void) {
+  degrli_play_sound("grab");
+  data->state = ANIM_STATE_DRAG;
+  data->cur = 0;
+}
+
+void anim_trigger_quit(cleanup_func a) {
+  cleanup = a;
+  degrli_play_sound("outro");
+  data->state = ANIM_STATE_OUTRO;
+  data->cur = 0;
+}
+
+void anim_trigger_rclick(void) {
+  degrli_play_sound("mambo"); // this is the sound played in original
+  data->state = ANIM_STATE_CLICK;
+  data->cur = 0;
+}
+
+void anim_trigger_drag_end(void) {
+  data->state = ANIM_STATE_IDLE;
+  data->cur = 0;
+}
+// NOTE:
+// Finding as of 26/08/25:
+//   Emotes 3 and 2 are swapped.
+void anim_trigger_emote_1(void) {
+  degrli_play_sound("emote1");
+  data->state = ANIM_STATE_EMOTE1;
+  data->cur = 0;
+}
+void anim_trigger_emote_2(void) {
+  degrli_play_sound("emote3");
+  data->state = ANIM_STATE_EMOTE2;
+  data->cur = 0;
+}
+void anim_trigger_emote_3(void) {
+  degrli_play_sound("emote2");
+  data->state = ANIM_STATE_EMOTE3;
+  data->cur = 0;
+}
+void anim_trigger_emote_4(void) {
+  degrli_play_sound("emote4");
+  data->state = ANIM_STATE_EMOTE4;
+  data->cur = 0;
 }
 
 void anim_start_loop(GtkWidget *a) {
@@ -97,11 +193,12 @@ void anim_start_loop(GtkWidget *a) {
 
   data->img = a;
   data->cur = 0;
-  data->state = ANIM_STATE_IDLE;
+  data->state = ANIM_STATE_INTRO;
   data->maxf = asset_conf_animation->idle;
-  data->lru_id = DEGRLI_LRU_IDLE;
 
   guint interval_ms = 1000 / local_conf_animation->sprite_framerate;
+  // play intro sound
+  degrli_play_sound("intro");
   g_timeout_add(interval_ms, animation_tick, data);
 }
 

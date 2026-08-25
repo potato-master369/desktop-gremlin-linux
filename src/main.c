@@ -164,6 +164,7 @@ static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
     g_print(" [  main  ] Drag started on NULL/EMPTY\n");
 #endif
   }
+  anim_trigger_drag_start();
 }
 
 static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offset_y, gpointer user_data) {
@@ -191,6 +192,30 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offs
     degrli_move_input_region(1, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite));
 }
 
+// for animation trigger
+static void on_drag_end(GtkGestureDrag *gesture, double offset_x, double offset_y, gpointer user_data) {
+  anim_trigger_drag_end();
+}
+
+
+// This function is called before the Application is closed.
+// All cleanup should go here.
+static void cleanup() {
+  g_print(" [  main  ] Exiting...\n");
+  degrli_input_region_cleanup();
+  asset_cleanup();
+  animation_cleanup();
+  degrli_destroy_audio();
+}
+
+static void cleanup_anim_wrapper(void) {
+    GtkRoot *root = gtk_widget_get_root(sprite);
+    GtkApplication *app = root ? gtk_window_get_application(GTK_WINDOW(root)) : NULL;
+
+    if (app != NULL) {
+        g_application_quit(G_APPLICATION(app));
+    }
+}
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                                guint keycode, GdkModifierType state,
                                gpointer user_data) {
@@ -199,12 +224,32 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
 #endif
   if (keyval == GDK_KEY_x) {
     g_print(" [  main  ] X key pressed! Exiting...\n");
-    g_application_quit(G_APPLICATION(user_data));
+    anim_trigger_quit(cleanup_anim_wrapper);
+    return TRUE;
+  }
+  if (keyval == GDK_KEY_1) {
+    anim_trigger_emote_1();
+    return TRUE;
+  }
+  if (keyval == GDK_KEY_2) {
+    anim_trigger_emote_2();
+    return TRUE;
+  }
+  if (keyval == GDK_KEY_3) {
+    anim_trigger_emote_3();
+    return TRUE;
+  }
+  if (keyval == GDK_KEY_4) {
+    anim_trigger_emote_4();
     return TRUE;
   }
   return false;
 }
-static void on_r_click() { g_print("Right mouse button clicked!\n"); }
+static void on_r_click() { anim_trigger_rclick(); }
+
+static gboolean on_close_request(GtkWindow *w, gpointer user_data) {
+  return TRUE;
+}
 // This function runs when program is started.
 static void activate(GtkApplication *app, gpointer user_data) {
   // Basic settings for the window
@@ -212,6 +257,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_window_set_title(w, "desktop-gremlin-linux");
   gtk_window_set_decorated(w, FALSE);
   gtk_widget_set_can_focus(GTK_WIDGET(w), true);
+  g_signal_connect(w, "close-request", G_CALLBACK(on_close_request), NULL);
 
   // NOTE: Set monitor
   GdkMonitor *mon = pick_monitor();
@@ -342,6 +388,7 @@ skiptop:
   GtkGesture *drag = gtk_gesture_drag_new();
   g_signal_connect(drag, "drag-begin", G_CALLBACK(on_drag_begin), NULL);
   g_signal_connect(drag, "drag-update", G_CALLBACK(on_drag_update), NULL);
+  g_signal_connect(drag, "drag-end", G_CALLBACK(on_drag_end), NULL);
 
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(drag), GDK_BUTTON_PRIMARY);
 
@@ -373,15 +420,6 @@ skiptop:
   anim_start_loop(sprite);
 }
 
-// This function is called before the Application is closed.
-// All cleanup should go here.
-static void cleanup() {
-  g_print(" [  main  ] Exiting...\n");
-  degrli_input_region_cleanup();
-  asset_cleanup();
-  animation_cleanup();
-  degrli_destroy_audio();
-}
 
 static void cleanup_sig(int sig) {
   cleanup();

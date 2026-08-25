@@ -52,6 +52,7 @@ void asset_cleanup(void) {
     if (asset_texture_lru[i].tex != NULL) {
       // Free it
       g_object_unref(asset_texture_lru[i].tex);
+      asset_texture_lru[i].tex = NULL;
       #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
       g_print(" [ asset  ] Cleaned up: i = %d\n", i);
       #endif
@@ -75,10 +76,22 @@ GdkTexture *asset_lru_load(int16_t id) {
       snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote3.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     case DEGRLI_LRU_EMOTE_4:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote4.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     case DEGRLI_LRU_IDLE:
       snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/idle.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      break;
+    case DEGRLI_LRU_INTRO:
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/intro.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      break;
+    case DEGRLI_LRU_GRAB:
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/grab.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      break;
+    case DEGRLI_LRU_CLICK:
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/click.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      break;
+    case DEGRLI_LRU_OUTRO:
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/outro.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
     default:
       strncpy(filename, "/dev/null", 256);
