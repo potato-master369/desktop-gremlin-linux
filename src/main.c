@@ -1,5 +1,6 @@
 // main file for the thing
 
+#include <bits/types/locale_t.h>
 #include <stdio.h>
 #include <sys/types.h>
 static int requested_monitor = 0;
@@ -427,10 +428,16 @@ static void cleanup_sig(int sig) {
 }
 int main(int argc, char **argv) {
   signal(SIGINT, cleanup_sig);
+  char startchar_override[64];
+  bool override_st=false;
   // parse options
   for (int i = 0; i < argc; ++i) {
     if (g_strcmp0(argv[i], "--monitor") == 0 && (i + 1) < argc) {
       requested_monitor = atoi(argv[i + 1]);
+    }
+    else if (g_strcmp0(argv[i], "--char") == 0 && (i + 1) < argc) {
+      strcpy(startchar_override, argv[i + 1]);
+      override_st = true;
     }
   }
   g_print("desktop-gremlin-linux v4.x\nCopyright (C) 2026- potato-master369 "
@@ -443,15 +450,18 @@ int main(int argc, char **argv) {
           "YOUR OWN RISK.\n");
 #endif
   degrli_init_readconf();
+  local_config_main = degrli_request_localconf();
+  if (override_st) {
+    g_strlcpy(local_config_main->start_char, startchar_override, sizeof(startchar_override));
+  }
   asset_init();
   animation_init();
-  local_config_main = degrli_request_localconf();
   GtkApplication *app = gtk_application_new(
       "io.github.potato-master369.desktop-gremlin-linux",
       G_APPLICATION_DEFAULT_FLAGS | G_APPLICATION_NON_UNIQUE);
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
 
-  int status = g_application_run(G_APPLICATION(app), argc, argv);
+  int status = g_application_run(G_APPLICATION(app), 0, NULL);
   cleanup();
   g_object_unref(app);
   return status;
