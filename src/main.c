@@ -439,6 +439,13 @@ int main(int argc, char **argv) {
       strcpy(startchar_override, argv[i + 1]);
       override_st = true;
     }
+    else if (g_strcmp0(argv[i], "--help") == 0) {
+      g_print("desktop-gremlin-linux v4.x\nCopyright (C) 2026 - potato-master369\n"
+	      "OPTIONS:\n"
+	      "  --monitor n         Sets the monitor to use, to n, using GDK. By defualt uses whatever is your primary monitor. Trial and error I guess\n"
+	      "  --char char         Overrides config.txt to use character char. E.g., --char Agnes will use Tachyon instead of whatever is in your config.\n");
+      return 0;
+    }
   }
   g_print("desktop-gremlin-linux v4.x\nCopyright (C) 2026- potato-master369 "
           "(GitHub). Source code available on request. Compile time: %s %s\n "
