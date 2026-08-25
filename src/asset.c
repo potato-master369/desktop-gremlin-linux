@@ -77,6 +77,9 @@ GdkTexture *asset_lru_load(int16_t id) {
     case DEGRLI_LRU_EMOTE_4:
       snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
+    case DEGRLI_LRU_IDLE:
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/idle.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      break;
     default:
       strncpy(filename, "/dev/null", 256);
   }

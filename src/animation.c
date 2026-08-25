@@ -17,7 +17,6 @@ void animation_init(void) {
   local_conf_animation = degrli_request_localconf(); // get local conf
   asset_conf_animation = asset_request_conf(); // again, for assets.
 }
-
 // This block is the demo. Provides a naive example of
 // the Asset LRU Engine. It does its job pretty well.
 #ifndef DEGRLI_NO_ANIM_DEMO
@@ -64,29 +63,52 @@ typedef struct {
   int maxf;
   int lru_id;
 } animation_data_t;
-
+animation_data_t *data;
 static gboolean animation_tick(gpointer user_data) {
-  animation_data_t *data = (animation_data_t *)user_data;
 
-  // Do something
+  // state machine
+  switch (data->state) {
+    case ANIM_STATE_IDLE:
+      data->cur = ++data->cur % asset_conf_animation->idle;
+      asset_apply(DEGRLI_LRU_IDLE, data->cur, data->img);
+      return G_SOURCE_CONTINUE;
+      break;
+    case ANIM_STATE_EMOTE1:
+      
+    asset_apply(data->lru_id, data->cur, data->img);
+    data->cur++;
+    default:
+      g_print(" [  anim  ] Warn: invalid state! Resetting to idle...\n");
+      data->state = ANIM_STATE_IDLE;
+      data->cur = 0;
+      break;
+  }
   
   return G_SOURCE_CONTINUE; // we will most LIKELY never quit the loop.
 }
 
 void anim_start_loop(GtkWidget *a) {
+  data = malloc(sizeof(animation_data_t));
   g_print(" [  anim  ] Starting main loop...\n");
   if (local_conf_animation->sprite_framerate <= 0) {
     g_print(" [  anim  ] ERROR! Invalid framerate (<=0). Open the Options, and set this in Sprite Settings > FrameRate\n[  anim  ] Quitting main loop...\n");
     return;
   }
 
-  animation_data_t *data = g_new0(animation_data_t, 1);
   data->img = a;
   data->cur = 0;
-  data->state = 0;
+  data->state = ANIM_STATE_IDLE;
   data->maxf = asset_conf_animation->idle;
   data->lru_id = DEGRLI_LRU_IDLE;
 
   guint interval_ms = 1000 / local_conf_animation->sprite_framerate;
   g_timeout_add(interval_ms, animation_tick, data);
+}
+
+// cleanup function
+void animation_cleanup(void) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+	g_print(" [  anim  ] Cleaning up animation data...\n");
+#endif
+  free(data);
 }

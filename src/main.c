@@ -142,7 +142,7 @@ static GtkWidget *target_w = NULL;
 static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
                           gpointer user_data) {
   GtkWidget *picked = gtk_widget_pick(GTK_WIDGET(fcontainer), sxp, syp, GTK_PICK_DEFAULT);
-  if (picked == foodsprite || gtk_widget_is_ancestor(picked, foodsprite)) {
+  if ((picked == foodsprite || gtk_widget_is_ancestor(picked, foodsprite)) && food_enabled) {
     target_w = foodsprite;
     ddsx = food_x;
     ddsy = food_y;
@@ -185,7 +185,10 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offs
 #endif
   }
 
-  degrli_move_input_region(2, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite), food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
+  if (food_enabled)
+    degrli_move_input_region(2, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite), food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
+  else
+    degrli_move_input_region(1, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite));
 }
 
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
@@ -297,7 +300,7 @@ skiptop:
   gtk_window_set_child(w, fcontainer);
 
   degrli_input_region_init();
-  sprite = gtk_image_new_from_file("blanktexture.png");
+  sprite = gtk_image_new();
   char foodpath[256];
   snprintf(foodpath, sizeof(foodpath), "%sSpriteSheet/Misc/%s",
            DEGRLI_ASSET_DIR, local_config_main->food_spawn);
@@ -353,8 +356,9 @@ skiptop:
     gtk_widget_add_controller(GTK_WIDGET(w), kbp);
   }
 
-  // FIXME: remove after test
-  food_enabled = true;
+  // Disable food
+  if (!food_enabled)
+	  gtk_widget_set_visible(foodsprite, false);
   // set up right click
   GtkGesture *click = gtk_gesture_click_new();
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 3);
@@ -366,6 +370,7 @@ skiptop:
 #ifndef DEGRLI_NO_ANIM_DEMO
   play_emote1(sprite);
 #endif
+  anim_start_loop(sprite);
 }
 
 // This function is called before the Application is closed.
@@ -374,6 +379,7 @@ static void cleanup() {
   g_print(" [  main  ] Exiting...\n");
   degrli_input_region_cleanup();
   asset_cleanup();
+  animation_cleanup();
   degrli_destroy_audio();
 }
 

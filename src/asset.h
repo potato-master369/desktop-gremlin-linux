@@ -1,5 +1,6 @@
 #ifndef ASSET_H
 #define ASSET_H
+#include <gtk/gtk.h>
 // Change this to set the LRU maximum size.
 // Explanation:
 //  [ ] [ ] [ ] [ ] [ ] <- This is the LRU. We store spritesheet
@@ -14,7 +15,8 @@
 #define DEGRLI_LRU_EMOTE_2 2
 #define DEGRLI_LRU_EMOTE_3 3
 #define DEGRLI_LRU_EMOTE_4 4
-#define DEGRLI_LRU_IDLE    1
+#define DEGRLI_LRU_IDLE    5
+#define DEGRLI_LRU_GRAB    6
 typedef struct {
   int runup;
   int rundown;
@@ -48,6 +50,7 @@ typedef struct {
 } asset_conf_t;
 
 void asset_init(void);
+void asset_apply(int id, int fid, GtkWidget *image);
 asset_conf_t *asset_request_conf(void);
 #endif
 
