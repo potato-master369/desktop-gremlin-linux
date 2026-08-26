@@ -230,20 +230,33 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
     anim_trigger_quit(cleanup_anim_wrapper);
     return TRUE;
   }
-  if (keyval == GDK_KEY_1) {
+  else if (keyval == GDK_KEY_1) {
     anim_trigger_emote_1();
     return TRUE;
   }
-  if (keyval == GDK_KEY_2) {
+  else if (keyval == GDK_KEY_2) {
     anim_trigger_emote_2();
     return TRUE;
   }
-  if (keyval == GDK_KEY_3) {
+  else if (keyval == GDK_KEY_3) {
     anim_trigger_emote_3();
     return TRUE;
   }
-  if (keyval == GDK_KEY_4) {
+  else if (keyval == GDK_KEY_4) {
     anim_trigger_emote_4();
+    return TRUE;
+  }
+  // walking
+  else if (keycode == GDK_KEY_w) {
+    return TRUE;
+  }
+  else if (keycode == GDK_KEY_a) {
+    return TRUE;
+  }
+  else if (keycode == GDK_KEY_s) {
+    return TRUE;
+  }
+  else if (keycode == GDK_KEY_d) {
     return TRUE;
   }
   return false;
