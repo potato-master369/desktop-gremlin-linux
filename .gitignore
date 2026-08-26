@@ -1,0 +1,10 @@
+*.o
+*.d
+degrli*
+degrli
+
+.vscode/
+.tar.gz
+*.swap
+*~
+
