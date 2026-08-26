@@ -13,6 +13,9 @@ OBJ     = dynamic.o config.o sounds.o asset.o animation.o
 OPTOBJ  = options.o meme.o config_opt.o
 INSTOBJ = installer.o
 CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops
+PREFIX      ?= /usr/local
+DATADIR     ?= /usr/share/desktop-gremlin-linux
+DESKTOPDIR  ?= /usr/share/applications
 
 debug: CFLAGS=$(CFLAGS_BASE) -g -O0 -DDEBUG
 debug: clean $(TARGETS)
@@ -63,17 +66,18 @@ clean:
 	rm -f $(OBJ) $(TARGETS) $(OPTOBJ)
 
 install:
-	mkdir -p /usr/share/desktop-gremlin-linux
-	mkdir -p /usr/share/desktop-gremlin-linux/assets
-	cp -r manhattancafe /usr/share/desktop-gremlin-linux/assets
-	#cp desktop-gremlin-linux-manager /usr/local/bin
-	cp blanktexture.png /usr/share/desktop-gremlin-linux/assets
-	cp degrli /usr/local/bin
-	cp degrli-manager /usr/local/bin
-	cp desktop-gremlin-linux-manager.desktop /usr/share/applications
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -d $(DESTDIR)$(DATADIR)/Sounds
+	install -d $(DESTDIR)$(DATADIR)/SpriteSheet
+	install -d $(HOME)/.config/desktop-gremlin-linux
+	install -m 755 degrli $(DESTDIR)$(PREFIX)/bin/degrli
+	install -m 755 degrli_options $(DESTDIR)$(PREFIX)/bin/degrli_options
+	cp -r ass/Sounds/* $(DESTDIR)$(DATADIR)/Sounds/
+	cp -r ass/SpriteSheet/* $(DESTDIR)$(DATADIR)/SpriteSheet
+	test -f $(HOME)/.config/desktop-gremlin-linux/config.txt || \
+		install -m 644 ass/config.txt $(HOME)/.config/desktop-gremlin-linux/config.txt
 
 uninstall:
-	rm -rf /usr/share/desktop-gremlin-linux
-	rm -f /usr/local/bin/degrli-manager
-	rm -f /usr/local/bin/degrli
-	rm -f /usr/share/applications/desktop-gremlin-linux-manager.desktop
+	rm -f $(DESTDIR)$(PREFIX)/bin/degrli
+	rm -f $(DESTDIR)$(PREFIX)/bin/degrli_options
+	rm -rf $(DESTDIR)$(DATADIR)

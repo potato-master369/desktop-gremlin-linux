@@ -50,6 +50,26 @@ static GtkAdjustment *a_gravity_strength = NULL;
 static GtkAdjustment *a_current_acceleration = NULL;
 static GtkAdjustment *a_follow_acceleration = NULL;
 
+static void find_characters(void) {
+  char path[256];
+  snprintf(path, sizeof(path), "%sSpriteSheet/Gremlins", DEGRLI_ASSET_DIR);
+  GDir *directory = g_dir_open(path, 0, NULL);
+  if (directory == NULL) {
+    g_print("Could not open character directory: %s\n", path);
+    return;
+  }
+
+  const char *name;
+  while ((name = g_dir_read_name(directory)) != NULL) {
+    char character_path[512];
+    snprintf(character_path, sizeof(character_path), "%s/%s", path, name);
+    if (g_file_test(character_path, G_FILE_TEST_IS_DIR)) {
+      gtk_string_list_append(char_list, name);
+    }
+  }
+  g_dir_close(directory);
+}
+
 static int get_entry_int(GtkWidget *widget) {
   return atoi(gtk_editable_get_text(GTK_EDITABLE(widget)));
 }
@@ -136,6 +156,14 @@ static void apply_to_conf(void) {
 }
 
 static void apply_from_conf(void) {
+  guint character_count = g_list_model_get_n_items(G_LIST_MODEL(char_list));
+  for (guint i = 0; i < character_count; ++i) {
+    const char *name = gtk_string_list_get_string(char_list, i);
+    if (g_strcmp0(name, conf.start_char) == 0) {
+      gtk_drop_down_set_selected(GTK_DROP_DOWN(w_start_char), i);
+      break;
+    }
+  }
   gtk_switch_set_active(GTK_SWITCH(w_language_diff), conf.language_diff);
   gtk_switch_set_active(GTK_SWITCH(w_enable_keyboard), conf.enable_keyboard);
   gtk_switch_set_active(GTK_SWITCH(w_allow_error_messages), conf.allow_error_messages);
@@ -215,6 +243,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_1), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_1), 20);
   char_list = gtk_string_list_new(NULL);
+  find_characters();
   w_start_char = gtk_drop_down_new(G_LIST_MODEL(char_list), NULL);
   add_setting_row(GTK_GRID(g_tab_1), 0, "Starting Character", w_start_char, "Available Characters in SpriteSheet/Gremlins");
   w_language_diff = gtk_switch_new();
