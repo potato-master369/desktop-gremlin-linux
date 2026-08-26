@@ -20,6 +20,7 @@
 #define DEGRLI_LRU_INTRO   7
 #define DEGRLI_LRU_OUTRO   8
 #define DEGRLI_LRU_CLICK   9
+#define DEGRLI_LRU_HOVER   10
 
 typedef struct {
   int runup;

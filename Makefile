@@ -12,7 +12,7 @@ TARGETS = degrli degrli_options degrli_installer
 OBJ     = dynamic.o config.o sounds.o asset.o animation.o
 OPTOBJ  = options.o meme.o config_opt.o
 INSTOBJ = installer.o
-CFLAGS = $(CFLAGS_BASE) -O3
+CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops
 
 debug: CFLAGS=$(CFLAGS_BASE) -g -O0 -DDEBUG
 debug: clean $(TARGETS)

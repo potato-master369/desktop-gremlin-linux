@@ -93,6 +93,9 @@ GdkTexture *asset_lru_load(int16_t id) {
     case DEGRLI_LRU_OUTRO:
       snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/outro.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
       break;
+    case DEGRLI_LRU_HOVER:
+      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/hover.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
+      break;
     default:
       strncpy(filename, "/dev/null", 256);
   }

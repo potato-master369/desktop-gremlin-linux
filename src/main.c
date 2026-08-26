@@ -36,11 +36,13 @@ int32_t sprite_y  =   400;
 int32_t food_x    =     0;
 int32_t food_y    =     0;
 bool food_enabled = false;
+bool is_hover     = false;
 GtkWindow           *w;
 GtkWidget      *sprite;
 GtkWidget  *foodsprite;
 GtkWidget  *fcontainer;
 degrli_conf_t *local_config_main;
+asset_conf_t *asset_config_main;
 
 static GdkMonitor *pick_monitor(void) {
   GdkDisplay *display = gdk_display_get_default();
@@ -248,6 +250,25 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
 }
 static void on_r_click() { anim_trigger_rclick(); }
 
+static void on_enter(GtkEventControllerMotion *controller, double x, double y, gpointer user_data) {
+  if ((int32_t)x > sprite_x && (int32_t)x < sprite_x + gtk_widget_get_width(sprite) && (int32_t)y > sprite_y && (int32_t)y < sprite_y + gtk_widget_get_height(sprite)) {
+    is_hover = true;
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] Hover enter\n");
+#endif
+    anim_trigger_hover_start();
+  }
+}
+
+static void on_leave(GtkEventController *controller, gpointer user_data) {
+  if (is_hover) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] Hover leave\n");
+#endif
+    anim_trigger_hover_end();
+  }
+}
+
 static gboolean on_close_request(GtkWindow *w, gpointer user_data) {
   return TRUE;
 }
@@ -359,10 +380,13 @@ skiptop:
   // FIXME: lowk set this to do something properly
   gtk_image_set_pixel_size(GTK_IMAGE(foodsprite), 184);
   gtk_fixed_put(GTK_FIXED(fcontainer), foodsprite, 0, 0);
-  gtk_image_set_pixel_size(GTK_IMAGE(sprite), 325);
+  // Set relative scale
+  int32_t scaled_h = (int32_t)(asset_config_main->height * asset_config_main->scale);
+  int32_t scaled_w = (int32_t)(asset_config_main->width * asset_config_main->scale);
+  gtk_image_set_pixel_size(GTK_IMAGE(sprite), scaled_h);
   if (local_config_main->randomize_spawn == false) {
     gtk_fixed_put(GTK_FIXED(fcontainer), sprite, mon_w / 2, mon_h / 2);
-    degrli_move_input_region(1, mon_w / 2, mon_h / 2, 325, 325);
+    degrli_move_input_region(1, mon_w / 2, mon_h / 2, scaled_w, scaled_h);
     sprite_x = mon_w / 2;
     sprite_y = mon_h / 2;
   } else {
@@ -379,9 +403,9 @@ skiptop:
         mon_h / 2 + (0 - local_config_main->spawn_distance) +
         (2 * local_config_main->spawn_distance) * (double)rand() / RAND_MAX;
     gtk_fixed_put(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
-    degrli_move_input_region(1, sprite_x, sprite_y, 325, 325);
+    degrli_move_input_region(1, sprite_x, sprite_y, scaled_w, scaled_h);
   }
-  degrli_move_input_region(2, sprite_x, sprite_y, 325, 325, food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
+  degrli_move_input_region(2, sprite_x, sprite_y, scaled_w, scaled_h, food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
 
   // Audio
   degrli_init_audio();
@@ -412,6 +436,11 @@ skiptop:
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 3);
   g_signal_connect(click, "pressed", G_CALLBACK(on_r_click), NULL);
   gtk_widget_add_controller(fcontainer, GTK_EVENT_CONTROLLER(click));
+  // Set up hover
+  GtkEventController *hover = gtk_event_controller_motion_new();
+  g_signal_connect(hover, "enter", G_CALLBACK(on_enter), NULL);
+  g_signal_connect(hover, "leave", G_CALLBACK(on_leave), NULL);
+  gtk_widget_add_controller(GTK_WIDGET(w), hover);
   // This is a test, initially used to test our player.
   // This identified some non-null issues. Thanks to @potato-master369
   // (me) for finding that out.
@@ -462,6 +491,7 @@ int main(int argc, char **argv) {
     g_strlcpy(local_config_main->start_char, startchar_override, sizeof(startchar_override));
   }
   asset_init();
+  asset_config_main = asset_request_conf();
   animation_init();
   GtkApplication *app = gtk_application_new(
       "io.github.potato-master369.desktop-gremlin-linux",

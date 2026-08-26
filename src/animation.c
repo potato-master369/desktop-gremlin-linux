@@ -126,6 +126,10 @@ static gboolean animation_tick(gpointer user_data) {
         return G_SOURCE_REMOVE;
       }
       return G_SOURCE_CONTINUE;
+    case ANIM_STATE_HOVER:
+      asset_apply(DEGRLI_LRU_HOVER, data->cur, data->img);
+      data->cur = ++data->cur % asset_conf_animation->hover;
+      return G_SOURCE_CONTINUE;
     default:
       g_print(" [  anim  ] Warn: invalid state! Resetting to idle...\n");
       data->state = ANIM_STATE_IDLE;
@@ -181,6 +185,21 @@ void anim_trigger_emote_4(void) {
   degrli_play_sound("emote4");
   data->state = ANIM_STATE_EMOTE4;
   data->cur = 0;
+}
+
+// Hover triggers
+void anim_trigger_hover_start(void) {
+  if (data->state == ANIM_STATE_IDLE) {
+    degrli_play_sound("hover");
+    data->state = ANIM_STATE_HOVER;
+    data->cur = 0;
+  }
+}
+void anim_trigger_hover_end(void) {
+  if (data->state == ANIM_STATE_HOVER) {
+    data->state = ANIM_STATE_IDLE;
+    data->cur = 0;
+  }
 }
 
 void anim_start_loop(GtkWidget *a) {

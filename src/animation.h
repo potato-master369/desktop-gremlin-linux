@@ -13,6 +13,7 @@ void animation_cleanup(void);
 #define ANIM_STATE_INTRO 6
 #define ANIM_STATE_CLICK 7
 #define ANIM_STATE_OUTRO 8
+#define ANIM_STATE_HOVER 9
 
 #ifndef DEGRLI_NO_ANIM_DEMO
 void play_emote1(GtkWidget *a);
@@ -29,5 +30,7 @@ void anim_trigger_emote_2(void);
 void anim_trigger_emote_3(void);
 void anim_trigger_emote_4(void);
 void anim_trigger_rclick(void);
+void anim_trigger_hover_start(void);
+void anim_trigger_hover_end(void);
 void anim_trigger_quit(void (*a)(void));
 #endif
