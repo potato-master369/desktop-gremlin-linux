@@ -14,11 +14,11 @@ static int requested_monitor = 0;
 #include <stdlib.h>
 #include <time.h>
 // Degrli stuff
+#include "animation.h"
+#include "asset.h"
 #include "config.h"
 #include "defines.h"
 #include "sounds.h"
-#include "asset.h"
-#include "animation.h"
 // X11-specific
 // If you encounter problems building because
 //   - a) GTK devs fully deprecated GDK X11
@@ -31,16 +31,16 @@ static int requested_monitor = 0;
 #include <gdk/x11/gdkx.h>
 #endif
 // These are global for a pretty good reason
-int32_t sprite_x  =   400;
-int32_t sprite_y  =   400;
-int32_t food_x    =     0;
-int32_t food_y    =     0;
+int32_t sprite_x = 400;
+int32_t sprite_y = 400;
+int32_t food_x = 0;
+int32_t food_y = 0;
 bool food_enabled = false;
-bool is_hover     = false;
-GtkWindow           *w;
-GtkWidget      *sprite;
-GtkWidget  *foodsprite;
-GtkWidget  *fcontainer;
+bool is_hover = false;
+GtkWindow *w;
+GtkWidget *sprite;
+GtkWidget *foodsprite;
+GtkWidget *fcontainer;
 degrli_conf_t *local_config_main;
 asset_conf_t *asset_config_main;
 
@@ -64,13 +64,13 @@ static int16_t tc = 0;
 static GdkSurface *surface_cache;
 static void degrli_input_region_init(void) {
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-	g_print(" [  main  ] Init input regions.\n");
+  g_print(" [  main  ] Init input regions.\n");
 #endif
   input_region = cairo_region_create(); // empty region
 
   free(tracked_rects);
   tracked_rects = NULL;
-  tc =0;
+  tc = 0;
 
   surface_cache = gtk_native_get_surface(GTK_NATIVE(w));
 }
@@ -80,30 +80,35 @@ static void degrli_input_region_init(void) {
 static void degrli_move_input_region(int16_t num_rec, ...) {
   va_list args;
   va_start(args, num_rec);
-  cairo_rectangle_int_t *new_rects = malloc(sizeof(cairo_rectangle_int_t) * num_rec);
+  cairo_rectangle_int_t *new_rects =
+      malloc(sizeof(cairo_rectangle_int_t) * num_rec);
   for (int16_t i = 0; i < num_rec; ++i) {
-    int32_t x  = va_arg(args, int32_t);
-    int32_t y  = va_arg(args, int32_t);
+    int32_t x = va_arg(args, int32_t);
+    int32_t y = va_arg(args, int32_t);
     int32_t wx = va_arg(args, int32_t);
     int32_t wy = va_arg(args, int32_t);
-    new_rects[i] = (cairo_rectangle_int_t){ .x = x, .y = y, .width = wx, .height = wy};
+    new_rects[i] =
+        (cairo_rectangle_int_t){.x = x, .y = y, .width = wx, .height = wy};
   }
   va_end(args);
 
   // check if repeat call
   if (tc == num_rec && tracked_rects != NULL) {
-     bool s = true;
-     for (int16_t i = 0; i < num_rec; ++i) {
-      if (tracked_rects[i].x != new_rects[i].x || tracked_rects[i].y != new_rects[i].y || tracked_rects[i].width != new_rects[i].width || tracked_rects[i].height != new_rects[i].height) {
+    bool s = true;
+    for (int16_t i = 0; i < num_rec; ++i) {
+      if (tracked_rects[i].x != new_rects[i].x ||
+          tracked_rects[i].y != new_rects[i].y ||
+          tracked_rects[i].width != new_rects[i].width ||
+          tracked_rects[i].height != new_rects[i].height) {
         s = false;
-	break;
+        break;
       }
-     }
-     // Then don't continue
-     if (s) {
-       free(new_rects);
-       return;
-     }
+    }
+    // Then don't continue
+    if (s) {
+      free(new_rects);
+      return;
+    }
   }
 
   if (!surface_cache) {
@@ -117,7 +122,7 @@ static void degrli_move_input_region(int16_t num_rec, ...) {
 
   // Rebuild entire region
   if (input_region)
-	  cairo_region_destroy(input_region);
+    cairo_region_destroy(input_region);
   input_region = cairo_region_create();
   for (int16_t i = 0; i < num_rec; ++i) {
     cairo_region_union_rectangle(input_region, &new_rects[i]);
@@ -144,24 +149,24 @@ static GtkWidget *target_w = NULL;
 // Functions to move input region with drag
 static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
                           gpointer user_data) {
-  GtkWidget *picked = gtk_widget_pick(GTK_WIDGET(fcontainer), sxp, syp, GTK_PICK_DEFAULT);
-  if ((picked == foodsprite || gtk_widget_is_ancestor(picked, foodsprite)) && food_enabled) {
+  GtkWidget *picked =
+      gtk_widget_pick(GTK_WIDGET(fcontainer), sxp, syp, GTK_PICK_DEFAULT);
+  if ((picked == foodsprite || gtk_widget_is_ancestor(picked, foodsprite)) &&
+      food_enabled) {
     target_w = foodsprite;
     ddsx = food_x;
     ddsy = food_y;
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
     g_print(" [  main  ] Drag started on FOOD\n");
 #endif
-  } 
-  else if (picked == sprite || gtk_widget_is_ancestor(picked, sprite)) {
+  } else if (picked == sprite || gtk_widget_is_ancestor(picked, sprite)) {
     target_w = sprite;
     ddsx = sprite_x;
     ddsy = sprite_y;
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
     g_print(" [  main  ] Drag started on SPRITE\n");
 #endif
-  } 
-  else {
+  } else {
     target_w = NULL;
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
     g_print(" [  main  ] Drag started on NULL/EMPTY\n");
@@ -170,7 +175,41 @@ static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
   anim_trigger_drag_start();
 }
 
-static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offset_y, gpointer user_data) {
+// function to move gremlin
+static void degrli_mov(int32_t offset_x, int32_t offset_y) {
+  // should make sure we don't move it out of bounds! GtkFixed will not stop us,
+  // but it will be out of view and hard to get back.
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print(" [  main  ] Move: %d %d\n", sprite_x, sprite_y);
+#endif
+  int target_x = sprite_x + offset_x;
+  int target_y = sprite_y + offset_y;
+
+  if (target_x >= 0 &&
+      target_x + asset_config_main->width <=
+          gtk_widget_get_width(GTK_WIDGET(w)) &&
+      target_y >= 0 &&
+      target_y + asset_config_main->height <=
+          gtk_widget_get_height(GTK_WIDGET(w))) {
+    gtk_fixed_move(GTK_FIXED(fcontainer), sprite, sprite_x + offset_x,
+                   sprite_y + offset_y);
+    sprite_x += offset_x;
+    sprite_y += offset_y;
+    if (food_enabled) {
+      degrli_move_input_region(
+          2, food_x, food_y, gtk_widget_get_width(foodsprite),
+          gtk_widget_get_height(foodsprite), sprite_x, sprite_y,
+          gtk_widget_get_width(sprite), gtk_widget_get_height(sprite));
+    } else {
+      degrli_move_input_region(1, sprite_x, sprite_y,
+                               gtk_widget_get_width(sprite),
+                               gtk_widget_get_height(sprite));
+    }
+  }
+}
+
+static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
+                           double offset_y, gpointer user_data) {
   if (target_w == foodsprite) {
     int32_t x = ddsx + (int32_t)offset_x;
     int32_t y = ddsy + (int32_t)offset_y;
@@ -185,21 +224,26 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x, double offs
     sprite_y = y;
   } else {
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-	  g_print(" [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
+    g_print(" [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
 #endif
   }
 
   if (food_enabled)
-    degrli_move_input_region(2, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite), food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
+    degrli_move_input_region(
+        2, sprite_x, sprite_y, gtk_widget_get_width(sprite),
+        gtk_widget_get_height(sprite), food_x, food_y,
+        gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
   else
-    degrli_move_input_region(1, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite));
+    degrli_move_input_region(1, sprite_x, sprite_y,
+                             gtk_widget_get_width(sprite),
+                             gtk_widget_get_height(sprite));
 }
 
 // for animation trigger
-static void on_drag_end(GtkGestureDrag *gesture, double offset_x, double offset_y, gpointer user_data) {
+static void on_drag_end(GtkGestureDrag *gesture, double offset_x,
+                        double offset_y, gpointer user_data) {
   anim_trigger_drag_end();
 }
-
 
 // This function is called before the Application is closed.
 // All cleanup should go here.
@@ -212,59 +256,113 @@ static void cleanup() {
 }
 
 static void cleanup_anim_wrapper(void) {
-    GtkRoot *root = gtk_widget_get_root(sprite);
-    GtkApplication *app = root ? gtk_window_get_application(GTK_WINDOW(root)) : NULL;
+  GtkRoot *root = gtk_widget_get_root(sprite);
+  GtkApplication *app =
+      root ? gtk_window_get_application(GTK_WINDOW(root)) : NULL;
 
-    if (app != NULL) {
-        g_application_quit(G_APPLICATION(app));
-    }
+  if (app != NULL) {
+    g_application_quit(G_APPLICATION(app));
+  }
 }
+
+struct {
+  bool w;
+  bool a;
+  bool s;
+  bool d;
+} keydata;
+
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                                guint keycode, GdkModifierType state,
                                gpointer user_data) {
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
   g_print(" [  main  ] Key pressed!\n");
 #endif
+  // neutralise key
+  keyval = gdk_keyval_to_lower(keyval);
   if (keyval == GDK_KEY_x) {
     g_print(" [  main  ] X key pressed! Exiting...\n");
     anim_trigger_quit(cleanup_anim_wrapper);
     return TRUE;
-  }
-  else if (keyval == GDK_KEY_1) {
+  } else if (keyval == GDK_KEY_1) {
     anim_trigger_emote_1();
     return TRUE;
-  }
-  else if (keyval == GDK_KEY_2) {
+  } else if (keyval == GDK_KEY_2) {
     anim_trigger_emote_2();
     return TRUE;
-  }
-  else if (keyval == GDK_KEY_3) {
+  } else if (keyval == GDK_KEY_3) {
     anim_trigger_emote_3();
     return TRUE;
-  }
-  else if (keyval == GDK_KEY_4) {
+  } else if (keyval == GDK_KEY_4) {
     anim_trigger_emote_4();
     return TRUE;
   }
   // walking
-  else if (keycode == GDK_KEY_w) {
+  else if (keyval == GDK_KEY_w) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] movement\n");
+#endif
+    keydata.w = true;
     return TRUE;
-  }
-  else if (keycode == GDK_KEY_a) {
+  } else if (keyval == GDK_KEY_a) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] movement\n");
+#endif
+    keydata.a = true;
     return TRUE;
-  }
-  else if (keycode == GDK_KEY_s) {
+  } else if (keyval == GDK_KEY_s) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] movement\n");
+#endif
+    keydata.s = true;
     return TRUE;
-  }
-  else if (keycode == GDK_KEY_d) {
+  } else if (keyval == GDK_KEY_d) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] movement\n");
+#endif
+    keydata.d = true;
     return TRUE;
   }
   return false;
 }
+
+// remove the states applied by key-pressed.
+// This allows us to detect when multiple keys are pressed, and also
+// detec keypresses more smoothly.
+// For example, if "a" and "w" are true, we move up-left.
+static void on_key_release(GtkEventControllerKey *controller, guint keyval,
+                           guint keycode, GdkModifierType state,
+                           gpointer user_data) {
+  keyval = gdk_keyval_to_lower(keyval);
+  if (keyval == GDK_KEY_w)
+    keydata.w = false;
+  if (keyval == GDK_KEY_a)
+    keydata.a = false;
+  if (keyval == GDK_KEY_s)
+    keydata.s = false;
+  if (keyval == GDK_KEY_d)
+    keydata.d = false;
+}
+
+static gboolean key_update_timer(gpointer user_data) {
+  if (keydata.w || keydata.a || keydata.s || keydata.d) {
+    int32_t offset_x = keydata.a * -local_config_main->sprite_speed +
+                       keydata.d * local_config_main->sprite_speed;
+    int32_t offset_y = keydata.w * -local_config_main->sprite_speed +
+                       keydata.s * local_config_main->sprite_speed;
+    degrli_mov(offset_x, offset_y);
+  }
+  return G_SOURCE_CONTINUE;
+}
+
 static void on_r_click() { anim_trigger_rclick(); }
 
-static void on_enter(GtkEventControllerMotion *controller, double x, double y, gpointer user_data) {
-  if ((int32_t)x > sprite_x && (int32_t)x < sprite_x + gtk_widget_get_width(sprite) && (int32_t)y > sprite_y && (int32_t)y < sprite_y + gtk_widget_get_height(sprite)) {
+static void on_enter(GtkEventControllerMotion *controller, double x, double y,
+                     gpointer user_data) {
+  if ((int32_t)x > sprite_x &&
+      (int32_t)x < sprite_x + gtk_widget_get_width(sprite) &&
+      (int32_t)y > sprite_y &&
+      (int32_t)y < sprite_y + gtk_widget_get_height(sprite)) {
     is_hover = true;
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
     g_print(" [  main  ] Hover enter\n");
@@ -394,8 +492,10 @@ skiptop:
   gtk_image_set_pixel_size(GTK_IMAGE(foodsprite), 184);
   gtk_fixed_put(GTK_FIXED(fcontainer), foodsprite, 0, 0);
   // Set relative scale
-  int32_t scaled_h = (int32_t)(asset_config_main->height * asset_config_main->scale);
-  int32_t scaled_w = (int32_t)(asset_config_main->width * asset_config_main->scale);
+  int32_t scaled_h =
+      (int32_t)(asset_config_main->height * asset_config_main->scale);
+  int32_t scaled_w =
+      (int32_t)(asset_config_main->width * asset_config_main->scale);
   gtk_image_set_pixel_size(GTK_IMAGE(sprite), scaled_h);
   if (local_config_main->randomize_spawn == false) {
     gtk_fixed_put(GTK_FIXED(fcontainer), sprite, mon_w / 2, mon_h / 2);
@@ -418,7 +518,9 @@ skiptop:
     gtk_fixed_put(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
     degrli_move_input_region(1, sprite_x, sprite_y, scaled_w, scaled_h);
   }
-  degrli_move_input_region(2, sprite_x, sprite_y, scaled_w, scaled_h, food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
+  degrli_move_input_region(2, sprite_x, sprite_y, scaled_w, scaled_h, food_x,
+                           food_y, gtk_widget_get_width(foodsprite),
+                           gtk_widget_get_height(foodsprite));
 
   // Audio
   degrli_init_audio();
@@ -434,35 +536,45 @@ skiptop:
 
   if (local_config_main->enable_keyboard == true) {
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-	  g_print(" [  main  ] NOTE: Keyboard has been enabled.\n");
+    g_print(" [  main  ] NOTE: Keyboard has been enabled.\n");
 #endif
     GtkEventController *kbp = gtk_event_controller_key_new();
     g_signal_connect(kbp, "key-pressed", G_CALLBACK(on_key_pressed), app);
+    g_signal_connect(kbp, "key-released", G_CALLBACK(on_key_release), app);
     gtk_widget_add_controller(GTK_WIDGET(w), kbp);
   }
-
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print(" [  main  ] Window size: %d by %d\n",
+          gtk_widget_get_width(GTK_WIDGET(w)),
+          gtk_widget_get_height(GTK_WIDGET(w)));
+#endif
   // Disable food
   if (!food_enabled)
-	  gtk_widget_set_visible(foodsprite, false);
+    gtk_widget_set_visible(foodsprite, false);
   // set up right click
   GtkGesture *click = gtk_gesture_click_new();
   gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 3);
   g_signal_connect(click, "pressed", G_CALLBACK(on_r_click), NULL);
   gtk_widget_add_controller(fcontainer, GTK_EVENT_CONTROLLER(click));
   // Set up hover
-  GtkEventController *hover = gtk_event_controller_motion_new();
-  g_signal_connect(hover, "enter", G_CALLBACK(on_enter), NULL);
-  g_signal_connect(hover, "leave", G_CALLBACK(on_leave), NULL);
-  gtk_widget_add_controller(GTK_WIDGET(w), hover);
+  // Hacky anti-oguri technique (she ate her hover spritesheet)
+  if (asset_config_main->hover != 0) {
+    GtkEventController *hover = gtk_event_controller_motion_new();
+    g_signal_connect(hover, "enter", G_CALLBACK(on_enter), NULL);
+    g_signal_connect(hover, "leave", G_CALLBACK(on_leave), NULL);
+    gtk_widget_add_controller(GTK_WIDGET(w), hover);
+  }
   // This is a test, initially used to test our player.
   // This identified some non-null issues. Thanks to @potato-master369
   // (me) for finding that out.
 #ifndef DEGRLI_NO_ANIM_DEMO
   play_emote1(sprite);
 #endif
+  // Loop for controlling the more complicated keyboard inputs
+  g_timeout_add(1000 / local_config_main->sprite_framerate, key_update_timer,
+                NULL);
   anim_start_loop(sprite);
 }
-
 
 static void cleanup_sig(int sig) {
   cleanup();
@@ -471,21 +583,24 @@ static void cleanup_sig(int sig) {
 int main(int argc, char **argv) {
   signal(SIGINT, cleanup_sig);
   char startchar_override[64];
-  bool override_st=false;
+  bool override_st = false;
   // parse options
   for (int i = 0; i < argc; ++i) {
     if (g_strcmp0(argv[i], "--monitor") == 0 && (i + 1) < argc) {
       requested_monitor = atoi(argv[i + 1]);
-    }
-    else if (g_strcmp0(argv[i], "--char") == 0 && (i + 1) < argc) {
+    } else if (g_strcmp0(argv[i], "--char") == 0 && (i + 1) < argc) {
       strcpy(startchar_override, argv[i + 1]);
       override_st = true;
-    }
-    else if (g_strcmp0(argv[i], "--help") == 0) {
-      g_print("desktop-gremlin-linux v4.x\nCopyright (C) 2026 - potato-master369\n"
-	      "OPTIONS:\n"
-	      "  --monitor n         Sets the monitor to use, to n, using GDK. By defualt uses whatever is your primary monitor. Trial and error I guess\n"
-	      "  --char char         Overrides config.txt to use character char. E.g., --char Agnes will use Tachyon instead of whatever is in your config.\n");
+    } else if (g_strcmp0(argv[i], "--help") == 0) {
+      g_print(
+          "desktop-gremlin-linux v4.x\nCopyright (C) 2026 - potato-master369\n"
+          "OPTIONS:\n"
+          "  --monitor n         Sets the monitor to use, to n, using GDK. By "
+          "defualt uses whatever is your primary monitor. Trial and error I "
+          "guess\n"
+          "  --char char         Overrides config.txt to use character char. "
+          "E.g., --char Agnes will use Tachyon instead of whatever is in your "
+          "config.\n");
       return 0;
     }
   }
@@ -501,7 +616,8 @@ int main(int argc, char **argv) {
   degrli_init_readconf();
   local_config_main = degrli_request_localconf();
   if (override_st) {
-    g_strlcpy(local_config_main->start_char, startchar_override, sizeof(startchar_override));
+    g_strlcpy(local_config_main->start_char, startchar_override,
+              sizeof(startchar_override));
   }
   asset_init();
   asset_config_main = asset_request_conf();

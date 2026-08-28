@@ -1,27 +1,48 @@
+#include "asset.h"
+#include "config.h"
 #include "defines.h"
+#include <ctype.h>
+#include <errno.h>
 #include <gdk/gdk.h>
 #include <glib.h>
 #include <graphene.h>
 #include <gtk/gtk.h>
 #include <stdint.h>
-#include <ctype.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
-#include "asset.h"
-#include "config.h"
 // Change this based on memory usage
 degrli_conf_t *localconf_asset;
-asset_conf_t local_asset_conf = {
-  .runup = 18, .rundown = 18, .runleft = 18, .runright = 18,
-  .upleft = 18, .upright = 18, .downleft = 18, .downright = 18,
-  .emote1 = 41, .emote2 = 35, .emote3 = 15, .emote4 = 42,
-  .walkdown = 30, .walkleft = 30, .walkright = 30, .walkup = 30,
-  .grab = 50, .hover = 89, .idle = 60, .intro = 100, .click = 111,
-  .outro = 140, .pat = 0, .runidle = 60, .sleep = 50,
-  .width = 325, .height = 325, .column = 10, .scale = 0.9f
-};
+asset_conf_t local_asset_conf = {.runup = 18,
+                                 .rundown = 18,
+                                 .runleft = 18,
+                                 .runright = 18,
+                                 .upleft = 18,
+                                 .upright = 18,
+                                 .downleft = 18,
+                                 .downright = 18,
+                                 .emote1 = 41,
+                                 .emote2 = 35,
+                                 .emote3 = 15,
+                                 .emote4 = 42,
+                                 .walkdown = 30,
+                                 .walkleft = 30,
+                                 .walkright = 30,
+                                 .walkup = 30,
+                                 .grab = 50,
+                                 .hover = 89,
+                                 .idle = 60,
+                                 .intro = 100,
+                                 .click = 111,
+                                 .outro = 140,
+                                 .pat = 0,
+                                 .runidle = 60,
+                                 .sleep = 50,
+                                 .width = 325,
+                                 .height = 325,
+                                 .column = 10,
+                                 .scale = 0.9f};
 
 typedef struct {
   int16_t id;
@@ -35,7 +56,7 @@ void asset_lru_del_first(void) {
     g_object_unref(asset_texture_lru[0].tex);
   }
   for (int i = 0; i < DEGRLI_LRU_SIZE - 1; ++i) {
-    asset_texture_lru[i] = asset_texture_lru[i+1];
+    asset_texture_lru[i] = asset_texture_lru[i + 1];
   }
   // prevent stupid access
   asset_texture_lru[DEGRLI_LRU_SIZE - 1].id = DEGRLI_LRU_NULL;
@@ -45,17 +66,17 @@ void asset_lru_del_first(void) {
 // Cleanup process - not NECESSARY, since GTK unrefs all assets with our app,
 // but good practice
 void asset_cleanup(void) {
-  #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
   g_print(" [ asset  ] Cleaning up...\n");
-  #endif
+#endif
   for (int i = 0; i < DEGRLI_LRU_SIZE; ++i) {
     if (asset_texture_lru[i].tex != NULL) {
       // Free it
       g_object_unref(asset_texture_lru[i].tex);
       asset_texture_lru[i].tex = NULL;
-      #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
       g_print(" [ asset  ] Cleaned up: i = %d\n", i);
-      #endif
+#endif
     }
   }
 }
@@ -66,40 +87,54 @@ GdkTexture *asset_lru_load(int16_t id) {
   }
   char filename[256];
   switch (id) {
-    case DEGRLI_LRU_EMOTE_1:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_EMOTE_2:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote2.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_EMOTE_3:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote3.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_EMOTE_4:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote4.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_IDLE:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/idle.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_INTRO:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/intro.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_GRAB:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/grab.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_CLICK:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/click.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_OUTRO:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/outro.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    case DEGRLI_LRU_HOVER:
-      snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/hover.png", DEGRLI_ASSET_DIR, localconf_asset->start_char);
-      break;
-    default:
-      strncpy(filename, "/dev/null", 256);
+  case DEGRLI_LRU_EMOTE_1:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_EMOTE_2:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote2.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_EMOTE_3:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote3.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_EMOTE_4:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote4.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_IDLE:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/idle.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_INTRO:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/intro.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_GRAB:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/grab.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_CLICK:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/click.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_OUTRO:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/outro.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_HOVER:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/hover.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  default:
+    strncpy(filename, "/dev/null", 256);
   }
+  if (access(filename, F_OK) == 0) {
   return gdk_texture_new_from_filename(filename, NULL);
+  }
+  else
+	  return NULL;
 }
 
 int asset_lru_req_asset(int16_t id) {
@@ -121,8 +156,7 @@ int asset_lru_req_asset(int16_t id) {
   } else {
     if (found == DEGRLI_LRU_SIZE - 1) {
       return found;
-    }
-    else {
+    } else {
       asset_lru_t tmp = asset_texture_lru[found];
       for (int i = found; i < DEGRLI_LRU_SIZE - 1; ++i) {
         asset_texture_lru[i] = asset_texture_lru[i + 1];
@@ -194,8 +228,9 @@ void asset_init(void) {
     if (errno != 0 || value_end == value || *value_end != '\0')
       continue;
 
-#define ASSET_INT(key_name, field) \
-    if (strcmp(key, key_name) == 0) local_asset_conf.field = (int)parsed
+#define ASSET_INT(key_name, field)                                             \
+  if (strcmp(key, key_name) == 0)                                              \
+  local_asset_conf.field = (int)parsed
     ASSET_INT("RUNUP", runup);
     ASSET_INT("RUNDOWN", rundown);
     ASSET_INT("RUNLEFT", runleft);
@@ -243,12 +278,14 @@ void asset_init(void) {
   }
 }
 
-asset_conf_t *asset_request_conf(void) {
-  return &local_asset_conf;
-}
+asset_conf_t *asset_request_conf(void) { return &local_asset_conf; }
 
 void asset_apply(int id, int fid, GtkWidget *image) {
-    asset_lru_t a = asset_texture_lru[asset_lru_req_asset(id)];
+  asset_lru_t a = asset_texture_lru[asset_lru_req_asset(id)];
+  if (a.tex != NULL) {
+#ifdef DEGRLI_DEBUG_HIGH
+	  g_print(" [  asset ] HI: Applying asset: id %d, fid %d\n", id, fid);
+#endif
 
     int width = local_asset_conf.width;
     int height = local_asset_conf.height;
@@ -269,19 +306,21 @@ void asset_apply(int id, int fid, GtkWidget *image) {
     const guchar *src_data = g_bytes_get_data(src_bytes, NULL);
 
     for (int y = 0; y < height; y++) {
-        const guchar *src_row = src_data + ((start_y + y) * src_stride) + (start_x * 4);
-        guchar *dest_row = buf + (y * dest_stride);
-        memcpy(dest_row, src_row, dest_stride);
+      const guchar *src_row =
+          src_data + ((start_y + y) * src_stride) + (start_x * 4);
+      guchar *dest_row = buf + (y * dest_stride);
+      memcpy(dest_row, src_row, dest_stride);
     }
 
     g_bytes_unref(src_bytes);
 
-    // 3. Create cropped memory texture & assign to GtkImage
     GBytes *bytes = g_bytes_new_take(buf, buffer_size);
-    GdkTexture *crop = gdk_memory_texture_new(width, height, GDK_MEMORY_R8G8B8A8, bytes, dest_stride);
+    GdkTexture *crop = gdk_memory_texture_new(
+        width, height, GDK_MEMORY_R8G8B8A8, bytes, dest_stride);
 
     gtk_image_set_from_paintable(GTK_IMAGE(image), GDK_PAINTABLE(crop));
 
     g_bytes_unref(bytes);
     g_object_unref(crop);
+  }
 }

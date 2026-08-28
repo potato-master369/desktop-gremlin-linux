@@ -29,6 +29,8 @@
 #define DEGRLI_RELEASE 1
 #define DEGRLI_RELEASE_STATE DEGRLI_DEBUG
 
+#define DEGRLI_DEBUG_HIGH
+
 // Options stuff
 #define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.0 (Pre-release)"
 // uncomment to disable X11
