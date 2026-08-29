@@ -127,6 +127,38 @@ GdkTexture *asset_lru_load(int16_t id) {
     snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/hover.png",
              DEGRLI_ASSET_DIR, localconf_asset->start_char);
     break;
+  case DEGRLI_LRU_RUN_UP:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runUp.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_RUN_DOWN:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runDown.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_RUN_LEFT:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runLeft.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_RUN_RIGHT:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runRight.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_UP_LEFT:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/upLeft.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_UP_RIGHT:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/upRight.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_DOWN_LEFT:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/downLeft.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
+  case DEGRLI_LRU_DOWN_RIGHT:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/downRight.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
   default:
     strncpy(filename, "/dev/null", 256);
   }

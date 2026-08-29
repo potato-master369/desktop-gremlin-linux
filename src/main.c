@@ -351,6 +351,24 @@ static gboolean key_update_timer(gpointer user_data) {
     int32_t offset_y = keydata.w * -local_config_main->sprite_speed +
                        keydata.s * local_config_main->sprite_speed;
     degrli_mov(offset_x, offset_y);
+    // Play the animation
+    if (offset_y < 0 && offset_x == 0) {
+      anim_trigger_run_up();
+    } else if (offset_y > 0 && offset_x == 0) {
+      anim_trigger_run_down();
+    } else if (offset_y == 0 && offset_x < 0) {
+      anim_trigger_run_left();
+    } else if (offset_y == 0 && offset_x > 0) {
+      anim_trigger_run_right();
+    } else if (offset_y < 0 && offset_x < 0) {
+      anim_trigger_up_left();
+    } else if (offset_y < 0 && offset_x > 0) {
+      anim_trigger_up_right();
+    } else if (offset_y > 0 && offset_x < 0) {
+      anim_trigger_down_left();
+    } else if (offset_y > 0 && offset_x > 0) {
+      anim_trigger_down_right();
+    }
   }
   return G_SOURCE_CONTINUE;
 }

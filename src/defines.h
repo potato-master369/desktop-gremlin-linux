@@ -29,6 +29,8 @@
 #define DEGRLI_RELEASE 1
 #define DEGRLI_RELEASE_STATE DEGRLI_DEBUG
 
+// Uncomment to enable HIGH debug.
+// This prints small things like fids and ids on refresh.
 #define DEGRLI_DEBUG_HIGH
 
 // Options stuff

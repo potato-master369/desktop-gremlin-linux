@@ -1,4 +1,5 @@
 #include <gio/gio.h>
+#include <glib-object.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkshortcut.h>
 #include "meme.h"
@@ -103,6 +104,15 @@ static void add_setting_row(GtkGrid *grid, int row, const char *name,
   gtk_grid_attach(grid, lbl_name, 0, row, 1, 1);
   gtk_grid_attach(grid, control_widget, 1, row, 1, 1);
   gtk_grid_attach(grid, lbl_desc, 2, row, 1, 1);
+}
+
+// function to start the child process
+static void unleash_gremlin(gpointer user_data) {
+  // requires GNU coreutils.
+  // only works if degrli is in path.
+  if (system("nohup degrli > /dev/null 2>&1 &") == 127) {
+    g_print(" WARNING: Either nohup or degrli was not found. Nohup is part of the coreutils, so it's probably degrli. Check if it's in PATH.\n");
+  }
 }
 
 static void apply_to_conf(void) {
@@ -229,6 +239,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *b_save = gtk_button_new_with_label("Save Changes");
   GtkWidget *b_spawn = gtk_button_new_with_label("Release the Gremlin");
   GtkWidget *b_horde = gtk_button_new_with_label("Unleash the Horde");
+  g_signal_connect(b_spawn, "clicked", G_CALLBACK(unleash_gremlin), NULL);
   gtk_widget_add_css_class(GTK_WIDGET(b_horde), "destructive-action");
   gtk_box_append(GTK_BOX(menubox), b_revert);
   gtk_box_append(GTK_BOX(menubox), b_save);

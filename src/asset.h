@@ -10,6 +10,8 @@
 //  Increasing -> Increases RAM footprint, but reduces disk thrash, especially
 //                if doing a lot of diagonal walking.
 #define DEGRLI_LRU_SIZE    5
+
+// defines for LRU IDs.
 #define DEGRLI_LRU_NULL    0
 #define DEGRLI_LRU_EMOTE_1 1
 #define DEGRLI_LRU_EMOTE_2 2
@@ -21,6 +23,14 @@
 #define DEGRLI_LRU_OUTRO   8
 #define DEGRLI_LRU_CLICK   9
 #define DEGRLI_LRU_HOVER   10
+#define DEGRLI_LRU_RUN_UP 11
+#define DEGRLI_LRU_RUN_DOWN 12
+#define DEGRLI_LRU_RUN_LEFT 13
+#define DEGRLI_LRU_RUN_RIGHT 14
+#define DEGRLI_LRU_UP_RIGHT 15
+#define DEGRLI_LRU_UP_LEFT 16
+#define DEGRLI_LRU_DOWN_RIGHT 17
+#define DEGRLI_LRU_DOWN_LEFT 18
 
 typedef struct {
   int runup;
