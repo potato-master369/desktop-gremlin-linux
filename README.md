@@ -1,5 +1,9 @@
 # desktop-gremlin-linux
 
+## About
+
+Who wouldn't want to have their favorite Umas running around on your desktop? That shouldn't be a Windows only privelege.
+
 This is a rewrite of `desktop-gremlin-linux`. Similar to the V3.x branch, it is also made with GTK4. There are however, major changes. For example, the X11 client has been removed because we can now fix all the initial problems with X11.
 
 See `OPTIONS.md`, for how to use the config.txt options.
@@ -27,6 +31,10 @@ make install
 ## Optimization
 
 For some reason, GTK4's defualt renderer is really heavy on RAM. Try `GSK_RENDERER=cairo` as an environment variable. Drops about 10MB of RAM usage.
+
+## Getting more Umas
+
+For whatever reason, I have only included Tamtam, but if you want to ~~steal~~ get some more umas, see [`Desktop_Gremlin` releases](https://github.com/Kritzkingvoid/Desktop_Gremlin/releases).
 
 ## License
 
