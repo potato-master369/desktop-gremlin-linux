@@ -11,7 +11,7 @@ NCURSES = -lncursesw
 TARGETS = degrli degrli_options degrli_installer
 OBJ     = dynamic.o config.o sounds.o asset.o animation.o
 OPTOBJ  = options.o meme.o config_opt.o
-INSTOBJ = installer.o
+INSTOBJ = installer.o installer_payload.o
 CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops
 PREFIX      ?= /usr/local
 DATADIR     ?= /usr/share/desktop-gremlin-linux
@@ -61,9 +61,12 @@ degrli_installer: $(INSTOBJ)
 installer.o: src/installer/main.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+installer_payload.o: src/installer/payload.c src/installer/payload.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # Clean
 clean:
-	rm -f $(OBJ) $(TARGETS) $(OPTOBJ)
+	rm -f $(OBJ) $(TARGETS) $(OPTOBJ) $(INSTOBJ)
 
 install:
 	install -d $(DESTDIR)$(PREFIX)/bin
@@ -81,3 +84,5 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli_options
 	rm -rf $(DESTDIR)$(DATADIR)
+
+.PHONY: all debug clean install uninstall
