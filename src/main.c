@@ -401,6 +401,79 @@ static void on_leave(GtkEventController *controller, gpointer user_data) {
 static gboolean on_close_request(GtkWindow *w, gpointer user_data) {
   return TRUE;
 }
+
+typedef struct {
+  int tyx;
+  int tyy;
+} random_move_t;
+// Random Actions
+static gboolean random_move_event(gpointer user_data) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print(" [  main  ] Random move tick\n");
+#endif
+  random_move_t *r = (random_move_t *)user_data;
+  if ((local_config_main->enable_gravity) 
+    ? (sprite_x != r->tyx) 
+    : ((sprite_x != r->tyx) || (sprite_y != r->tyy))) {
+    int dx = (r->tyx - sprite_x) / local_config_main->random_move_distance;
+    int dy =
+        local_config_main->enable_gravity
+            ? 0
+            : (r->tyy - sprite_y) / local_config_main->random_move_distance;
+    if (abs(dx) < 20)
+      dx = r->tyx - sprite_x;
+    if (abs(dy) < 20)
+      dy = r->tyy - sprite_y;
+    degrli_mov(dx, dy);
+    return G_SOURCE_CONTINUE;
+  } else {
+    free(r);
+    return G_SOURCE_REMOVE;
+  }
+}
+
+static gboolean schedule_random_event(gpointer user_data) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print(" [  main  ] RANDOM ACTION\n");
+#endif
+  // LETS GO GAMBLING
+  int state = rand() % 4;
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+  g_print(" [  main  ] Random Action state: %d\n", state);
+#endif
+  switch (state) {
+  case 0:
+    anim_trigger_rclick();
+    break;
+  case 1:
+    break;
+  case 2:
+    break;
+  case 3:
+    // FIXME: do random movement
+    int tyx =
+        sprite_x + ((int)rand() % (local_config_main->random_move_distance * 2) -
+                    local_config_main->random_move_distance);
+    int tyy =
+        sprite_y + ((int)rand() % (2 * local_config_main->random_move_distance) -
+                    local_config_main->random_move_distance);
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] offsets of: tyx: %d tyy: %d\n", tyx - sprite_x, tyy - sprite_y);
+#endif
+    random_move_t *r = malloc(sizeof(random_move_t));
+    r->tyx = tyx;
+    r->tyy = tyy;
+    g_timeout_add(1000 / local_config_main->sprite_framerate, random_move_event,
+                  r);
+    break;
+  }
+  guint next_interval = (rand() % (local_config_main->max_interval -
+                                   local_config_main->min_interval)) +
+                        local_config_main->min_interval;
+  g_timeout_add(next_interval, schedule_random_event, NULL);
+  return G_SOURCE_REMOVE; // stop this timer!
+}
+
 // This function runs when program is started.
 static void activate(GtkApplication *app, gpointer user_data) {
   // Basic settings for the window
@@ -588,6 +661,13 @@ skiptop:
 #ifndef DEGRLI_NO_ANIM_DEMO
   play_emote1(sprite);
 #endif
+  // Random Actions - does stuff from interval min_interval to max_interval
+  if (local_config_main->allow_random_actions == true) {
+#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
+    g_print(" [  main  ] NOTE: Random Actions have been enabled.\n");
+#endif
+    g_timeout_add(local_config_main->min_interval, schedule_random_event, NULL);
+  }
   // Loop for controlling the more complicated keyboard inputs
   g_timeout_add(1000 / local_config_main->sprite_framerate, key_update_timer,
                 NULL);
@@ -637,6 +717,16 @@ int main(int argc, char **argv) {
     g_strlcpy(local_config_main->start_char, startchar_override,
               sizeof(startchar_override));
   }
+  if (local_config_main->min_interval > local_config_main->max_interval &&
+      local_config_main->allow_random_actions) {
+    g_print(" [  main  ] CRASH: min_interval > max_interval. Fix this!\n");
+    cleanup();
+    exit(1);
+  }
+  // convert intervals from s to ms
+  local_config_main->min_interval *= 1000;
+  local_config_main->max_interval *= 1000;
+
   asset_init();
   asset_config_main = asset_request_conf();
   animation_init();

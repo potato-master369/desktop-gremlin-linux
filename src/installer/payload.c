@@ -1,4 +1,5 @@
 #include "payload.h"
+#include "../defines.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -45,13 +46,30 @@ int depcheck(int id) {
 
 int clonegit(void) {
   int result;
+  char clone_cmd[512];
+  
   system("rm -rf /tmp/degrli-src"); // prevents error 128
-  result = system("git clone https://github.com/potato-master369/desktop-gremlin-linux /tmp/degrli-src >/dev/null 2>&1");
-  return result;
+
+  snprintf(clone_cmd, sizeof(clone_cmd),
+           "git clone https://github.com/potato-master369/desktop-gremlin-linux /tmp/degrli-src >/dev/null 2>&1");
+  result = system(clone_cmd);
+  if (result != 0) {
+    return result;
+  }
+
 }
 
 int cd_src(void) {
+  char checkout_cmd[512];
   const char *src_dir = "/tmp/degrli-src";
+
+  snprintf(checkout_cmd, sizeof(checkout_cmd),
+           "git checkout %s >/dev/null 2>&1",
+           DEGRLI_CHECKOUT_VERSION);
+  int result = system(checkout_cmd);
+  if (result != 0) {
+    return result;
+  }
   return chdir(src_dir);
 }
 

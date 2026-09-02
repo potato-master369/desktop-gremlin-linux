@@ -15,6 +15,7 @@ typedef struct {
 } StageData;
 
 static void stage_1(gpointer user_data);
+static void stage_3(gpointer user_data);
 
 static void finish_callback(GtkWidget *widget, gpointer user_data) {
   gtk_window_close(GTK_WINDOW(window));
