@@ -412,9 +412,9 @@ static gboolean random_move_event(gpointer user_data) {
   g_print(" [  main  ] Random move tick\n");
 #endif
   random_move_t *r = (random_move_t *)user_data;
-  if ((local_config_main->enable_gravity) 
-    ? (sprite_x != r->tyx) 
-    : ((sprite_x != r->tyx) || (sprite_y != r->tyy))) {
+  if ((local_config_main->enable_gravity)
+          ? (sprite_x != r->tyx)
+          : ((sprite_x != r->tyx) || (sprite_y != r->tyy))) {
     int dx = (r->tyx - sprite_x) / local_config_main->random_move_distance;
     int dy =
         local_config_main->enable_gravity
@@ -437,28 +437,34 @@ static gboolean schedule_random_event(gpointer user_data) {
   g_print(" [  main  ] RANDOM ACTION\n");
 #endif
   // LETS GO GAMBLING
+#ifndef DEGRLI_RANDOM_OVERRIDE
   int state = rand() % 4;
+#else
+  int state = DEGRLI_RANDOM_OVERRIDE;
+#endif
+
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
   g_print(" [  main  ] Random Action state: %d\n", state);
 #endif
   switch (state) {
   case 0:
-    anim_trigger_rclick();
     break;
   case 1:
+    anim_trigger_rclick();
     break;
   case 2:
     break;
   case 3:
     // FIXME: do random movement
-    int tyx =
-        sprite_x + ((int)rand() % (local_config_main->random_move_distance * 2) -
-                    local_config_main->random_move_distance);
-    int tyy =
-        sprite_y + ((int)rand() % (2 * local_config_main->random_move_distance) -
-                    local_config_main->random_move_distance);
+    int tyx = sprite_x +
+              ((int)rand() % (local_config_main->random_move_distance * 2) -
+               local_config_main->random_move_distance);
+    int tyy = sprite_y +
+              ((int)rand() % (2 * local_config_main->random_move_distance) -
+               local_config_main->random_move_distance);
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] offsets of: tyx: %d tyy: %d\n", tyx - sprite_x, tyy - sprite_y);
+    g_print(" [  main  ] offsets of: tyx: %d tyy: %d\n", tyx - sprite_x,
+            tyy - sprite_y);
 #endif
     random_move_t *r = malloc(sizeof(random_move_t));
     r->tyx = tyx;
@@ -728,6 +734,7 @@ int main(int argc, char **argv) {
   local_config_main->max_interval *= 1000;
 
   asset_init();
+  srand(time(NULL));
   asset_config_main = asset_request_conf();
   animation_init();
   GtkApplication *app = gtk_application_new(

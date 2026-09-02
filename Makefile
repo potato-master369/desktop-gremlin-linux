@@ -27,41 +27,41 @@ all: $(TARGETS)
 degrli: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDLIBS) -lX11
 
-dynamic.o: src/main.c
+dynamic.o: src/main.c src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-config.o: src/config.c src/config.h
+config.o: src/config.c src/config.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-sounds.o: src/sounds.c src/sounds.h
+sounds.o: src/sounds.c src/sounds.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-asset.o: src/asset.c src/asset.h
+asset.o: src/asset.c src/asset.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-animation.o: src/animation.c src/animation.h
+animation.o: src/animation.c src/animation.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Options program
 degrli_options: $(OPTOBJ)
 	$(CC) $(CFLAGS) -o $@ $(OPTOBJ) $(LDLIBS)
 
-meme.o: src/options/meme.c src/options/meme.h
+meme.o: src/options/meme.c src/options/meme.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-config_opt.o: src/options/config.c src/options/config.h
+config_opt.o: src/options/config.c src/options/config.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-options.o: src/options/main.c
+options.o: src/options/main.c src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 degrli_installer: $(INSTOBJ)
 	$(CC) $(CFLAGS) -o $@ $(INSTOBJ) $(LDLIBS)
 
-installer.o: src/installer/main.c
+installer.o: src/installer/main.c src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-installer_payload.o: src/installer/payload.c src/installer/payload.h
+installer_payload.o: src/installer/payload.c src/installer/payload.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean

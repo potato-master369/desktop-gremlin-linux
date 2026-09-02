@@ -42,6 +42,13 @@
 #define DEGRLI_NO_ANIM_DEMO
 #endif
 
+// Uncomment to override the random action state, for testing
+//  0 - NIL
+//  1 - trigger rclick emo
+//  2 - NIL
+//  3 - random move
+// #define DEGRLI_RANDOM_OVERRIDE 1
+
 // I sincerely hope you enjoy my product, and don't forget. Credits for the orignal go to
 // @KritzKingVoid. I HAVE NO IDEA HOW HIS ASSETS ARE LICENSED, but probably distributable.
 // It's fine.
