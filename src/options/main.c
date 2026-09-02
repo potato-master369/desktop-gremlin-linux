@@ -5,6 +5,7 @@
 #include "meme.h"
 #include "config.h"
 #include "../defines.h"
+#include "../trace.h"
 // Made with GTK-4.0
 // Options program, designed to emulate Options.exe from Desktop_Gremlin
 
@@ -56,7 +57,7 @@ static void find_characters(void) {
   snprintf(path, sizeof(path), "%sSpriteSheet/Gremlins", DEGRLI_ASSET_DIR);
   GDir *directory = g_dir_open(path, 0, NULL);
   if (directory == NULL) {
-    g_print("Could not open character directory: %s\n", path);
+    trace_log(ERROR, "Could not open character directory: %s\n", path);
     return;
   }
 
@@ -111,7 +112,7 @@ static void unleash_gremlin(gpointer user_data) {
   // requires GNU coreutils.
   // only works if degrli is in path.
   if (system("nohup degrli > /dev/null 2>&1 &") == 127) {
-    g_print(" WARNING: Either nohup or degrli was not found. Nohup is part of the coreutils, so it's probably degrli. Check if it's in PATH.\n");
+    trace_log(WARN, " WARNING: Either nohup or degrli was not found. Nohup is part of the coreutils, so it's probably degrli. Check if it's in PATH.\n");
   }
 }
 
@@ -208,7 +209,7 @@ static void apply_from_conf(void) {
 }
 
 static void revert_settings(GtkWidget *widget, gpointer data) {
-  g_print("Revert settings button was pressed\n");
+  trace_log(INFO, "Revert settings button was pressed\n");
   // Reset to default... means application defaults? Sure i guess kurt
   // tho setting to original before edits would make more sense;
   conf_apply_default(&conf);
@@ -216,7 +217,7 @@ static void revert_settings(GtkWidget *widget, gpointer data) {
 }
 
 static void save_defaults(GtkWidget *widget, gpointer data) {
-  g_print("Saving settings!\n");
+  trace_log(INFO, "Saving settings!\n");
   // Save them to the file. Because we dont give a shit about kurt
   // We will just save them in whatever format the C library wants
   apply_to_conf();
@@ -430,7 +431,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 int main(int argc, char **argv) {
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print("WARNING: This is a pre-release version!\nCompiled on %s %s\n", __DATE__, __TIME__);
+  trace_log(WARN, "WARNING: This is a pre-release version!\nCompiled on %s %s\n", __DATE__, __TIME__);
 #endif
   conf_apply_default(&conf);
   load_conf(&conf);

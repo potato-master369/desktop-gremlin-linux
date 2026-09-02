@@ -2,6 +2,7 @@
 // Ensures full compat with Desktop_Gremlin.
 #include "config.h"
 #include "defines.h"
+#include "trace.h"
 #include <ctype.h>
 #include <gtk/gtk.h>
 #include <stdint.h>
@@ -49,10 +50,8 @@ degrli_conf_t *local_config = &local_config_default;
 
 void degrli_init_readconf(void) {
   int res;
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [ config ] Started config init...\n");
-#endif
-  g_print(" [ config ] Looking for file in %sconfig.txt\n",
+  trace_log(INFO, " [ config ] Started config init...\n");
+  trace_log(INFO, " [ config ] Looking for file in %sconfig.txt\n",
           DEGRLI_LOCALCONFPREFIX);
   char filepath[256];
   // Looks for PATH/config.txt. Assume that the last letter is a /
@@ -68,15 +67,15 @@ void degrli_init_readconf(void) {
     }
   }
   if (res > sizeof(filepath)) {
-    g_print(" [ config ] WARN: file path was truncated. We will probably not "
+    trace_log(WARN, " [ config ] WARN: file path was truncated. We will probably not "
             "be able to read!\n");
   } else if (res < 0) {
-    g_print(" [ config ] WARN: snprintf encoding error while generating "
+    trace_log(WARN, " [ config ] WARN: snprintf encoding error while generating "
             "filepath!!!\n");
   }
   FILE *conf = fopen(filepath, "r");
   if (conf == NULL) {
-    g_print(" [ config ] WARN: could not read filepath. Does %sconfig.txt "
+    trace_log(WARN, " [ config ] WARN: could not read filepath. Does %sconfig.txt "
             "exist? We will fall back to defaults.\n",
             DEGRLI_LOCALCONFPREFIX);
   } else {
@@ -103,9 +102,7 @@ void degrli_init_readconf(void) {
       }
       if (buf[0] == '/' && buf[1] == '/') {
         // comment
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-        g_print(" [ config ] Comment at line: %s\n", buf);
-#endif
+        trace_log(DEBUG, " [ config ] Comment at line: %s\n", buf);
         continue;
       }
       if (strlen(buf) == 0) {
@@ -116,9 +113,8 @@ void degrli_init_readconf(void) {
       char key[127], value[127];
       sscanf(buf, " %49[^ =] = %n", key, &offset);
       strncpy(value, buf + offset, sizeof(value) - 1);
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-      g_print(" [ config ] Key: %s\n [ config ] Value: %s\n", key, value);
-#endif
+      trace_log(DEBUG, " [ config ] Key: %s\n", key);
+      trace_log(DEBUG, " [ config ] Value: %s\n", value);
       // ADD to config
 #define MATCH(a) (strcmp(key, a) == 0)
 #define COPYKEY(a)                                                             \

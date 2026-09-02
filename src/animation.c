@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "gtk/gtk.h"
 #include "sounds.h"
+#include "trace.h"
 #include <glib.h>
 degrli_conf_t *local_conf_animation;
 asset_conf_t *asset_conf_animation;
@@ -12,9 +13,7 @@ asset_conf_t *asset_conf_animation;
 //  - CONFIG
 //  - ASSET
 void animation_init(void) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  anim  ] Initialising animation stuff...\n");
-#endif
+  trace_log(INFO, " [  anim  ] Initialising animation stuff...\n");
   local_conf_animation = degrli_request_localconf(); // get local conf
   asset_conf_animation = asset_request_conf();       // again, for assets.
 }
@@ -43,7 +42,7 @@ static gboolean on_emote_frame_tick(gpointer user_data) {
 }
 
 void play_emote1(GtkWidget *a) {
-  g_print(" [  anim  ] WARN: Demo code. Please remove me. Define #define "
+  trace_log(WARN, " [  anim  ] WARN: Demo code. Please remove me. Define #define "
           "DEGRLI_NO_ANIM_DEMO\n");
   if (local_conf_animation->sprite_framerate <= 0)
     return;
@@ -216,7 +215,7 @@ static gboolean animation_tick(gpointer user_data) {
     }
     return G_SOURCE_CONTINUE;
   default:
-    g_print(" [  anim  ] Warn: invalid state! Resetting to idle...\n");
+    trace_log(WARN, " [  anim  ] Warn: invalid state! Resetting to idle...\n");
     data->state = ANIM_STATE_IDLE;
     data->cur = 0;
     break;
@@ -316,7 +315,7 @@ void anim_trigger_up_left(void) {
   data->walkticks = 0;
   if (data->cur >= asset_conf_animation->upleft) {
 #ifdef DEGRLI_DEBUG_HIGH
-    g_print(" [  anim  ] HI: Resetting cur for walk\n");
+    trace_log(DEBUG, " [  anim  ] HI: Resetting cur for walk\n");
 #endif
     data->cur = 0;
   }
@@ -326,7 +325,7 @@ void anim_trigger_up_right(void) {
   data->walkticks = 0;
   if (data->cur >= asset_conf_animation->upright) {
 #ifdef DEGRLI_DEBUG_HIGH
-    g_print(" [  anim  ] HI: Resetting cur for walk\n");
+    trace_log(DEBUG, " [  anim  ] HI: Resetting cur for walk\n");
 #endif
     data->cur = 0;
   }
@@ -336,7 +335,7 @@ void anim_trigger_down_left(void) {
   data->walkticks = 0;
   if (data->cur >= asset_conf_animation->downleft){
 #ifdef DEGRLI_DEBUG_HIGH
-    g_print(" [  anim  ] HI: Resetting cur for walk\n");
+    trace_log(DEBUG, " [  anim  ] HI: Resetting cur for walk\n");
 #endif
     data->cur = 0;
   }
@@ -346,7 +345,7 @@ void anim_trigger_down_right(void) {
   data->walkticks = 0;
   if (data->cur >= asset_conf_animation->downright){
 #ifdef DEGRLI_DEBUG_HIGH
-    g_print(" [  anim  ] HI: Resetting cur for walk\n");
+    trace_log(DEBUG, " [  anim  ] HI: Resetting cur for walk\n");
 #endif
     data->cur = 0;
   }
@@ -355,9 +354,9 @@ void anim_trigger_down_right(void) {
 
 void anim_start_loop(GtkWidget *a) {
   data = malloc(sizeof(animation_data_t));
-  g_print(" [  anim  ] Starting main loop...\n");
+  trace_log(INFO, " [  anim  ] Starting main loop...\n");
   if (local_conf_animation->sprite_framerate <= 0) {
-    g_print(" [  anim  ] ERROR! Invalid framerate (<=0). Open the Options, and "
+    trace_log(ERROR, " [  anim  ] ERROR! Invalid framerate (<=0). Open the Options, and "
             "set this in Sprite Settings > FrameRate\n[  anim  ] Quitting main "
             "loop...\n");
     return;
@@ -377,8 +376,6 @@ void anim_start_loop(GtkWidget *a) {
 
 // cleanup function
 void animation_cleanup(void) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  anim  ] Cleaning up animation data...\n");
-#endif
+  trace_log(INFO, " [  anim  ] Cleaning up animation data...\n");
   free(data);
 }

@@ -1,7 +1,10 @@
 #include "payload.h"
 #include "../defines.h"
+#include "../trace.h"
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -66,11 +69,12 @@ int cd_src(void) {
   snprintf(checkout_cmd, sizeof(checkout_cmd),
            "git checkout %s >/dev/null 2>&1",
            DEGRLI_CHECKOUT_VERSION);
-  int result = system(checkout_cmd);
+  
+  int result = chdir(src_dir);
   if (result != 0) {
     return result;
   }
-  return chdir(src_dir);
+  return system(checkout_cmd);
 }
 
 int build_src(void) {
@@ -84,7 +88,7 @@ int install_src(void) {
 
   if (pid < 0) {
     // Fork failed
-    perror("Fork failed");
+    trace_log(ERROR, "Fork failed: %s\n", strerror(errno));
     return 1;
   }
 
@@ -97,7 +101,7 @@ int install_src(void) {
     execvp(args[0], args);
 
     // execvp only returns if an error occurred
-    perror("Failed to execute pkexec");
+    trace_log(ERROR, "Failed to execute pkexec: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   } else {
     // --- Parent Process ---
@@ -105,7 +109,7 @@ int install_src(void) {
 
     // Wait for the child process (pkexec) to finish
     if (waitpid(pid, &status, 0) == -1) {
-      perror("waitpid failed");
+      trace_log(ERROR, "waitpid failed: %s\n", strerror(errno));
       return 1;
     }
 
@@ -113,20 +117,20 @@ int install_src(void) {
     if (WIFEXITED(status)) {
       int exit_code = WEXITSTATUS(status);
       if (exit_code == 0) {
-        printf("Installation completed successfully!\n");
+        trace_log(INFO, "Installation completed successfully!\n");
         return 0;
       } else if (exit_code == 127) {
-        fprintf(stderr, "Error: pkexec or make command not found.\n");
+        trace_log(ERROR, "Error: pkexec or make command not found.\n");
         return 1;
       } else if (exit_code == 126) {
-        fprintf(stderr, "Error: Authentication was cancelled or failed.\n");
+        trace_log(ERROR, "Error: Authentication was cancelled or failed.\n");
         return 1;
       } else {
-        fprintf(stderr, "Installation failed with exit code: %d\n", exit_code);
+        trace_log(ERROR, "Installation failed with exit code: %d\n", exit_code);
         return 1;
       }
     } else if (WIFSIGNALED(status)) {
-      fprintf(stderr, "Process was killed by signal %d\n", WTERMSIG(status));
+      trace_log(ERROR, "Process was killed by signal %d\n", WTERMSIG(status));
       return 1;
     }
   }

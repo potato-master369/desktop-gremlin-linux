@@ -1,6 +1,7 @@
 #include "asset.h"
 #include "config.h"
 #include "defines.h"
+#include "trace.h"
 #include <ctype.h>
 #include <errno.h>
 #include <gdk/gdk.h>
@@ -66,17 +67,13 @@ void asset_lru_del_first(void) {
 // Cleanup process - not NECESSARY, since GTK unrefs all assets with our app,
 // but good practice
 void asset_cleanup(void) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [ asset  ] Cleaning up...\n");
-#endif
+  trace_log(INFO, " [ asset  ] Cleaning up...\n");
   for (int i = 0; i < DEGRLI_LRU_SIZE; ++i) {
     if (asset_texture_lru[i].tex != NULL) {
       // Free it
       g_object_unref(asset_texture_lru[i].tex);
       asset_texture_lru[i].tex = NULL;
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-      g_print(" [ asset  ] Cleaned up: i = %d\n", i);
-#endif
+      trace_log(DEBUG, " [ asset  ] Cleaned up: i = %d\n", i);
     }
   }
 }
@@ -208,13 +205,13 @@ void asset_init(void) {
                              "%sSpriteSheet/Gremlins/%s/config.txt",
                              DEGRLI_ASSET_DIR, localconf_asset->start_char);
   if (path_length < 0 || (size_t)path_length >= sizeof(filepath)) {
-    g_print(" [ asset  ] WARN: asset config path is too long.\n");
+    trace_log(WARN, " [ asset  ] WARN: asset config path is too long.\n");
     return;
   }
 
   FILE *conf = fopen(filepath, "r");
   if (conf == NULL) {
-    g_print(" [ asset  ] WARN: could not read %s. Using defaults.\n", filepath);
+    trace_log(WARN, " [ asset  ] WARN: could not read %s. Using defaults.\n", filepath);
     return;
   }
 
@@ -228,9 +225,7 @@ void asset_init(void) {
         (unsigned char)start[2] == 0xBF)
       start += 3;
     if (*start == '/' && start[1] == '/') {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-      g_print(" [ asset  ] Comment at line: %s\n", start);
-#endif
+      trace_log(DEBUG, " [ asset  ] Comment at line: %s\n", start);
       continue;
     }
 
@@ -248,9 +243,8 @@ void asset_init(void) {
     end = value + strlen(value);
     while (end > value && isspace((unsigned char)end[-1]))
       *--end = '\0';
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [ asset  ] Key: %s\n [ asset  ] Value: %s\n", key, value);
-#endif
+    trace_log(DEBUG, " [ asset  ] Key: %s\n", key);
+    trace_log(DEBUG, " [ asset  ] Value: %s\n", value);
 
     errno = 0;
     char *value_end;
@@ -316,7 +310,7 @@ void asset_apply(int id, int fid, GtkWidget *image) {
   asset_lru_t a = asset_texture_lru[asset_lru_req_asset(id)];
   if (a.tex != NULL) {
 #ifdef DEGRLI_DEBUG_HIGH
-	  g_print(" [  asset ] HI: Applying asset: id %d, fid %d\n", id, fid);
+    trace_log(DEBUG, " [  asset ] HI: Applying asset: id %d, fid %d\n", id, fid);
 #endif
 
     int width = local_asset_conf.width;

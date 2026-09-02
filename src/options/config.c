@@ -1,5 +1,6 @@
 #include "config.h"
 #include "../defines.h"
+#include "../trace.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,18 +30,18 @@ void write_conf(config_t conf) {
     }
   }
   if (res >= (int)sizeof(filepath)) {
-    g_print(" [ config ] WARN: file path was truncated. We will probably not "
+    trace_log(WARN, " [ config ] WARN: file path was truncated. We will probably not "
             "be able to read!\n");
   } else if (res < 0) {
-    g_print(" [ config ] WARN: snprintf encoding error while generating "
+    trace_log(WARN, " [ config ] WARN: snprintf encoding error while generating "
             "filepath!!!\n");
   }
   FILE *configfile = fopen(filepath, "w");
   if (configfile == NULL) {
-    g_print(" [ config ] WARN: cannot open config.txt Permission denied, or something idk\n");
+    trace_log(ERROR, " [ config ] WARN: cannot open config.txt Permission denied, or something idk\n");
     return;
   }
-  g_print(" [ config] Writing config to %s\n", filepath);
+  trace_log(INFO, " [ config] Writing config to %s\n", filepath);
 
   // General Settings
   fprintf(configfile, "//General Settings\n");
@@ -108,20 +109,20 @@ void load_conf(config_t *conf) {
     }
   }
   if (res > sizeof(filepath)) {
-    g_print(" [ config ] WARN: file path was truncated. We will probably not "
+    trace_log(WARN, " [ config ] WARN: file path was truncated. We will probably not "
             "be able to read!\n");
   } else if (res < 0) {
-    g_print(" [ config ] WARN: snprintf encoding error while generating "
+    trace_log(WARN, " [ config ] WARN: snprintf encoding error while generating "
             "filepath!!!\n");
   }
   FILE *configfile = fopen(filepath, "r");
   if (configfile == NULL) {
-    g_print(" [ config ] WARN: config.txt is missing. Some items may appear messed up.\n");
+    trace_log(WARN, " [ config ] WARN: config.txt is missing. Some items may appear messed up.\n");
 
   } else {
     char *buf = (char*)malloc(256 * sizeof(char)); // allocs 256 chars of space (1-line max width)
     if (buf == NULL) {
-      g_print(" [ config ] ERROR: out of memory reading config\n");
+      trace_log(ERROR, " [ config ] ERROR: out of memory reading config\n");
       fclose(configfile);
       return;
     }
@@ -143,7 +144,7 @@ void load_conf(config_t *conf) {
       if (line[0] == '/' && line[1] == '/') {
         // comment
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-        g_print(" [ config ] Comment at line: %s\n", line);
+        trace_log(DEBUG, " [ config ] Comment at line: %s\n", line);
 #endif
         continue;
       }
@@ -164,7 +165,8 @@ void load_conf(config_t *conf) {
         key_lwr[i] = (char)tolower((unsigned char)key[i]);
       }
 #if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [ config ] Key: %s\n [ config ] Value: %s\n", key_lwr, value);
+  trace_log(DEBUG, " [ config ] Key: %s\n", key_lwr);
+  trace_log(DEBUG, " [ config ] Value: %s\n", value);
 #endif
   // ADD to config (compare lowercase keys)
 #define MATCH(a) (strcmp(key_lwr, a) == 0)

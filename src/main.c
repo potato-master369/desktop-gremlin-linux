@@ -19,6 +19,8 @@ static int requested_monitor = 0;
 #include "config.h"
 #include "defines.h"
 #include "sounds.h"
+// External deps
+#include "trace.h"
 // X11-specific
 // If you encounter problems building because
 //   - a) GTK devs fully deprecated GDK X11
@@ -63,9 +65,7 @@ static cairo_rectangle_int_t *tracked_rects = NULL;
 static int16_t tc = 0;
 static GdkSurface *surface_cache;
 static void degrli_input_region_init(void) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Init input regions.\n");
-#endif
+  trace_log(INFO, "[ main ] Init input regions.\n");
   input_region = cairo_region_create(); // empty region
 
   free(tracked_rects);
@@ -115,7 +115,7 @@ static void degrli_move_input_region(int16_t num_rec, ...) {
     surface_cache = gtk_native_get_surface(GTK_NATIVE(w));
     if (!surface_cache) {
       free(new_rects);
-      g_print(" [  main  ] ERR (non-fatal) Surface cache is not realised.\n");
+      trace_log(ERROR, " [  main  ] Surface cache is not realised.\n");
       return;
     }
   }
@@ -156,21 +156,15 @@ static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
     target_w = foodsprite;
     ddsx = food_x;
     ddsy = food_y;
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] Drag started on FOOD\n");
-#endif
+    trace_log(INFO, " [  main  ] Drag started on FOOD\n");
   } else if (picked == sprite || gtk_widget_is_ancestor(picked, sprite)) {
     target_w = sprite;
     ddsx = sprite_x;
     ddsy = sprite_y;
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] Drag started on SPRITE\n");
-#endif
+    trace_log(INFO, " [  main  ] Drag started on SPRITE\n");
   } else {
     target_w = NULL;
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] Drag started on NULL/EMPTY\n");
-#endif
+    trace_log(INFO, " [  main  ] Drag started on NULL/EMPTY\n");
   }
   anim_trigger_drag_start();
 }
@@ -179,9 +173,7 @@ static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
 static void degrli_mov(int32_t offset_x, int32_t offset_y) {
   // should make sure we don't move it out of bounds! GtkFixed will not stop us,
   // but it will be out of view and hard to get back.
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Move: %d %d\n", sprite_x, sprite_y);
-#endif
+  trace_log(TRACE, " [  main  ] Move: %d %d\n", sprite_x, sprite_y);
   int target_x = sprite_x + offset_x;
   int target_y = sprite_y + offset_y;
 
@@ -223,9 +215,7 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
     sprite_x = x;
     sprite_y = y;
   } else {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
-#endif
+    trace_log(WARN, " [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
   }
 
   if (food_enabled)
@@ -248,7 +238,7 @@ static void on_drag_end(GtkGestureDrag *gesture, double offset_x,
 // This function is called before the Application is closed.
 // All cleanup should go here.
 static void cleanup() {
-  g_print(" [  main  ] Exiting...\n");
+  trace_log(INFO, " [  main  ] Exiting...\n");
   degrli_input_region_cleanup();
   asset_cleanup();
   animation_cleanup();
@@ -275,13 +265,11 @@ struct {
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                                guint keycode, GdkModifierType state,
                                gpointer user_data) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Key pressed!\n");
-#endif
+  trace_log(INFO, " [  main  ] Key pressed!\n");
   // neutralise key
   keyval = gdk_keyval_to_lower(keyval);
   if (keyval == GDK_KEY_x) {
-    g_print(" [  main  ] X key pressed! Exiting...\n");
+    trace_log(INFO, " [  main  ] X key pressed! Exiting...\n");
     anim_trigger_quit(cleanup_anim_wrapper);
     return TRUE;
   } else if (keyval == GDK_KEY_1) {
@@ -299,27 +287,15 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
   }
   // walking
   else if (keyval == GDK_KEY_w) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] movement\n");
-#endif
     keydata.w = true;
     return TRUE;
   } else if (keyval == GDK_KEY_a) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] movement\n");
-#endif
     keydata.a = true;
     return TRUE;
   } else if (keyval == GDK_KEY_s) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] movement\n");
-#endif
     keydata.s = true;
     return TRUE;
   } else if (keyval == GDK_KEY_d) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] movement\n");
-#endif
     keydata.d = true;
     return TRUE;
   }
@@ -382,18 +358,14 @@ static void on_enter(GtkEventControllerMotion *controller, double x, double y,
       (int32_t)y > sprite_y &&
       (int32_t)y < sprite_y + gtk_widget_get_height(sprite)) {
     is_hover = true;
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] Hover enter\n");
-#endif
+    trace_log(INFO, " [  main  ] Hover enter\n");
     anim_trigger_hover_start();
   }
 }
 
 static void on_leave(GtkEventController *controller, gpointer user_data) {
   if (is_hover) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] Hover leave\n");
-#endif
+    trace_log(INFO, " [  main  ] Hover leave\n");
     anim_trigger_hover_end();
   }
 }
@@ -408,9 +380,7 @@ typedef struct {
 } random_move_t;
 // Random Actions
 static gboolean random_move_event(gpointer user_data) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Random move tick\n");
-#endif
+  trace_log(TRACE, " [  main  ] Random move tick\n");
   random_move_t *r = (random_move_t *)user_data;
   if ((local_config_main->enable_gravity)
           ? (sprite_x != r->tyx)
@@ -433,9 +403,7 @@ static gboolean random_move_event(gpointer user_data) {
 }
 
 static gboolean schedule_random_event(gpointer user_data) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] RANDOM ACTION\n");
-#endif
+  trace_log(INFO, " [  main  ] RANDOM ACTION\n");
   // LETS GO GAMBLING
 #ifndef DEGRLI_RANDOM_OVERRIDE
   int state = rand() % 4;
@@ -443,9 +411,7 @@ static gboolean schedule_random_event(gpointer user_data) {
   int state = DEGRLI_RANDOM_OVERRIDE;
 #endif
 
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Random Action state: %d\n", state);
-#endif
+  trace_log(TRACE, " [  main  ] Random Action state: %d\n", state);
   switch (state) {
   case 0:
     break;
@@ -462,10 +428,8 @@ static gboolean schedule_random_event(gpointer user_data) {
     int tyy = sprite_y +
               ((int)rand() % (2 * local_config_main->random_move_distance) -
                local_config_main->random_move_distance);
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] offsets of: tyx: %d tyy: %d\n", tyx - sprite_x,
+    trace_log(TRACE, " [  main  ] offsets of: tyx: %d tyy: %d\n", tyx - sprite_x,
             tyy - sprite_y);
-#endif
     random_move_t *r = malloc(sizeof(random_move_t));
     r->tyx = tyx;
     r->tyy = tyy;
@@ -500,7 +464,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     mon_h = geometry.height;
     g_object_unref(mon);
   } else {
-    g_print("WARN: Monitor was NULL! Check code if developer.\n");
+    trace_log(WARN, "WARN: Monitor was NULL! Check code if developer.\n");
   }
   gtk_window_set_resizable(w, FALSE);
   GtkCssProvider *css = gtk_css_provider_new();
@@ -514,7 +478,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
   g_object_unref(css);
 
   gtk_window_present(GTK_WINDOW(w));
-  g_print("still alive!\n");
 
   // Make it stay on top (Wayland)
   if (GDK_IS_WAYLAND_DISPLAY(gdk_display_get_default())) {
@@ -527,14 +490,14 @@ static void activate(GtkApplication *app, gpointer user_data) {
   else if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     GtkNative *native = gtk_widget_get_native(GTK_WIDGET(w));
     if (!native) {
-      g_print("Warning: Could not resolve native for Window. Skipping staying "
+      trace_log(WARN, "Warning: Could not resolve native for Window. Skipping staying "
               "on top.\n");
       goto skiptop;
     }
 
     GdkSurface *surface = gtk_native_get_surface(native);
     if (!surface) {
-      g_print("Warning: Could not resolve surface for native. Skipping staying "
+      trace_log(WARN, "Warning: Could not resolve surface for native. Skipping staying "
               "on top.\n");
       goto skiptop;
     }
@@ -581,9 +544,7 @@ skiptop:
   snprintf(foodpath, sizeof(foodpath), "%sSpriteSheet/Misc/%s",
            DEGRLI_ASSET_DIR, local_config_main->food_spawn);
 // Integer copy: parses string to int using atoi
-#if (DEGRLI_RELEASE_STAGE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Food spawn path: %s\n", foodpath);
-#endif
+  trace_log(INFO, " [  main  ] Food spawn path: %s\n", foodpath);
   foodsprite = gtk_image_new_from_file(foodpath);
   // FIXME: lowk set this to do something properly
   gtk_image_set_pixel_size(GTK_IMAGE(foodsprite), 184);
@@ -600,12 +561,10 @@ skiptop:
     sprite_x = mon_w / 2;
     sprite_y = mon_h / 2;
   } else {
-    g_print(" [  main  ] Randomising position...\n");
+    trace_log(INFO, " [  main  ] Randomising position...\n");
     srand((unsigned)time(0)); // reset seed
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] spawn distance: %d\n",
+    trace_log(TRACE, " [  main  ] spawn distance: %d\n",
             local_config_main->spawn_distance);
-#endif
     sprite_x =
         mon_w / 2 + (0 - local_config_main->spawn_distance) +
         (2 * local_config_main->spawn_distance) * (double)rand() / RAND_MAX;
@@ -632,19 +591,15 @@ skiptop:
   gtk_widget_add_controller(fcontainer, GTK_EVENT_CONTROLLER(drag));
 
   if (local_config_main->enable_keyboard == true) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] NOTE: Keyboard has been enabled.\n");
-#endif
+    trace_log(INFO, " [  main  ] NOTE: Keyboard has been enabled.\n");
     GtkEventController *kbp = gtk_event_controller_key_new();
     g_signal_connect(kbp, "key-pressed", G_CALLBACK(on_key_pressed), app);
     g_signal_connect(kbp, "key-released", G_CALLBACK(on_key_release), app);
     gtk_widget_add_controller(GTK_WIDGET(w), kbp);
   }
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  g_print(" [  main  ] Window size: %d by %d\n",
+  trace_log(TRACE, " [  main  ] Window size: %d by %d\n",
           gtk_widget_get_width(GTK_WIDGET(w)),
           gtk_widget_get_height(GTK_WIDGET(w)));
-#endif
   // Disable food
   if (!food_enabled)
     gtk_widget_set_visible(foodsprite, false);
@@ -669,9 +624,7 @@ skiptop:
 #endif
   // Random Actions - does stuff from interval min_interval to max_interval
   if (local_config_main->allow_random_actions == true) {
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-    g_print(" [  main  ] NOTE: Random Actions have been enabled.\n");
-#endif
+    trace_log(INFO, " [  main  ] NOTE: Random Actions have been enabled.\n");
     g_timeout_add(local_config_main->min_interval, schedule_random_event, NULL);
   }
   // Loop for controlling the more complicated keyboard inputs
@@ -689,12 +642,20 @@ int main(int argc, char **argv) {
   char startchar_override[64];
   bool override_st = false;
   // parse options
+  trace_set_loglevel(WARN);
   for (int i = 0; i < argc; ++i) {
     if (g_strcmp0(argv[i], "--monitor") == 0 && (i + 1) < argc) {
       requested_monitor = atoi(argv[i + 1]);
     } else if (g_strcmp0(argv[i], "--char") == 0 && (i + 1) < argc) {
       strcpy(startchar_override, argv[i + 1]);
       override_st = true;
+    } else if (g_strcmp0(argv[i], "--loglevel") == 0 && (i + 1) < argc) {
+      int level = atoi(argv[i + 1]);
+      if (level < 0 || level > 4) {
+        trace_log(ERROR, "Invalid log level. Must be between 0 and 4.\n");
+        return 1;
+      }
+      trace_set_loglevel(level);
     } else if (g_strcmp0(argv[i], "--help") == 0) {
       g_print(
           "desktop-gremlin-linux v4.x\nCopyright (C) 2026 - potato-master369\n"
@@ -702,7 +663,8 @@ int main(int argc, char **argv) {
           "  --monitor n         Sets the monitor to use, to n, using GDK. By "
           "defualt uses whatever is your primary monitor. Trial and error I "
           "guess\n"
-          "  --char char         Overrides config.txt to use character char. "
+          "  --char char         Overrides config.txt to use character char. \n"
+          "  --loglevel n        Sets the log level to n. 0 = ERROR, 1 = WARN, 2 = INFO, 3 = DEBUG, 4 = TRACE\n"
           "E.g., --char Agnes will use Tachyon instead of whatever is in your "
           "config.\n");
       return 0;

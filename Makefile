@@ -9,9 +9,9 @@ LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-s
 NCURSES = -lncursesw
 
 TARGETS = degrli degrli_options degrli_installer
-OBJ     = dynamic.o config.o sounds.o asset.o animation.o
-OPTOBJ  = options.o meme.o config_opt.o
-INSTOBJ = installer.o installer_payload.o
+OBJ     = dynamic.o config.o sounds.o asset.o animation.o trace.o
+OPTOBJ  = options.o meme.o config_opt.o trace.o
+INSTOBJ = installer.o installer_payload.o trace.o
 CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops
 PREFIX      ?= /usr/local
 DATADIR     ?= /usr/share/desktop-gremlin-linux
@@ -28,6 +28,9 @@ degrli: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDLIBS) -lX11
 
 dynamic.o: src/main.c src/defines.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+trace.o: src/trace.c src/trace.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 config.o: src/config.c src/config.h src/defines.h

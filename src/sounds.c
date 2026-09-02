@@ -8,6 +8,7 @@
 // degrli
 #include "config.h"
 #include "defines.h"
+#include "trace.h"
 ma_result res;
 ma_engine engine;
 int engine_initialized = 0;
@@ -46,7 +47,7 @@ struct {
 // Call this to initialise audio subsystem.
 // Do note that config.h must be init-ed first.
 int degrli_init_audio(void) {
-  printf(" [ sounds ] Engine initialised.\n");
+  trace_log(INFO, " [ sounds ] Engine initialised.\n");
   res = ma_engine_init(NULL, &engine);
 
   if (res != MA_SUCCESS) {
@@ -86,7 +87,7 @@ int degrli_init_audio(void) {
 
 // should be called on cleanup
 int degrli_destroy_audio(void) {
-  printf(" [ sounds ] Cleaning up...\n");
+  trace_log(INFO, " [ sounds ] Cleaning up...\n");
   ma_engine_uninit(&engine);
   engine_initialized = 0;
   return 0;
@@ -112,7 +113,7 @@ ma_result degrli_play_exec(ma_engine *pEngine, const char *filepath) {
 // function for sound! Osu!
 // メルト is a great song lowk listen to it
 void degrli_play_sound(const char *sound) {
-  printf(" [ sounds ] Playing sound: %s\n", sound);
+  trace_log(INFO, " [ sounds ] Playing sound: %s\n", sound);
   #define MATCH(a) (strncmp(sound, a, 8) == 0)
   if (MATCH("emote1")) {
     if (access(sounds_cache_paths.emote1, F_OK) == 0) {
@@ -180,14 +181,12 @@ void degrli_play_sound(const char *sound) {
       res = degrli_play_exec(&engine, sounds_cache_paths.run);
     }
   }
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  printf(" [ sounds ] MiniAudio result: %d\n", (int)res);
-#endif
+  trace_log(DEBUG, " [ sounds ] MiniAudio result: %d\n", (int)res);
 }
 
 // Function for companion sounds
 void degrli_play_sound_comp(const char *sound) {
-  printf(" [ sounds ] Playing sound (companion): %s\n", sound);
+  trace_log(INFO, " [ sounds ] Playing sound (companion): %s\n", sound);
   #define MATCH(a) (strncmp(sound, a, 8) == 0)
   if (MATCH("grab")) {
     if (access(sounds_cache_paths_comp.grab, F_OK) == 0) {
@@ -204,8 +203,6 @@ void degrli_play_sound_comp(const char *sound) {
       res = degrli_play_exec(&engine, sounds_cache_paths.intro);    
     }
   }
-#if (DEGRLI_RELEASE_STATE) == (DEGRLI_DEBUG)
-  printf(" [ sounds ] MiniAudio result: %d\n", (int)res);
-#endif
+  trace_log(DEBUG, " [ sounds ] MiniAudio result: %d\n", (int)res);
 
 }
