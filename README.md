@@ -1,4 +1,7 @@
 
+
+[![YouTube - WompWomp1234-j6c](https://img.shields.io/badge/YouTube-WompWomp1234--j6c-ff0033?logo=youtube)](https://www.youtube.com/@wompwomp1234-j6c)
+
 [![potato-master369 - desktop-gremlin-linux](https://img.shields.io/static/v1?label=potato-master369&message=desktop-gremlin-linux&color=blue&logo=github)](https://github.com/potato-master369/desktop-gremlin-linux "Go to GitHub repo")
 [![stars - desktop-gremlin-linux](https://img.shields.io/github/stars/potato-master369/desktop-gremlin-linux?style=social)](https://github.com/potato-master369/desktop-gremlin-linux)
 [![forks - desktop-gremlin-linux](https://img.shields.io/github/forks/potato-master369/desktop-gremlin-linux?style=social)](https://github.com/potato-master369/desktop-gremlin-linux)
