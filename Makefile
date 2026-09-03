@@ -12,7 +12,7 @@ TARGETS = degrli degrli_options degrli_installer
 OBJ     = dynamic.o config.o sounds.o asset.o animation.o trace.o
 OPTOBJ  = options.o meme.o config_opt.o trace.o
 INSTOBJ = installer.o installer_payload.o trace.o
-CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops
+CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops -std=c99
 PREFIX      ?= /usr/local
 DATADIR     ?= /usr/share/desktop-gremlin-linux
 DESKTOPDIR  ?= /usr/share/applications

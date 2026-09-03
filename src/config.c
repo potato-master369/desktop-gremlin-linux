@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <stdbool.h>
 // variables
 
 // declare defaults

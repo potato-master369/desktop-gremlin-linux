@@ -1,5 +1,6 @@
 #ifndef OPTIONS_CONFIG_H
 #define OPTIONS_CONFIG_H
+#include <stdbool.h>
 typedef struct {
   char start_char[64];
   bool language_diff;

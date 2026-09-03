@@ -42,6 +42,7 @@ int32_t food_x = 0;
 int32_t food_y = 0;
 bool food_enabled = false;
 bool is_hover = false;
+bool is_gravity = true;
 GtkWindow *w;
 GtkWidget *sprite;
 GtkWidget *foodsprite;
@@ -355,6 +356,12 @@ static gboolean key_update_timer(gpointer user_data) {
 
 static void on_r_click() { anim_trigger_rclick(); }
 
+static bool gravity_callback(gpointer *user_data) {
+  if (is_gravity) {
+    degrli_mov(0, local_config_main->gravity_strength);
+  }
+}
+
 static void on_enter(GtkEventControllerMotion *controller, double x, double y,
                      gpointer user_data) {
   if ((int32_t)x > sprite_x &&
@@ -387,7 +394,7 @@ typedef struct {
 } random_move_t;
 
 static gboolean random_move_event(gpointer user_data) {
-    trace_log(TRACE, " [   main   ] Random move tick\n");
+    trace_log(TRACE, " [  main  ] Random move tick\n");
     random_move_t *r = (random_move_t *)user_data;
 
     degrli_mov(r->dx, r->dy);
