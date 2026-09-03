@@ -32,6 +32,9 @@ static int requested_monitor = 0;
 #include <X11/X.h>
 #include <gdk/x11/gdkx.h>
 #endif
+
+#define max(x, y) (((x) > (y)) ? (x) : (y))
+#define min(x, y) (((x) < (y)) ? (x) : (y))
 // These are global for a pretty good reason
 int32_t sprite_x = 400;
 int32_t sprite_y = 400;
@@ -215,7 +218,8 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
     sprite_x = x;
     sprite_y = y;
   } else {
-    trace_log(WARN, " [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
+    trace_log(WARN,
+              " [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
   }
 
   if (food_enabled)
@@ -375,73 +379,109 @@ static gboolean on_close_request(GtkWindow *w, gpointer user_data) {
 }
 
 typedef struct {
-  int tyx;
-  int tyy;
+    double dx;
+    double dy;
+    int step;
+    double subpix_mov_x;
+    double subpix_mov_y;
 } random_move_t;
-// Random Actions
+
 static gboolean random_move_event(gpointer user_data) {
-  trace_log(TRACE, " [  main  ] Random move tick\n");
-  random_move_t *r = (random_move_t *)user_data;
-  if ((local_config_main->enable_gravity)
-          ? (sprite_x != r->tyx)
-          : ((sprite_x != r->tyx) || (sprite_y != r->tyy))) {
-    int dx = (r->tyx - sprite_x) / local_config_main->random_move_distance;
-    int dy =
-        local_config_main->enable_gravity
-            ? 0
-            : (r->tyy - sprite_y) / local_config_main->random_move_distance;
-    if (abs(dx) < 20)
-      dx = r->tyx - sprite_x;
-    if (abs(dy) < 20)
-      dy = r->tyy - sprite_y;
-    degrli_mov(dx, dy);
+    trace_log(TRACE, " [   main   ] Random move tick\n");
+    random_move_t *r = (random_move_t *)user_data;
+
+    degrli_mov(r->dx, r->dy);
+    r->step++;
+
+    if (local_config_main->enable_gravity) {
+        r->dy = 0;
+    }
+
+    r->subpix_mov_x += r->dx;
+    r->subpix_mov_y += r->dy;
+    int offset_x = 0;
+    int offset_y = 0;
+    if (r->subpix_mov_x >= 1) {
+      offset_x = round(r->subpix_mov_x);
+      r->subpix_mov_x -= (double)round(r->subpix_mov_x);
+    }
+    if (r->subpix_mov_y >= 1) {
+      offset_y = round(r->subpix_mov_y);
+      r->subpix_mov_y -= (double)round(r->subpix_mov_y);
+    }
+    trace_log(TRACE, " [  main  ] Subpix_mov: x: %f, y: %f offset_x: %d offset_y: %d\n", r->subpix_mov_x, r->subpix_mov_y, offset_x, offset_y);
+
+    if (r->dy < 0 && r->dx == 0) {
+        anim_trigger_run_up();
+    } else if (r->dy > 0 && r->dx == 0) {
+        anim_trigger_run_down();
+    } else if (r->dy == 0 && r->dx < 0) {
+        anim_trigger_run_left();
+    } else if (r->dy == 0 && r->dx > 0) {
+        anim_trigger_run_right();
+    } else if (r->dy < 0 && r->dx < 0) {
+        anim_trigger_up_left();
+    } else if (r->dy < 0 && r->dx > 0) {
+        anim_trigger_up_right();
+    } else if (r->dy > 0 && r->dx < 0) {
+        anim_trigger_down_left();
+    } else if (r->dy > 0 && r->dx > 0) {
+        anim_trigger_down_right();
+    }
+    degrli_mov(offset_x, offset_y);
+
+    if (r->step >= local_config_main->random_move_distance) {
+        g_free(r); // Free heap memory when steps complete
+        return G_SOURCE_REMOVE;
+    }
+
     return G_SOURCE_CONTINUE;
-  } else {
-    free(r);
-    return G_SOURCE_REMOVE;
-  }
 }
 
 static gboolean schedule_random_event(gpointer user_data) {
-  trace_log(INFO, " [  main  ] RANDOM ACTION\n");
-  // LETS GO GAMBLING
+    trace_log(INFO, " [   main   ] RANDOM ACTION\n");
+
 #ifndef DEGRLI_RANDOM_OVERRIDE
-  int state = rand() % 4;
+    int state = rand() % 4;
 #else
-  int state = DEGRLI_RANDOM_OVERRIDE;
+    int state = DEGRLI_RANDOM_OVERRIDE;
 #endif
 
-  trace_log(TRACE, " [  main  ] Random Action state: %d\n", state);
-  switch (state) {
-  case 0:
-    break;
-  case 1:
-    anim_trigger_rclick();
-    break;
-  case 2:
-    break;
-  case 3:
-    // FIXME: do random movement
-    int tyx = sprite_x +
-              ((int)rand() % (local_config_main->random_move_distance * 2) -
-               local_config_main->random_move_distance);
-    int tyy = sprite_y +
-              ((int)rand() % (2 * local_config_main->random_move_distance) -
-               local_config_main->random_move_distance);
-    trace_log(TRACE, " [  main  ] offsets of: tyx: %d tyy: %d\n", tyx - sprite_x,
-            tyy - sprite_y);
-    random_move_t *r = malloc(sizeof(random_move_t));
-    r->tyx = tyx;
-    r->tyy = tyy;
-    g_timeout_add(1000 / local_config_main->sprite_framerate, random_move_event,
-                  r);
-    break;
-  }
-  guint next_interval = (rand() % (local_config_main->max_interval -
-                                   local_config_main->min_interval)) +
-                        local_config_main->min_interval;
-  g_timeout_add(next_interval, schedule_random_event, NULL);
-  return G_SOURCE_REMOVE; // stop this timer!
+    trace_log(TRACE, " [   main   ] Random Action state: %d\n", state);
+    switch (state) {
+    case 0:
+        break;
+    case 1:
+        anim_trigger_rclick();
+        break;
+    case 2:
+        break;
+    case 3: {
+        int move_x = rand() % (local_config_main->random_move_distance * 2) -
+                     local_config_main->random_move_distance;
+        int move_y = rand() % (local_config_main->random_move_distance * 2) -
+                     local_config_main->random_move_distance;
+
+        int target_x = max(0, min(gtk_widget_get_width(GTK_WIDGET(w)) - gtk_widget_get_width(sprite), sprite_x + move_x));
+        int target_y = min(gtk_widget_get_height(GTK_WIDGET(w)), max(gtk_widget_get_height(sprite), sprite_y + move_y));
+
+        // Dynamically allocate on heap
+        random_move_t *r = g_new0(random_move_t, 1);
+        r->dx = (double)(target_x - sprite_x) / local_config_main->random_move_distance;
+        r->dy = (double)(target_y - sprite_y) / local_config_main->random_move_distance;
+        r->step = 0;
+	r->subpix_mov_x = 0;
+	r->subpix_mov_y = 0;
+
+        g_timeout_add(1000 / local_config_main->sprite_framerate, random_move_event, r);
+        break;
+    }
+    }
+
+    guint next_interval = (rand() % (local_config_main->max_interval - local_config_main->min_interval)) + local_config_main->min_interval;
+    g_timeout_add(next_interval, schedule_random_event, NULL);
+
+    return G_SOURCE_REMOVE;
 }
 
 // This function runs when program is started.
@@ -490,15 +530,19 @@ static void activate(GtkApplication *app, gpointer user_data) {
   else if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     GtkNative *native = gtk_widget_get_native(GTK_WIDGET(w));
     if (!native) {
-      trace_log(WARN, "Warning: Could not resolve native for Window. Skipping staying "
-              "on top.\n");
+      trace_log(
+          WARN,
+          "Warning: Could not resolve native for Window. Skipping staying "
+          "on top.\n");
       goto skiptop;
     }
 
     GdkSurface *surface = gtk_native_get_surface(native);
     if (!surface) {
-      trace_log(WARN, "Warning: Could not resolve surface for native. Skipping staying "
-              "on top.\n");
+      trace_log(
+          WARN,
+          "Warning: Could not resolve surface for native. Skipping staying "
+          "on top.\n");
       goto skiptop;
     }
 
@@ -543,7 +587,7 @@ skiptop:
   char foodpath[256];
   snprintf(foodpath, sizeof(foodpath), "%sSpriteSheet/Misc/%s",
            DEGRLI_ASSET_DIR, local_config_main->food_spawn);
-// Integer copy: parses string to int using atoi
+  // Integer copy: parses string to int using atoi
   trace_log(INFO, " [  main  ] Food spawn path: %s\n", foodpath);
   foodsprite = gtk_image_new_from_file(foodpath);
   // FIXME: lowk set this to do something properly
@@ -564,7 +608,7 @@ skiptop:
     trace_log(INFO, " [  main  ] Randomising position...\n");
     srand((unsigned)time(0)); // reset seed
     trace_log(TRACE, " [  main  ] spawn distance: %d\n",
-            local_config_main->spawn_distance);
+              local_config_main->spawn_distance);
     sprite_x =
         mon_w / 2 + (0 - local_config_main->spawn_distance) +
         (2 * local_config_main->spawn_distance) * (double)rand() / RAND_MAX;
@@ -598,8 +642,8 @@ skiptop:
     gtk_widget_add_controller(GTK_WIDGET(w), kbp);
   }
   trace_log(TRACE, " [  main  ] Window size: %d by %d\n",
-          gtk_widget_get_width(GTK_WIDGET(w)),
-          gtk_widget_get_height(GTK_WIDGET(w)));
+            gtk_widget_get_width(GTK_WIDGET(w)),
+            gtk_widget_get_height(GTK_WIDGET(w)));
   // Disable food
   if (!food_enabled)
     gtk_widget_set_visible(foodsprite, false);
@@ -651,8 +695,8 @@ int main(int argc, char **argv) {
       override_st = true;
     } else if (g_strcmp0(argv[i], "--loglevel") == 0 && (i + 1) < argc) {
       int level = atoi(argv[i + 1]);
-      if (level < 0 || level > 4) {
-        trace_log(ERROR, "Invalid log level. Must be between 0 and 4.\n");
+      if (level < -1 || level > 4) {
+        trace_log(ERROR, "Invalid log level. Must be between -1 and 4.\n");
         return 1;
       }
       trace_set_loglevel(level);
@@ -664,7 +708,8 @@ int main(int argc, char **argv) {
           "defualt uses whatever is your primary monitor. Trial and error I "
           "guess\n"
           "  --char char         Overrides config.txt to use character char. \n"
-          "  --loglevel n        Sets the log level to n. 0 = ERROR, 1 = WARN, 2 = INFO, 3 = DEBUG, 4 = TRACE\n"
+          "  --loglevel n        Sets the log level to n. 0 = ERROR, 1 = WARN, "
+          "2 = INFO, 3 = DEBUG, 4 = TRACE\n"
           "E.g., --char Agnes will use Tachyon instead of whatever is in your "
           "config.\n");
       return 0;
