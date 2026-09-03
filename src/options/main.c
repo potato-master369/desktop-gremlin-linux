@@ -1,5 +1,6 @@
 #include <gio/gio.h>
 #include <glib-object.h>
+#include <glib.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkshortcut.h>
 #include "meme.h"
@@ -114,6 +115,26 @@ static void unleash_gremlin(gpointer user_data) {
   if (system("nohup degrli > /dev/null 2>&1 &") == 127) {
     trace_log(WARN, " WARNING: Either nohup or degrli was not found. Nohup is part of the coreutils, so it's probably degrli. Check if it's in PATH.\n");
   }
+}
+
+int horde_i = 0;
+static int horde_callback(gpointer user_data) {
+  if (horde_i == g_list_model_get_n_items(G_LIST_MODEL(char_list))) {
+    return G_SOURCE_REMOVE;
+  } else {
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "nohup degrli --char %s > /dev/null 2>&1 &", gtk_string_list_get_string(char_list, horde_i));
+    if (system(cmd) == 127) {
+      trace_log(WARN, "WARNING: Either nohup or degrli was not found. Nohup is part of the coreutils, so it's probably degrli. Check if it's in PATH.\n");
+    }
+    horde_i++;
+  }
+  return G_SOURCE_CONTINUE;
+}
+
+static void unleash_horde(gpointer user_data) {
+  horde_i = 0;
+  g_timeout_add(1000, horde_callback, NULL);
 }
 
 static void apply_to_conf(void) {
@@ -241,6 +262,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *b_spawn = gtk_button_new_with_label("Release the Gremlin");
   GtkWidget *b_horde = gtk_button_new_with_label("Unleash the Horde");
   g_signal_connect(b_spawn, "clicked", G_CALLBACK(unleash_gremlin), NULL);
+  g_signal_connect(b_horde, "clicked", G_CALLBACK(unleash_horde), NULL);
   gtk_widget_add_css_class(GTK_WIDGET(b_horde), "destructive-action");
   gtk_box_append(GTK_BOX(menubox), b_revert);
   gtk_box_append(GTK_BOX(menubox), b_save);

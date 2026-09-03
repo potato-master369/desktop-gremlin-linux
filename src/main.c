@@ -517,7 +517,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkCssProvider *css = gtk_css_provider_new();
   // Compositor security should not let us make a transparent window.
   gtk_css_provider_load_from_string(
-      css, ".window { background-color: rgba(1, 0, 0, 0.01); border: none; }");
+      css, ".window { background-color: rgba(1, 0, 0, 0.00392); border: none; }");
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                              GTK_STYLE_PROVIDER(css),
                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
