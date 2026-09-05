@@ -50,6 +50,7 @@ void anim_trigger_up_left(void);
 void anim_trigger_up_right(void);
 void anim_trigger_down_left(void);
 void anim_trigger_down_right(void);
+void anim_trigger_sleep(void);
 
 // Request state
 int anim_request_state(void);

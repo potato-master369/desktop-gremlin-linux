@@ -42,8 +42,9 @@ static gboolean on_emote_frame_tick(gpointer user_data) {
 }
 
 void play_emote1(GtkWidget *a) {
-  trace_log(WARN, " [  anim  ] WARN: Demo code. Please remove me. Define #define "
-          "DEGRLI_NO_ANIM_DEMO\n");
+  trace_log(WARN,
+            " [  anim  ] WARN: Demo code. Please remove me. Define #define "
+            "DEGRLI_NO_ANIM_DEMO\n");
   if (local_conf_animation->sprite_framerate <= 0)
     return;
 
@@ -275,9 +276,14 @@ void anim_trigger_emote_4(void) {
   data->cur = 0;
 }
 void anim_trigger_sleep(void) {
-  degrli_play_sound("sleep");
-  data->state = ANIM_STATE_SLEEP;
-  data->cur = 0;
+  if (data->state != ANIM_STATE_SLEEP) {
+    degrli_play_sound("sleep");
+    data->state = ANIM_STATE_SLEEP;
+    data->cur = 0;
+  } else {
+    data->state = ANIM_STATE_IDLE;
+    data->cur = 0;
+  }
 }
 
 // Hover triggers
@@ -342,7 +348,7 @@ void anim_trigger_up_right(void) {
 }
 void anim_trigger_down_left(void) {
   data->walkticks = 0;
-  if (data->cur >= asset_conf_animation->downleft){
+  if (data->cur >= asset_conf_animation->downleft) {
 #ifdef DEGRLI_DEBUG_HIGH
     trace_log(DEBUG, " [  anim  ] HI: Resetting cur for walk\n");
 #endif
@@ -352,7 +358,7 @@ void anim_trigger_down_left(void) {
 }
 void anim_trigger_down_right(void) {
   data->walkticks = 0;
-  if (data->cur >= asset_conf_animation->downright){
+  if (data->cur >= asset_conf_animation->downright) {
 #ifdef DEGRLI_DEBUG_HIGH
     trace_log(DEBUG, " [  anim  ] HI: Resetting cur for walk\n");
 #endif
@@ -365,9 +371,11 @@ void anim_start_loop(GtkWidget *a) {
   data = malloc(sizeof(animation_data_t));
   trace_log(INFO, " [  anim  ] Starting main loop...\n");
   if (local_conf_animation->sprite_framerate <= 0) {
-    trace_log(ERROR, " [  anim  ] ERROR! Invalid framerate (<=0). Open the Options, and "
-            "set this in Sprite Settings > FrameRate\n[  anim  ] Quitting main "
-            "loop...\n");
+    trace_log(
+        ERROR,
+        " [  anim  ] ERROR! Invalid framerate (<=0). Open the Options, and "
+        "set this in Sprite Settings > FrameRate\n[  anim  ] Quitting main "
+        "loop...\n");
     return;
   }
 
@@ -384,9 +392,7 @@ void anim_start_loop(GtkWidget *a) {
 }
 
 // Requester
-int anim_request_state() {
-  return data->state;
-}
+int anim_request_state() { return data->state; }
 
 // cleanup function
 void animation_cleanup(void) {

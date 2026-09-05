@@ -309,6 +309,9 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
   else if (keyval == GDK_KEY_c) {
     local_config_main->enable_gravity = !local_config_main->enable_gravity;
   }
+  else if (keyval == GDK_KEY_t) {
+    anim_trigger_sleep();
+  }
   return false;
 }
 
@@ -403,6 +406,11 @@ typedef struct {
 
 static gboolean random_move_event(gpointer user_data) {
   trace_log(TRACE, " [  main  ] Random move tick\n");
+  if (anim_request_state() == ANIM_STATE_SLEEP) {
+    trace_log(INFO, " [  main  ] Move event interrupted by sleep!\n");
+    free(user_data);
+    return G_SOURCE_REMOVE;
+  }
   random_move_t *r = (random_move_t *)user_data;
 
   degrli_mov(r->dx, r->dy);
@@ -456,7 +464,7 @@ static gboolean random_move_event(gpointer user_data) {
 }
 
 static gboolean schedule_random_event(gpointer user_data) {
-  trace_log(INFO, " [   main   ] RANDOM ACTION\n");
+  trace_log(INFO, " [  main  ] RANDOM ACTION\n");
 
 #ifndef DEGRLI_RANDOM_OVERRIDE
   int state = rand() % 4;
@@ -464,7 +472,7 @@ static gboolean schedule_random_event(gpointer user_data) {
   int state = DEGRLI_RANDOM_OVERRIDE;
 #endif
 
-  trace_log(TRACE, " [   main   ] Random Action state: %d\n", state);
+  trace_log(TRACE, " [  main  ] Random Action state: %d\n", state);
   if (anim_request_state() != ANIM_STATE_SLEEP) {
     switch (state) {
     case 0:
