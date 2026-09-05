@@ -267,6 +267,16 @@ struct {
   bool d;
 } keydata;
 
+typedef struct {
+  double dx;
+  double dy;
+  int step;
+  double subpix_mov_x;
+  double subpix_mov_y;
+} random_move_t;
+
+static gboolean random_move_event(gpointer user_data);
+
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                                guint keycode, GdkModifierType state,
                                gpointer user_data) {
@@ -308,9 +318,32 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
   // other stuff
   else if (keyval == GDK_KEY_c) {
     local_config_main->enable_gravity = !local_config_main->enable_gravity;
-  }
-  else if (keyval == GDK_KEY_t) {
+  } else if (keyval == GDK_KEY_t) {
     anim_trigger_sleep();
+  } else if (keyval == GDK_KEY_r) {
+    int move_x = rand() % (local_config_main->random_move_distance * 2) -
+                 local_config_main->random_move_distance;
+    int move_y = rand() % (local_config_main->random_move_distance * 2) -
+                 local_config_main->random_move_distance;
+
+    int target_x = max(0, min(gtk_widget_get_width(GTK_WIDGET(w)) -
+                                  gtk_widget_get_width(sprite),
+                              sprite_x + move_x));
+    int target_y = min(gtk_widget_get_height(GTK_WIDGET(w)),
+                       max(gtk_widget_get_height(sprite), sprite_y + move_y));
+
+    // Dynamically allocate on heap
+    random_move_t *r = g_new0(random_move_t, 1);
+    r->dx =
+        (double)(target_x - sprite_x) / local_config_main->random_move_distance;
+    r->dy =
+        (double)(target_y - sprite_y) / local_config_main->random_move_distance;
+    r->step = 0;
+    r->subpix_mov_x = 0;
+    r->subpix_mov_y = 0;
+
+    g_timeout_add(1000 / local_config_main->sprite_framerate, random_move_event,
+                  r);
   }
   return false;
 }
@@ -396,14 +429,6 @@ static gboolean on_close_request(GtkWindow *w, gpointer user_data) {
   return TRUE;
 }
 
-typedef struct {
-  double dx;
-  double dy;
-  int step;
-  double subpix_mov_x;
-  double subpix_mov_y;
-} random_move_t;
-
 static gboolean random_move_event(gpointer user_data) {
   trace_log(TRACE, " [  main  ] Random move tick\n");
   if (anim_request_state() == ANIM_STATE_SLEEP) {
@@ -455,7 +480,7 @@ static gboolean random_move_event(gpointer user_data) {
   }
   degrli_mov(offset_x, offset_y);
 
-  if (r->step >= local_config_main->random_move_distance) {
+  if (r->step >= local_config_main->random_move_distance || anim_request_state() == ANIM_STATE_SLEEP) {
     g_free(r); // Free heap memory when steps complete
     return G_SOURCE_REMOVE;
   }
@@ -548,7 +573,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   // Compositor security should not let us make a transparent window.
   gtk_css_provider_load_from_string(
       css,
-      ".window { background-color: rgba(1, 0, 0, 0.00392); border: none; }");
+      ".window { background-color: rgba(0, 0, 0, 0); border: none; }");
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                              GTK_STYLE_PROVIDER(css),
                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
