@@ -22,6 +22,7 @@ void animation_cleanup(void);
 #define ANIM_STATE_UP_LEFT 15
 #define ANIM_STATE_DOWN_RIGHT 16
 #define ANIM_STATE_DOWN_LEFT 17
+#define ANIM_STATE_SLEEP 18
 
 #ifndef DEGRLI_NO_ANIM_DEMO
 void play_emote1(GtkWidget *a);
@@ -49,4 +50,7 @@ void anim_trigger_up_left(void);
 void anim_trigger_up_right(void);
 void anim_trigger_down_left(void);
 void anim_trigger_down_right(void);
+
+// Request state
+int anim_request_state(void);
 #endif

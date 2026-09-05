@@ -156,6 +156,10 @@ GdkTexture *asset_lru_load(int16_t id) {
     snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/downRight.png",
 	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
     break;
+  case DEGRLI_LRU_SLEEP:
+    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/sleeppng",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    break;
   default:
     strncpy(filename, "/dev/null", 256);
   }

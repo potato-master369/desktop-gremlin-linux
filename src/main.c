@@ -305,6 +305,10 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
     keydata.d = true;
     return TRUE;
   }
+  // other stuff
+  else if (keyval == GDK_KEY_c) {
+    local_config_main->enable_gravity = !local_config_main->enable_gravity;
+  }
   return false;
 }
 
@@ -318,7 +322,7 @@ static void on_key_release(GtkEventControllerKey *controller, guint keyval,
   keyval = gdk_keyval_to_lower(keyval);
   if (keyval == GDK_KEY_w) {
     keydata.w = false;
-    is_gravity = true;
+    is_gravity = local_config_main->enable_gravity ? true : false;
   }
   if (keyval == GDK_KEY_a)
     keydata.a = false;
@@ -360,7 +364,7 @@ static gboolean key_update_timer(gpointer user_data) {
 static void on_r_click() { anim_trigger_rclick(); }
 
 static gboolean gravity_callback(gpointer user_data) {
-  if (is_gravity) {
+  if (is_gravity && local_config_main->enable_gravity) {
     degrli_mov(0, local_config_main->gravity_strength);
   }
   return G_SOURCE_CONTINUE;
@@ -461,40 +465,44 @@ static gboolean schedule_random_event(gpointer user_data) {
 #endif
 
   trace_log(TRACE, " [   main   ] Random Action state: %d\n", state);
-  switch (state) {
-  case 0:
-    break;
-  case 1:
-    anim_trigger_rclick();
-    break;
-  case 2:
-    break;
-  case 3: {
-    int move_x = rand() % (local_config_main->random_move_distance * 2) -
-                 local_config_main->random_move_distance;
-    int move_y = rand() % (local_config_main->random_move_distance * 2) -
-                 local_config_main->random_move_distance;
+  if (anim_request_state() != ANIM_STATE_SLEEP) {
+    switch (state) {
+    case 0:
+      break;
+    case 1:
+      anim_trigger_rclick();
+      break;
+    case 2:
+      break;
+    case 3: {
+      int move_x = rand() % (local_config_main->random_move_distance * 2) -
+                   local_config_main->random_move_distance;
+      int move_y = rand() % (local_config_main->random_move_distance * 2) -
+                   local_config_main->random_move_distance;
 
-    int target_x = max(0, min(gtk_widget_get_width(GTK_WIDGET(w)) -
-                                  gtk_widget_get_width(sprite),
-                              sprite_x + move_x));
-    int target_y = min(gtk_widget_get_height(GTK_WIDGET(w)),
-                       max(gtk_widget_get_height(sprite), sprite_y + move_y));
+      int target_x = max(0, min(gtk_widget_get_width(GTK_WIDGET(w)) -
+                                    gtk_widget_get_width(sprite),
+                                sprite_x + move_x));
+      int target_y = min(gtk_widget_get_height(GTK_WIDGET(w)),
+                         max(gtk_widget_get_height(sprite), sprite_y + move_y));
 
-    // Dynamically allocate on heap
-    random_move_t *r = g_new0(random_move_t, 1);
-    r->dx =
-        (double)(target_x - sprite_x) / local_config_main->random_move_distance;
-    r->dy =
-        (double)(target_y - sprite_y) / local_config_main->random_move_distance;
-    r->step = 0;
-    r->subpix_mov_x = 0;
-    r->subpix_mov_y = 0;
+      // Dynamically allocate on heap
+      random_move_t *r = g_new0(random_move_t, 1);
+      r->dx = (double)(target_x - sprite_x) /
+              local_config_main->random_move_distance;
+      r->dy = (double)(target_y - sprite_y) /
+              local_config_main->random_move_distance;
+      r->step = 0;
+      r->subpix_mov_x = 0;
+      r->subpix_mov_y = 0;
 
-    g_timeout_add(1000 / local_config_main->sprite_framerate, random_move_event,
-                  r);
-    break;
-  }
+      g_timeout_add(1000 / local_config_main->sprite_framerate,
+                    random_move_event, r);
+      break;
+    }
+    }
+  } else {
+    trace_log(INFO, " [  main  ] Random Action suppressed by sleep.\n");
   }
 
   guint next_interval = (rand() % (local_config_main->max_interval -
@@ -696,9 +704,10 @@ skiptop:
   // gravity
   if (local_config_main->enable_gravity) {
     trace_log(INFO, " [  main  ] NOTE: Gravity has been enabled.\n");
-    g_timeout_add(1000 / local_config_main->sprite_framerate, gravity_callback,
-                  NULL);
+    is_gravity = true;
   }
+  g_timeout_add(1000 / local_config_main->sprite_framerate, gravity_callback,
+                NULL);
   // Loop for controlling the more complicated keyboard inputs
   g_timeout_add(1000 / local_config_main->sprite_framerate, key_update_timer,
                 NULL);
@@ -737,8 +746,9 @@ int main(int argc, char **argv) {
           "guess\n"
           "  --char char         Overrides config.txt to use character char. \n"
           "  --loglevel n        Sets the log level to show all ABOVE n.\n"
-	  "                      TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, ERROR = 4,\n"
-	  "                      FATAL = 5.\n"
+          "                      TRACE = 0, DEBUG = 1, INFO = 2, WARN = 3, "
+          "ERROR = 4,\n"
+          "                      FATAL = 5.\n"
           "E.g., --char Agnes will use Tachyon instead of whatever is in your "
           "config.\n");
       return 0;

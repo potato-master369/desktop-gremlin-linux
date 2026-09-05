@@ -23,7 +23,7 @@
 #define DEGRLI_LRU_OUTRO   8
 #define DEGRLI_LRU_CLICK   9
 #define DEGRLI_LRU_HOVER   10
-#define DEGRLI_LRU_RUN_UP 11
+#define DEGRLI_LRU_RUN_UP  11
 #define DEGRLI_LRU_RUN_DOWN 12
 #define DEGRLI_LRU_RUN_LEFT 13
 #define DEGRLI_LRU_RUN_RIGHT 14
@@ -31,6 +31,7 @@
 #define DEGRLI_LRU_UP_LEFT 16
 #define DEGRLI_LRU_DOWN_RIGHT 17
 #define DEGRLI_LRU_DOWN_LEFT 18
+#define DEGRLI_LRU_SLEEP   19
 
 typedef struct {
   int runup;

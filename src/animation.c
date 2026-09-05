@@ -214,6 +214,10 @@ static gboolean animation_tick(gpointer user_data) {
       data->state = ANIM_STATE_IDLE;
     }
     return G_SOURCE_CONTINUE;
+  case ANIM_STATE_SLEEP:
+    asset_apply(DEGRLI_LRU_SLEEP, data->cur, data->img);
+    data->cur = ++data->cur % asset_conf_animation->sleep;
+    return G_SOURCE_CONTINUE;
   default:
     trace_log(WARN, " [  anim  ] Warn: invalid state! Resetting to idle...\n");
     data->state = ANIM_STATE_IDLE;
@@ -268,6 +272,11 @@ void anim_trigger_emote_3(void) {
 void anim_trigger_emote_4(void) {
   degrli_play_sound("emote4");
   data->state = ANIM_STATE_EMOTE4;
+  data->cur = 0;
+}
+void anim_trigger_sleep(void) {
+  degrli_play_sound("sleep");
+  data->state = ANIM_STATE_SLEEP;
   data->cur = 0;
 }
 
@@ -372,6 +381,11 @@ void anim_start_loop(GtkWidget *a) {
   // play intro sound
   degrli_play_sound("intro");
   g_timeout_add(interval_ms, animation_tick, data);
+}
+
+// Requester
+int anim_request_state() {
+  return data->state;
 }
 
 // cleanup function
