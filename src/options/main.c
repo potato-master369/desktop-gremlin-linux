@@ -247,6 +247,7 @@ static void save_defaults(GtkWidget *widget, gpointer data) {
 
 static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *w = gtk_application_window_new(app);
+  gtk_window_set_default_size(GTK_WINDOW(w), 800, 600);
   gtk_window_set_title(GTK_WINDOW(w), "Desktop-gremlin-linux Options");
   // basic layout
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
