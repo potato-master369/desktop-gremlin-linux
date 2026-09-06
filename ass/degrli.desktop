@@ -1,0 +1,24 @@
+[Desktop Entry]
+Type=Application
+Name=desktop-gremlin-linux
+Comment=Anime girls on your desktop shouldn't be windows-only
+
+# Japanese
+Name[ja]=リナックス desktop-gremlin
+Comment[ja]=デスクトップうえのアニメーション少女はWindows専用であるべきではない！
+
+# Chinese (mainland)
+Name[zh]=desktop-gremlin-linux
+Comment[zh]=桌面上面有赛马娘不应该是只是在Windows里的呢！
+# for the chuds from taiwan i guess (name does not need special TL
+# because its literally just english text)
+Comment[zh_TW]=桌面上面有賽馬娘不應該是只是在Windows里的呢！
+
+# funny manyogana TL cos why not
+Name[ja_JP.manyo]=利奈久久須 desktop-gremlin
+Comment[ja_JP.manyo]=度恵布流上能安爾万恵多流支夜於利恵奴波止能須流佐米也
+
+Exec=degrli
+Terminal=false
+Categories=Accessories;Utility;
+Icon=/usr/share/desktop-gremlin-linux/app.png

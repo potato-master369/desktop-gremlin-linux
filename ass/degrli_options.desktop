@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=desktop-gremlin-linux Options
+Comment=Self-explanatory; options for desktop-gremlin-linux
+
+Name[ja]=リナックス desktop-gremlinの設定
+Comment[ja]=リナックス desktop-gremlinの設定
+
+Name[zh]=desktop-gremlin-linux的设置
+Comment[zh]=连设置也听不懂吗？该跟你讲什么吧？？？
+
+Name[zh_TW]=desktop-gremlin-linux設定
+Comment[zh_TW]=你這個笨蛋聽不懂設定嗎
+
+Exec=degrli_options
+Terminal=false
+Icon=preferences-other
+Categories=Accessories;Utility;
+
