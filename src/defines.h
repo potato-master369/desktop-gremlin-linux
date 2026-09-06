@@ -25,7 +25,7 @@
 // if ~ is put here, it will resolve to $HOME. However, only at the start
 #define DEGRLI_LOCALCONFPREFIX "~/.config/desktop-gremlin-linux/"
 #define DEGRLI_ASSET_DIR       "/usr/share/desktop-gremlin-linux/"
-#define DEGRLI_CHECKOUT_VERSION "v4.0.0-beta0.3"
+#define DEGRLI_CHECKOUT_VERSION "v4.0.0-beta0.4"
 #define DEGRLI_DEBUG 0
 #define DEGRLI_RELEASE 1
 #define DEGRLI_RELEASE_STATE DEGRLI_DEBUG
