@@ -15,7 +15,7 @@ INSTOBJ = installer.o installer_payload.o trace.o
 CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops -std=c99 -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_56 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_80
 PREFIX      ?= /usr/local
 DATADIR     ?= /usr/share/desktop-gremlin-linux
-DESKTOPDIR  ?= /usr/share/applications
+DESKTOPDIR=$(PREFIX)/share/applications
 
 debug: CFLAGS=$(CFLAGS_BASE) -g -O0 -DDEBUG
 debug: clean $(TARGETS)
@@ -79,9 +79,14 @@ install:
 	install -m 755 degrli $(DESTDIR)$(PREFIX)/bin/degrli
 	install -m 755 degrli_options $(DESTDIR)$(PREFIX)/bin/degrli_options
 	cp -r ass/Sounds/* $(DESTDIR)$(DATADIR)/Sounds/
+	install -d $(DESTDIR)$(DESKTOPDIR)
+	install -m 644 ass/degrli.desktop $(DESTDIR)$(DESKTOPDIR)/degrli.desktop
+	install -m 644 ass/degrli_options.desktop $(DESTDIR)$(DESKTOPDIR)/degrli_options.desktop
+	install -m 644 ass/app.png $(DESTDIR)$(DATADIR)/app.png
 	cp -r ass/SpriteSheet/* $(DESTDIR)$(DATADIR)/SpriteSheet
 	test -f $(HOME)/.config/desktop-gremlin-linux/config.txt || \
 		install -m 644 ass/config.txt $(HOME)/.config/desktop-gremlin-linux/config.txt
+	-update-desktop-database -q
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli
