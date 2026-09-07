@@ -180,6 +180,8 @@ void degrli_init_readconf(void) {
 	      COPYKEYBOOL(force_centre);
       if (MATCH("ENABLE_MANUAL_RESIZE"))
 	      COPYKEYBOOL(enable_manual_resize);
+      if (MATCH("MAX_ACCELERATION"))
+	      COPYKEYINT(max_acceleration);
       if (MATCH("CURRENT_ACCELERATION"))
 	      COPYKEYFLOAT(current_acceleration);
       if (MATCH("FOLLOW_ACCELERATION"))

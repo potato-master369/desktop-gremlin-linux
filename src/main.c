@@ -94,6 +94,7 @@ static void degrli_move_input_region(int16_t num_rec, ...) {
     new_rects[i] =
         (cairo_rectangle_int_t){.x = x, .y = y, .width = wx, .height = wy};
   }
+  trace_log(TRACE, " [  main  ] Changing input region...\n");
   va_end(args);
 
   // check if repeat call
@@ -113,6 +114,8 @@ static void degrli_move_input_region(int16_t num_rec, ...) {
       free(new_rects);
       return;
     }
+  } else {
+    trace_log(TRACE, " [  main  ] Repeat call\n");
   }
 
   if (!surface_cache) {
@@ -262,12 +265,14 @@ static void cleanup_anim_wrapper(void) {
   }
 }
 
+struct {
+  float current_speed;
+} fooddata;
+
 static void spawn_food() {
   if (!food_enabled) {
     food_enabled = true;
     gtk_widget_set_visible(foodsprite, true);
-    degrli_move_input_region(2, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite),
-		                food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
   } else {
     trace_log(TRACE, " [  main  ] Food is already enabled.\n");
   }
@@ -280,6 +285,74 @@ static void hide_food() {
   } else {
     trace_log(TRACE, " [  main  ] Food is already disabled.\n");
   }
+}
+
+double diag_accu_x = 0;
+double diag_accu_y = 0;
+static void move_diagonally(double dx, double dy, double distance,
+                            double step) {
+  if (distance <= 0.0)
+    return; // avoid div by zero when food_tick calls with distance==0
+  double norm_x = (dx / distance) * step;
+  double norm_y = (dy / distance) * step;
+  diag_accu_x += norm_x;
+  diag_accu_y += norm_y;
+  int dx_r = 0;
+  int dy_r = 0;
+  if (fabs(diag_accu_x) >= 1) {
+    dx_r = (int)diag_accu_x; // truncation toward 0 is fine for both signs
+    diag_accu_x -= dx_r;
+  }
+  if (fabs(diag_accu_y) >= 1) {
+    dy_r = (int)diag_accu_y;
+    diag_accu_y -= dy_r;
+  }
+  if (dy < 0 && dx == 0) {
+    anim_trigger_run_up();
+  } else if (dy > 0 && dx == 0) {
+    anim_trigger_run_down();
+  } else if (dy == 0 && dx < 0) {
+    anim_trigger_run_left();
+  } else if (dy == 0 && dx > 0) {
+    anim_trigger_run_right();
+  } else if (dy < 0 && dx < 0) {
+    anim_trigger_up_left();
+  } else if (dy < 0 && dx > 0) {
+    anim_trigger_up_right();
+  } else if (dy > 0 && dx < 0) {
+    anim_trigger_down_left();
+  } else if (dy > 0 && dx > 0) {
+    anim_trigger_down_right();
+  }
+  degrli_mov(dx_r, dy_r);
+}
+static gboolean food_tick(gpointer user_data) {
+
+  if (!food_enabled) {
+    return G_SOURCE_REMOVE;
+  }
+  double dx = food_x - sprite_x;
+  double dy = food_y - sprite_y;
+  double distance = sqrt(dx * dx + dy * dy); // pythagoreas theorem?!?
+
+  if (distance < 25) {
+    hide_food();
+    food_enabled = false;
+    return G_SOURCE_REMOVE;
+  }
+
+  fooddata.current_speed =
+      min(fooddata.current_speed + local_config_main->current_acceleration,
+          local_config_main->max_acceleration);
+  double step = min(fooddata.current_speed, distance);
+  trace_log(TRACE, " [ food ] speed=%f step=%f dist=%f max_acceleration=%d\n",
+            fooddata.current_speed, step, distance, local_config_main->max_acceleration);
+  if (local_config_main->straight_line) {
+    // FIXME: unimplemented void!
+  } else {
+    move_diagonally(dx, dy, distance, step);
+  }
+  return G_SOURCE_CONTINUE;
 }
 
 // forward declarations for key for food
@@ -299,6 +372,14 @@ typedef struct {
 } random_move_t;
 
 static gboolean random_move_event(gpointer user_data);
+
+static gboolean stupid_move_timeout(gpointer user_data) {
+  degrli_move_input_region(2, food_x, food_y, gtk_widget_get_width(foodsprite),
+                           gtk_widget_get_height(foodsprite), sprite_x,
+                           sprite_y, gtk_widget_get_width(sprite),
+                           gtk_widget_get_height(sprite));
+  return G_SOURCE_REMOVE;
+}
 
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                                guint keycode, GdkModifierType state,
@@ -369,8 +450,17 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                   r);
   } else if (keyval == GDK_KEY_q) {
     // spawn food
-    trace_log(INFO, " [  main  ] Spawning food...\n");
-    spawn_food();
+    if (!food_enabled) {
+      trace_log(INFO, " [  main  ] Spawning food...\n");
+      spawn_food();
+      g_timeout_add(1000 / local_config_main->sprite_framerate,
+                    stupid_move_timeout, NULL);
+      degrli_play_sound(
+          "foodSpawn"); // in practice most don't actually have this sound
+      fooddata.current_speed = local_config_main->follow_acceleration;
+      g_timeout_add(1000 / local_config_main->sprite_framerate, food_tick,
+                    NULL);
+    }
   }
   return false;
 }
@@ -507,7 +597,8 @@ static gboolean random_move_event(gpointer user_data) {
   }
   degrli_mov(offset_x, offset_y);
 
-  if (r->step >= local_config_main->random_move_distance || anim_request_state() == ANIM_STATE_SLEEP) {
+  if (r->step >= local_config_main->random_move_distance ||
+      anim_request_state() == ANIM_STATE_SLEEP) {
     g_free(r); // Free heap memory when steps complete
     return G_SOURCE_REMOVE;
   }
@@ -599,8 +690,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkCssProvider *css = gtk_css_provider_new();
   // Compositor security should not let us make a transparent window.
   gtk_css_provider_load_from_string(
-      css,
-      ".window { background-color: rgba(0, 0, 0, 0); border: none; }");
+      css, ".window { background-color: rgba(0, 0, 0, 0); border: none; }");
   gtk_style_context_add_provider_for_display(gdk_display_get_default(),
                                              GTK_STYLE_PROVIDER(css),
                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
