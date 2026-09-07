@@ -8,6 +8,7 @@
 #include <strings.h>
 #include <ctype.h>
 #include <gtk/gtk.h>
+#include <sys/stat.h>
 
 static int parse_bool_str(const char *s) {
   if (s == NULL) return 0;
@@ -19,14 +20,17 @@ static int parse_bool_str(const char *s) {
 void write_conf(config_t conf) { 
   int res;
   char filepath[256];
+  char conffolder[256];
   if (DEGRLI_LOCALCONFPREFIX[0] != '~') {
     res = snprintf(filepath, sizeof(filepath), "%sconfig.txt", DEGRLI_LOCALCONFPREFIX);
+    strncpy(conffolder, DEGRLI_LOCALCONFPREFIX, sizeof(conffolder));
   }
   else {
     const char *home = getenv("HOME");
     if (home != NULL) {
       char *localpref = DEGRLI_LOCALCONFPREFIX;
       res = snprintf(filepath, sizeof(filepath), "%s%sconfig.txt", home, localpref + 1);
+      res = snprintf(conffolder, sizeof(conffolder), "%s%s", home, localpref + 1);
     }
   }
   if (res >= (int)sizeof(filepath)) {
@@ -35,6 +39,24 @@ void write_conf(config_t conf) {
   } else if (res < 0) {
     trace_log(WARN, " [ config ] WARN: snprintf encoding error while generating "
             "filepath!!!\n");
+  }
+  struct stat stats;
+  // Check if conf folder nonexistent (-1 = nonexistent)
+  if (stat(conffolder, &stats) == -1) {
+    // X bit (0b00000001) controls whether OPEN can open it too. WHY??!!
+    if (mkdir(conffolder, 0755) == 0) {
+      trace_log(INFO, " [ config ] Folder created successfully.\n");
+      FILE *configfile = fopen(filepath, "w");
+      if (configfile == NULL) {
+        trace_log(ERROR, " [ config ] Could not create config file?! Error: %d\n", errno);
+      } else {
+	trace_log(INFO, " [ config ] Creating file...\n"); 
+	fprintf(configfile, "\n");
+        fclose(configfile);
+      }
+    } else {
+      trace_log(ERROR, " [ config ] Could not create %s with mode 755. Do we have insufficient permissions?\n", conffolder);
+    }
   }
   FILE *configfile = fopen(filepath, "w");
   if (configfile == NULL) {
