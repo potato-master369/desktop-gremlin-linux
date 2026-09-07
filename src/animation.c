@@ -127,6 +127,7 @@ static gboolean animation_tick(gpointer user_data) {
     asset_apply(DEGRLI_LRU_OUTRO, data->cur, data->img);
     ++data->cur;
     if (data->cur == asset_conf_animation->outro) {
+      g_usleep(1000000);
       cleanup();
       return G_SOURCE_REMOVE;
     }

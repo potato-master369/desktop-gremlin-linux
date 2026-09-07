@@ -165,12 +165,13 @@ static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
     target_w = sprite;
     ddsx = sprite_x;
     ddsy = sprite_y;
+    // make sure anim only plays when dragging sprite
+    anim_trigger_drag_start();
     trace_log(INFO, " [  main  ] Drag started on SPRITE\n");
   } else {
     target_w = NULL;
     trace_log(INFO, " [  main  ] Drag started on NULL/EMPTY\n");
   }
-  anim_trigger_drag_start();
 }
 
 // function to move gremlin
@@ -237,7 +238,8 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
 // for animation trigger
 static void on_drag_end(GtkGestureDrag *gesture, double offset_x,
                         double offset_y, gpointer user_data) {
-  anim_trigger_drag_end();
+  if (target_w == sprite)
+    anim_trigger_drag_end();
 }
 
 // This function is called before the Application is closed.
@@ -260,6 +262,27 @@ static void cleanup_anim_wrapper(void) {
   }
 }
 
+static void spawn_food() {
+  if (!food_enabled) {
+    food_enabled = true;
+    gtk_widget_set_visible(foodsprite, true);
+    degrli_move_input_region(2, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite),
+		                food_x, food_y, gtk_widget_get_width(foodsprite), gtk_widget_get_height(foodsprite));
+  } else {
+    trace_log(TRACE, " [  main  ] Food is already enabled.\n");
+  }
+}
+
+static void hide_food() {
+  if (food_enabled) {
+    food_enabled = false;
+    gtk_widget_set_visible(foodsprite, false);
+  } else {
+    trace_log(TRACE, " [  main  ] Food is already disabled.\n");
+  }
+}
+
+// forward declarations for key for food
 struct {
   bool w;
   bool a;
@@ -344,6 +367,10 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
 
     g_timeout_add(1000 / local_config_main->sprite_framerate, random_move_event,
                   r);
+  } else if (keyval == GDK_KEY_q) {
+    // spawn food
+    trace_log(INFO, " [  main  ] Spawning food...\n");
+    spawn_food();
   }
   return false;
 }
