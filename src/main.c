@@ -172,6 +172,19 @@ static void on_drag_begin(GtkGestureDrag *gesture, double sxp, double syp,
     // make sure anim only plays when dragging sprite
     anim_trigger_drag_start();
     trace_log(INFO, " [  main  ] Drag started on SPRITE\n");
+  } else if (picked != NULL &&
+             (picked == hotspot_get_hotspot(0) ||
+              gtk_widget_is_ancestor(picked, hotspot_get_hotspot(0)) ||
+              picked == hotspot_get_hotspot(1) ||
+              gtk_widget_is_ancestor(picked, hotspot_get_hotspot(1)) ||
+              picked == hotspot_get_hotspot(2) ||
+              gtk_widget_is_ancestor(picked, hotspot_get_hotspot(2)) ||
+              picked == hotspot_get_hotspot(3) ||
+              gtk_widget_is_ancestor(picked, hotspot_get_hotspot(3)) ||
+              picked == hotspot_get_hotspot(4) ||
+              gtk_widget_is_ancestor(picked, hotspot_get_hotspot(4)))) {
+    hotspot_play((int)(sxp - sprite_x), (int)(syp - sprite_y));
+    target_w = NULL;
   } else {
     target_w = NULL;
     trace_log(INFO, " [  main  ] Drag started on NULL/EMPTY\n");
@@ -229,9 +242,6 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
     sprite_y = y;
     if (local_config_main->allow_col_hotspot)
       hotspot_update(GTK_FIXED(fcontainer), sprite_x, sprite_y);
-  } else {
-    trace_log(WARN,
-              " [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
   }
 
   if (food_enabled)
@@ -389,6 +399,17 @@ static gboolean stupid_move_timeout(gpointer user_data) {
   return G_SOURCE_REMOVE;
 }
 
+void x_spawn_food(void) {
+  trace_log(INFO, " [  main  ] Spawning food...\n");
+  spawn_food();
+  g_timeout_add(1000 / local_config_main->sprite_framerate, stupid_move_timeout,
+                NULL);
+  degrli_play_sound(
+      "foodSpawn"); // in practice most don't actually have this sound
+  fooddata.current_speed = local_config_main->follow_acceleration;
+  g_timeout_add(1000 / local_config_main->sprite_framerate, food_tick, NULL);
+}
+
 static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
                                guint keycode, GdkModifierType state,
                                gpointer user_data) {
@@ -459,15 +480,7 @@ static gboolean on_key_pressed(GtkEventControllerKey *controller, guint keyval,
   } else if (keyval == GDK_KEY_q) {
     // spawn food
     if (!food_enabled) {
-      trace_log(INFO, " [  main  ] Spawning food...\n");
-      spawn_food();
-      g_timeout_add(1000 / local_config_main->sprite_framerate,
-                    stupid_move_timeout, NULL);
-      degrli_play_sound(
-          "foodSpawn"); // in practice most don't actually have this sound
-      fooddata.current_speed = local_config_main->follow_acceleration;
-      g_timeout_add(1000 / local_config_main->sprite_framerate, food_tick,
-                    NULL);
+      x_spawn_food();
     }
   }
   return false;

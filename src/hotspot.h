@@ -5,4 +5,5 @@
 void hotspot_play(int x, int y);
 void hotspot_init(GtkFixed *fcontainer, double sprite_x, double sprite_y);
 void hotspot_update(GtkFixed *fcontainer, double sprite_x, double sprite_y);
+GtkWidget *hotspot_get_hotspot(int n);
 #endif

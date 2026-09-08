@@ -42,17 +42,25 @@
 //            Height="50" VerticalAlignment="Top"
 //            RenderTransformOrigin="0.5,0.5">
 //        </Border>
+
+// This is a bit janky and stuff but it works so its fine
+extern void x_spawn_food(void);
 void hotspot_play(int x, int y) {
   if (x >= 40 && x <= 80 && y >= 25 && y <= 165) {
     // LeftHotspot (Red)
+    anim_trigger_emote_1();
   } else if (x >= 40 && x <= 80 && y >= 165 && y <= 295) {
     // LeftDownHotspot (Yellow)
+    anim_trigger_emote_2();
   } else if (x >= 205 && x <= 244 && y >= 25 && y <= 170) {
     // RightHotspot (Blue)
+    anim_trigger_emote_3();
   } else if (x >= 205 && x <= 244 && y >= 170 && y <= 295) {
     // RightDownHotspot (Orange)
+    anim_trigger_emote_4();
   } else if (x >= 97 && x <= 187 && y >= 30 && y <= 80) {
     // TopHotspot (Purple)
+    x_spawn_food();
   } else {
     // No hotspot hit
     trace_log(TRACE, " [ hotspot] no hotspot hit\n");
@@ -105,8 +113,7 @@ void hotspot_init(GtkFixed *fcontainer, double sprite_x, double sprite_y) {
                                 (int)hotspots[i].height);
 
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(hotspots[i].widget),
-                                   draw_hotspot, &hotspots[i], NULL);gtk_widget_set_can_target(hotspots[i].widget, FALSE);
-    gtk_widget_set_can_target(hotspots[i].widget, FALSE);
+                                   draw_hotspot, &hotspots[i], NULL);
 
 
     double abs_x = sprite_x + hotspots[i].rel_x;
@@ -114,6 +121,10 @@ void hotspot_init(GtkFixed *fcontainer, double sprite_x, double sprite_y) {
 
     gtk_fixed_put(fcontainer, hotspots[i].widget, abs_x, abs_y);
   }
+}
+
+GtkWidget *hotspot_get_hotspot(int n) {
+  return n < NUM_HOTSPOTS ? hotspots[n].widget : NULL;
 }
 
 void hotspot_update(GtkFixed *fcontainer, double sprite_x, double sprite_y) {
