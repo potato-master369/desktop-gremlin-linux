@@ -18,6 +18,7 @@ static int requested_monitor = 0;
 #include "asset.h"
 #include "config.h"
 #include "defines.h"
+#include "hotspot.h"
 #include "sounds.h"
 // External deps
 #include "trace.h"
@@ -184,6 +185,8 @@ static void degrli_mov(int32_t offset_x, int32_t offset_y) {
   int target_x = sprite_x + offset_x;
   int target_y = sprite_y + offset_y;
 
+  // FIXME: color hotspots
+
   if (target_x >= 0 &&
       target_x + asset_config_main->width <=
           gtk_widget_get_width(GTK_WIDGET(w)) &&
@@ -195,6 +198,8 @@ static void degrli_mov(int32_t offset_x, int32_t offset_y) {
                    sprite_y + offset_y);
     sprite_x += offset_x;
     sprite_y += offset_y;
+    if (local_config_main->allow_col_hotspot)
+      hotspot_update(GTK_FIXED(fcontainer), sprite_x, sprite_y);
     if (food_enabled) {
       degrli_move_input_region(
           2, food_x, food_y, gtk_widget_get_width(foodsprite),
@@ -222,6 +227,8 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
     gtk_fixed_move(GTK_FIXED(fcontainer), target_w, x, y);
     sprite_x = x;
     sprite_y = y;
+    if (local_config_main->allow_col_hotspot)
+      hotspot_update(GTK_FIXED(fcontainer), sprite_x, sprite_y);
   } else {
     trace_log(WARN,
               " [  main  ] WHY ARE YOU CALLING DRAG UPDATE WITH NULL DRAG?!\n");
@@ -346,7 +353,8 @@ static gboolean food_tick(gpointer user_data) {
           local_config_main->max_acceleration);
   double step = min(fooddata.current_speed, distance);
   trace_log(TRACE, " [ food ] speed=%f step=%f dist=%f max_acceleration=%d\n",
-            fooddata.current_speed, step, distance, local_config_main->max_acceleration);
+            fooddata.current_speed, step, distance,
+            local_config_main->max_acceleration);
   if (local_config_main->straight_line) {
     // FIXME: unimplemented void!
   } else {
@@ -664,6 +672,10 @@ static gboolean schedule_random_event(gpointer user_data) {
   return G_SOURCE_REMOVE;
 }
 
+static void main_on_widget_realize(GtkWidget *w, gpointer user_data) {
+  trace_log(TRACE, " [  main  ] setting input region\n");
+  degrli_mov(0, 0);
+}
 // This function runs when program is started.
 static void activate(GtkApplication *app, gpointer user_data) {
   // Basic settings for the window
@@ -764,6 +776,7 @@ skiptop:
 
   degrli_input_region_init();
   sprite = gtk_image_new();
+  g_signal_connect(sprite, "realize", G_CALLBACK(main_on_widget_realize), NULL);
   char foodpath[256];
   snprintf(foodpath, sizeof(foodpath), "%sSpriteSheet/Misc/%s",
            DEGRLI_ASSET_DIR, local_config_main->food_spawn);
@@ -846,6 +859,9 @@ skiptop:
 #ifndef DEGRLI_NO_ANIM_DEMO
   play_emote1(sprite);
 #endif
+
+  if (local_config_main->allow_col_hotspot)
+    hotspot_init(GTK_FIXED(fcontainer), sprite_x, sprite_y);
   // Random Actions - does stuff from interval min_interval to max_interval
   if (local_config_main->allow_random_actions) {
     trace_log(INFO, " [  main  ] NOTE: Random Actions have been enabled.\n");

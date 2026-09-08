@@ -9,7 +9,7 @@ LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-s
 NCURSES = -lncursesw
 
 TARGETS = degrli degrli_options degrli_installer
-OBJ     = dynamic.o config.o sounds.o asset.o animation.o trace.o
+OBJ     = dynamic.o config.o sounds.o asset.o animation.o trace.o hotspot.o
 OPTOBJ  = options.o meme.o config_opt.o trace.o
 INSTOBJ = installer.o installer_payload.o trace.o
 CFLAGS = $(CFLAGS_BASE) -Os -ffast-math -fomit-frame-pointer -march=native -flto -fno-exceptions -fno-unroll-loops -std=c99 -DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_56 -DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_80
@@ -31,6 +31,9 @@ dynamic.o: src/main.c src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 trace.o: src/trace.c src/trace.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+hotspot.o: src/hotspot.c src/hotspot.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 config.o: src/config.c src/config.h src/defines.h
