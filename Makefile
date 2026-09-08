@@ -91,6 +91,11 @@ install:
 		install -m 644 ass/config.txt $(HOME)/.config/desktop-gremlin-linux/config.txt
 	-update-desktop-database -q
 
+install-conf:
+	install -d $(HOME)/.config/desktop-gremlin-linux
+	test -f $(HOME)/.config/desktop-gremlin-linux/config.txt || \
+		install -m 644 ass/config.txt $(HOME)/.config/desktop-gremlin-linux/config.txt
+	
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli_options
