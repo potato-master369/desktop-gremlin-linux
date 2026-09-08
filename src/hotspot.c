@@ -4,6 +4,7 @@
 //   making main.c too big
 #include "animation.h"
 #include "trace.h"
+#include "config.h"
 #include <cairo.h>
 #include <gdk/gdk.h>
 #include <glib-object.h>
@@ -43,6 +44,8 @@
 //            RenderTransformOrigin="0.5,0.5">
 //        </Border>
 
+degrli_conf_t *local_conf_hotspot;
+
 // This is a bit janky and stuff but it works so its fine
 extern void x_spawn_food(void);
 void hotspot_play(int x, int y) {
@@ -81,10 +84,12 @@ static HotspotBinding hotspots[NUM_HOTSPOTS];
 
 static void draw_hotspot(GtkDrawingArea *drawing_area, cairo_t *cr, int width,
                          int height, gpointer user_data) {
-  HotspotBinding *hb = (HotspotBinding *)user_data;
+  if (local_conf_hotspot->allow_col_hotspot) {
+    HotspotBinding *hb = (HotspotBinding *)user_data;
 
-  cairo_set_source_rgba(cr, hb->r, hb->g, hb->b, hb->a);
-  cairo_paint(cr);
+    cairo_set_source_rgba(cr, hb->r, hb->g, hb->b, hb->a);
+    cairo_paint(cr);
+  }
 }
 
 void hotspot_init(GtkFixed *fcontainer, double sprite_x, double sprite_y) {
@@ -121,6 +126,8 @@ void hotspot_init(GtkFixed *fcontainer, double sprite_x, double sprite_y) {
 
     gtk_fixed_put(fcontainer, hotspots[i].widget, abs_x, abs_y);
   }
+
+  local_conf_hotspot = degrli_request_localconf();
 }
 
 GtkWidget *hotspot_get_hotspot(int n) {

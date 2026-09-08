@@ -211,7 +211,7 @@ static void degrli_mov(int32_t offset_x, int32_t offset_y) {
                    sprite_y + offset_y);
     sprite_x += offset_x;
     sprite_y += offset_y;
-    if (local_config_main->allow_col_hotspot)
+    if (!local_config_main->disable_hotspots)
       hotspot_update(GTK_FIXED(fcontainer), sprite_x, sprite_y);
     if (food_enabled) {
       degrli_move_input_region(
@@ -240,7 +240,7 @@ static void on_drag_update(GtkGestureDrag *gesture, double offset_x,
     gtk_fixed_move(GTK_FIXED(fcontainer), target_w, x, y);
     sprite_x = x;
     sprite_y = y;
-    if (local_config_main->allow_col_hotspot)
+    if (!local_config_main->disable_hotspots)
       hotspot_update(GTK_FIXED(fcontainer), sprite_x, sprite_y);
   }
 
@@ -873,7 +873,7 @@ skiptop:
   play_emote1(sprite);
 #endif
 
-  if (local_config_main->allow_col_hotspot)
+  if (!local_config_main->disable_hotspots)
     hotspot_init(GTK_FIXED(fcontainer), sprite_x, sprite_y);
   // Random Actions - does stuff from interval min_interval to max_interval
   if (local_config_main->allow_random_actions) {
