@@ -61,6 +61,53 @@ After that, open the `desktop-gremlin-linux Options` application and press "Save
 
 This is not complete, and LXDE is without compositing cos im too dumb to get picom working in a VM.
 
+### Bug Reporting
+
+Try updating first, before you make an issue. Follow the following format:
+```Markdown
+# bug-report: <ISSUE>
+
+## System Information
+
+Linux/BSD Distribution: <DISTRO>
+Compositor: <COMPOSITOR e.g. kwin/compton(for X11)/etc>
+DE (if relevant): <DE e.g. KDE Plasma/GNOME/NULL (if not applicable; you're running a separate WM)>
+GPU driver: <run lspci -k | grep -EA3 'VGA|3D|Display' and copy the output from "Kernel driver in use">
+X11/Wayland: <X11/Wayland>
+
+## Issue
+
+### Expected Behaviour
+
+<What is supposed to happen. MAKE SURE YOU READ the README first before you think something should happen when it shouldn't. I would happily clarify though. e.g. "Sprite shows normally with an image of my favourite character">
+
+### Actual Behaviour
+
+<What actually happened instead of the above. e.g. "sprite shows up as a unknown bunch of colors and segfaults somehow">
+
+### Recreation instructions
+
+<A step-by-step instruction to repeat your issue. If I can't fix it, I'll just do random shit with your setup until it works
+
+e.g.
+
+1. Download Rice Shower assetpack from https://github.com/Kritzkingvoid/Desktop_Gremlin/Releases (this is a known issue. Run tool/fixup.py from my repo on
+   rice to fix her but this is an example)
+
+2. Set assetpack to Rice through desktop-gremlin-linux options.
+
+3. Open desktop-gremlin-linux>
+
+## Log
+
+<Run `degrli --loglevel -1 in a terminal`, attempt to recreate issue  and paste output here>
+
+```
+
+### Feature Requests
+
+Doesn't have to be as specific. Just whatever you think this project needs, as long as it's not absurd (or impossible).
+
 ## Optimization
 
 For some reason, GTK4's defualt renderer is really heavy on RAM. Try `GSK_RENDERER=cairo` as an environment variable. Drops about 10MB of RAM usage.
