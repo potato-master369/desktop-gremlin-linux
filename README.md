@@ -69,6 +69,8 @@ For some reason, GTK4's defualt renderer is really heavy on RAM. Try `GSK_RENDER
 
 For whatever reason, I have only included Tamtam, but if you want to ~~steal~~ get some more umas, see [`Desktop_Gremlin` releases](https://github.com/Kritzkingvoid/Desktop_Gremlin/releases).
 
+Copy them into `/usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins` (for the SpriteSheet folder, e.g. `SpriteSheet/Gremlins/Cafe`) and `/usr/share/desktop-gremlin-linux/Sounds/` (for the Sounds folder: e.g. `Sounds/Cafe`).
+
 ## License
 
 Under MIT license. Source freely available and do what the hell you want with it.

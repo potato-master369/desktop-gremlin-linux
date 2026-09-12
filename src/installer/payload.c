@@ -80,6 +80,7 @@ int cd_src(void) {
 int build_src(void) {
   int result;
   result = system("make all");
+  result = system("make install-conf"); // Update: install config to user-only: This allows us to be able to install config for the current-user: prevent issue with config not found segfaults.
   return result;
 }
 
