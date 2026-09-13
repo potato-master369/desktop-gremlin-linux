@@ -808,8 +808,8 @@ skiptop:
   if (local_config_main->randomize_spawn == false) {
     gtk_fixed_put(GTK_FIXED(fcontainer), sprite, mon_w / 2, mon_h / 2);
     degrli_move_input_region(1, mon_w / 2, mon_h / 2, scaled_w, scaled_h);
-    sprite_x = mon_w / 2;
-    sprite_y = mon_h / 2;
+    sprite_x = (mon_w - scaled_w) / 2;
+    sprite_y = (mon_h - scaled_h) / 2;
   } else {
     trace_log(INFO, " [  main  ] Randomising position...\n");
     srand((unsigned)time(0)); // reset seed
@@ -826,8 +826,8 @@ skiptop:
   }
   if (local_config_main->start_bottom) {
     trace_log(INFO, " [  main  ] Overriding position: start bottom enabled;\n");
-    sprite_y = mon_h - asset_config_main->height;
-    gtk_fixed_put(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
+    sprite_y = mon_h - scaled_h;
+    gtk_fixed_move(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
   }
   degrli_move_input_region(1, sprite_x, sprite_y, scaled_w, scaled_h);
 
