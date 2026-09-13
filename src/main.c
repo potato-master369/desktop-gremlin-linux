@@ -824,9 +824,12 @@ skiptop:
     gtk_fixed_put(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
     degrli_move_input_region(1, sprite_x, sprite_y, scaled_w, scaled_h);
   }
-  degrli_move_input_region(2, sprite_x, sprite_y, scaled_w, scaled_h, food_x,
-                           food_y, gtk_widget_get_width(foodsprite),
-                           gtk_widget_get_height(foodsprite));
+  if (local_config_main->start_bottom) {
+    trace_log(INFO, " [  main  ] Overriding position: start bottom enabled;\n");
+    sprite_y = mon_h - asset_config_main->height;
+    gtk_fixed_put(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
+  }
+  degrli_move_input_region(1, sprite_x, sprite_y, scaled_w, scaled_h);
 
   // Audio
   degrli_init_audio();
@@ -847,9 +850,6 @@ skiptop:
     g_signal_connect(kbp, "key-released", G_CALLBACK(on_key_release), app);
     gtk_widget_add_controller(GTK_WIDGET(w), kbp);
   }
-  trace_log(TRACE, " [  main  ] Window size: %d by %d\n",
-            gtk_widget_get_width(GTK_WIDGET(w)),
-            gtk_widget_get_height(GTK_WIDGET(w)));
   // Disable food
   if (!food_enabled)
     gtk_widget_set_visible(foodsprite, false);
