@@ -25,17 +25,17 @@
 // if ~ is put here, it will resolve to $HOME. However, only at the start
 #define DEGRLI_LOCALCONFPREFIX "~/.config/desktop-gremlin-linux/"
 #define DEGRLI_ASSET_DIR       "/usr/share/desktop-gremlin-linux/"
-#define DEGRLI_CHECKOUT_VERSION "v4.0.0-beta0.4"
+#define DEGRLI_CHECKOUT_VERSION "v4.0.0"
 #define DEGRLI_DEBUG 0
 #define DEGRLI_RELEASE 1
-#define DEGRLI_RELEASE_STATE DEGRLI_DEBUG
+#define DEGRLI_RELEASE_STATE DEGRLI_RELEASE
 
 // Uncomment to enable HIGH debug.
 // This prints small things like fids and ids on refresh.
 // #define DEGRLI_DEBUG_HIGH
 
 // Options stuff
-#define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.0 (Pre-release 2)"
+#define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.0 (holy shit a release after like 6 months)"
 // uncomment to disable X11
 // #define DEGRLI_NO_X11
 // uncomment to disable the Emote1 demo.
