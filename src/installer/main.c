@@ -172,8 +172,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_widget_set_margin_start(box, 20);
   gtk_widget_set_margin_end(box, 20);
   label = gtk_label_new(
-      "Welcome to the desktop-gremlin-linux-installer. This will guide you "
-      "through installing desktop-gremlin-linux on your Workstation. To "
+      "Welcome to the desktop-gremlin-linux-installer. This wizard will guide you "
+      "through installing desktop-gremlin-linux on your PC. To "
       "continue, press \"Next\". If not, close this "
       "window.\n\ndesktop-gremlin-linux is a free and open source software, "
       "made by potato-master369. GitHub is the ONLY place to get it. If you "
