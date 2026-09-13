@@ -95,10 +95,12 @@ install-conf:
 	install -d $(HOME)/.config/desktop-gremlin-linux
 	test -f $(HOME)/.config/desktop-gremlin-linux/config.txt || \
 		install -m 644 ass/config.txt $(HOME)/.config/desktop-gremlin-linux/config.txt
-	
+make-meme:
+	glib-compile-resources src/options/app.gresource.xml --target=src/options/meme.c --generate-source
+	glib-compile-resources src/options/app.gresource.xml --target=src/options/meme.h --generate-header
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli
 	rm -f $(DESTDIR)$(PREFIX)/bin/degrli_options
 	rm -rf $(DESTDIR)$(DATADIR)
 
-.PHONY: all debug clean install uninstall
+.PHONY: all debug clean install uninstall make-meme
