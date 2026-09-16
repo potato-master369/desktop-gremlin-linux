@@ -92,6 +92,7 @@ static void degrli_move_input_region(int16_t num_rec, ...) {
     int32_t y = va_arg(args, int32_t);
     int32_t wx = va_arg(args, int32_t);
     int32_t wy = va_arg(args, int32_t);
+    trace_log(TRACE, " x: %d, y: %d, wx: %d, wy: %d", x, y, wx, wy);
     new_rects[i] =
         (cairo_rectangle_int_t){.x = x, .y = y, .width = wx, .height = wy};
   }
@@ -687,7 +688,8 @@ static gboolean schedule_random_event(gpointer user_data) {
 
 static void main_on_widget_realize(GtkWidget *w, gpointer user_data) {
   trace_log(TRACE, " [  main  ] setting input region\n");
-  degrli_mov(0, 0);
+  degrli_move_input_region(1, sprite_x, sprite_y, gtk_widget_get_width(sprite), gtk_widget_get_height(sprite));
+  gtk_fixed_move(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
 }
 // This function runs when program is started.
 static void activate(GtkApplication *app, gpointer user_data) {
@@ -806,10 +808,10 @@ skiptop:
       (int32_t)(asset_config_main->width * asset_config_main->scale);
   gtk_image_set_pixel_size(GTK_IMAGE(sprite), scaled_h);
   if (local_config_main->randomize_spawn == false) {
-    gtk_fixed_put(GTK_FIXED(fcontainer), sprite, mon_w / 2, mon_h / 2);
-    degrli_move_input_region(1, mon_w / 2, mon_h / 2, scaled_w, scaled_h);
     sprite_x = (mon_w - scaled_w) / 2;
     sprite_y = (mon_h - scaled_h) / 2;
+    gtk_fixed_put(GTK_FIXED(fcontainer), sprite, sprite_x, sprite_y);
+    degrli_move_input_region(1, sprite_x, sprite_y, scaled_w, scaled_h);
   } else {
     trace_log(INFO, " [  main  ] Randomising position...\n");
     srand((unsigned)time(0)); // reset seed
