@@ -92,7 +92,7 @@ static void degrli_move_input_region(int16_t num_rec, ...) {
     int32_t y = va_arg(args, int32_t);
     int32_t wx = va_arg(args, int32_t);
     int32_t wy = va_arg(args, int32_t);
-    trace_log(TRACE, " x: %d, y: %d, wx: %d, wy: %d", x, y, wx, wy);
+    trace_log(TRACE, " x: %d, y: %d, wx: %d, wy: %d\n", x, y, wx, wy);
     new_rects[i] =
         (cairo_rectangle_int_t){.x = x, .y = y, .width = wx, .height = wy};
   }

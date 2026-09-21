@@ -51,6 +51,10 @@ typedef struct {
 } asset_lru_t;
 asset_lru_t asset_texture_lru[DEGRLI_LRU_SIZE];
 
+#define DEGRLI_LRU_I 20
+typedef char asset_filename_t[256];
+asset_filename_t asset_cache[DEGRLI_LRU_I];
+
 void asset_lru_del_first(void) {
   // Make sure we don't attempt to free nothing!
   if (asset_texture_lru[0].tex != NULL) {
@@ -83,86 +87,7 @@ GdkTexture *asset_lru_load(int16_t id) {
     return NULL;
   }
   char filename[256];
-  switch (id) {
-  case DEGRLI_LRU_EMOTE_1:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_EMOTE_2:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote2.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_EMOTE_3:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote3.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_EMOTE_4:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote4.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_IDLE:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/idle.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_INTRO:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/intro.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_GRAB:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/grab.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_CLICK:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/click.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_OUTRO:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/outro.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_HOVER:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/hover.png",
-             DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_RUN_UP:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runUp.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_RUN_DOWN:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runDown.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_RUN_LEFT:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runLeft.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_RUN_RIGHT:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/runRight.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_UP_LEFT:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/upLeft.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_UP_RIGHT:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/upRight.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_DOWN_LEFT:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/downLeft.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_DOWN_RIGHT:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Run/downRight.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  case DEGRLI_LRU_SLEEP:
-    snprintf(filename, 256, "%sSpriteSheet/Gremlins/%s/Actions/sleep.png",
-	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
-    break;
-  default:
-    strncpy(filename, "/dev/null", 256);
-  }
+  strncpy (filename, (id < DEGRLI_LRU_I) ? asset_cache[id] : "/dev/null", sizeof(filename));
   if (access(filename, F_OK) == 0) {
   return gdk_texture_new_from_filename(filename, NULL);
   }
@@ -306,6 +231,45 @@ void asset_init(void) {
     asset_texture_lru[i].id = DEGRLI_LRU_NULL;
     asset_texture_lru[i].tex = NULL;
   }
+  
+    snprintf(asset_cache[DEGRLI_LRU_EMOTE_1], 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote1.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_EMOTE_2], 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote2.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_EMOTE_3], 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote3.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_EMOTE_4], 256, "%sSpriteSheet/Gremlins/%s/Emotes/emote4.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_IDLE], 256, "%sSpriteSheet/Gremlins/%s/Actions/idle.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_INTRO], 256, "%sSpriteSheet/Gremlins/%s/Actions/intro.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_GRAB], 256, "%sSpriteSheet/Gremlins/%s/Actions/grab.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_CLICK], 256, "%sSpriteSheet/Gremlins/%s/Actions/click.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_OUTRO], 256, "%sSpriteSheet/Gremlins/%s/Actions/outro.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_HOVER], 256, "%sSpriteSheet/Gremlins/%s/Actions/hover.png",
+             DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_RUN_UP], 256, "%sSpriteSheet/Gremlins/%s/Run/runUp.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_RUN_DOWN], 256, "%sSpriteSheet/Gremlins/%s/Run/runDown.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_RUN_LEFT], 256, "%sSpriteSheet/Gremlins/%s/Run/runLeft.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_RUN_RIGHT], 256, "%sSpriteSheet/Gremlins/%s/Run/runRight.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_UP_LEFT], 256, "%sSpriteSheet/Gremlins/%s/Run/upLeft.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_UP_RIGHT], 256, "%sSpriteSheet/Gremlins/%s/Run/upRight.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_DOWN_LEFT], 256, "%sSpriteSheet/Gremlins/%s/Run/downLeft.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_DOWN_RIGHT], 256, "%sSpriteSheet/Gremlins/%s/Run/downRight.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
+    snprintf(asset_cache[DEGRLI_LRU_SLEEP], 256, "%sSpriteSheet/Gremlins/%s/Actions/sleep.png",
+	     DEGRLI_ASSET_DIR, localconf_asset->start_char);
 }
 
 asset_conf_t *asset_request_conf(void) { return &local_asset_conf; }

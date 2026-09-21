@@ -375,8 +375,8 @@ void anim_start_loop(GtkWidget *a) {
     trace_log(
         ERROR,
         " [  anim  ] ERROR! Invalid framerate (<=0). Open the Options, and "
-        "set this in Sprite Settings > FrameRate\n[  anim  ] Quitting main "
-        "loop...\n");
+        "set this in Sprite Settings > FrameRate");
+    trace_log(ERROR, "[  anim  ] Quitting main loop...\n");
     return;
   }
 

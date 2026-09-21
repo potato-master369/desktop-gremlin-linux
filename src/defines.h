@@ -25,9 +25,11 @@
 // if ~ is put here, it will resolve to $HOME. However, only at the start
 #define DEGRLI_LOCALCONFPREFIX "~/.config/desktop-gremlin-linux/"
 #define DEGRLI_ASSET_DIR       "/usr/share/desktop-gremlin-linux/"
-#define DEGRLI_CHECKOUT_VERSION "v4.0.0"
+// This is separate from the version string, and is only checked by the installer.
+#define DEGRLI_CHECKOUT_VERSION "v4.0.1"
 #define DEGRLI_DEBUG 0
 #define DEGRLI_RELEASE 1
+// switching to DEGRLI_DEBUG doesnt do much anymore, since the release version of 4.0.0
 #define DEGRLI_RELEASE_STATE DEGRLI_RELEASE
 
 // Uncomment to enable HIGH debug.
@@ -35,16 +37,16 @@
 // #define DEGRLI_DEBUG_HIGH
 
 // Options stuff
-#define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.0 (holy shit a release after like 6 months)"
+#define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.1 (uhhh bugfix i guess idk)"
 // uncomment to disable X11
 // #define DEGRLI_NO_X11
-// uncomment to disable the Emote1 demo.
+// uncomment to enable the Emote1 demo.
 #define DEGRLI_NO_ANIM_DEMO
 #endif
 
 // Uncomment to override the random action state, for testing
 //  0 - NIL
-//  1 - trigger rclick emo
+//  1 - trigger rclick emote
 //  2 - NIL
 //  3 - random move
 // #define DEGRLI_RANDOM_OVERRIDE 3
