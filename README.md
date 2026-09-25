@@ -118,6 +118,8 @@ For whatever reason, I have only included Tamtam, but if you want to ~~steal~~ g
 
 Copy them into `/usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins` (for the SpriteSheet folder, e.g. `SpriteSheet/Gremlins/Cafe`) and `/usr/share/desktop-gremlin-linux/Sounds/` (for the Sounds folder: e.g. `Sounds/Cafe`).
 
+If they seem buggy, try running the `tool/fixup.py` python program (with argument 1 as path to assetpack).
+
 ## License
 
 Under MIT license. Source freely available and do what the hell you want with it.

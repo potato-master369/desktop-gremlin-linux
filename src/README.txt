@@ -79,6 +79,8 @@ src/
   installer/
     - the folder for GUI Installer
     main.c -- main C program (GTK4)
+    payload.c -- executes the code 
+    for building and installing
 
 This folder structure is subject to
 change across versions. Read updates

@@ -40,7 +40,7 @@
 #define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.1 (uhhh bugfix i guess idk)"
 // uncomment to disable X11
 // #define DEGRLI_NO_X11
-// uncomment to enable the Emote1 demo.
+// uncomment to disable the Emote1 demo.
 #define DEGRLI_NO_ANIM_DEMO
 #endif
 
