@@ -5,47 +5,45 @@
 #include "trace.h"
 #include <ctype.h>
 #include <gtk/gtk.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdbool.h>
 // variables
 
 // declare defaults
-degrli_conf_t local_config_default = {
-	.start_char          = "Cafe",
-	.enable_keyboard       = true,
-	.randomize_spawn      = false,
-	.spawn_distance           = 0,
-	.volume_level           = 0.5,
-	.sprite_framerate        = 60,
-	.sprite_speed            = 10,
-	.follow_radius          = 300,
-	.start_bottom         = false,
-	.enable_gravity       = false,
-	.sleep_time             = 500,
-	.gravity_strength        = 20,
-	.allow_random_actions  = true,
-	.max_interval            = 40,
-	.min_interval            = 30,
-	.random_move_distance   = 120,
-	.walk_distance          = 200,
-	.allow_col_hotspot    = false,
-	.disable_hotspots     = false,
-	.enable_min_resize     = true,
-	.force_centre         = false,
-	.enable_manual_resize  = true,
-	.current_acceleration   = 0.3,
-	.follow_acceleration    = 0.2,
-	.max_acceleration       = 200,
-	.companion_char = "TachyonComp",
-	.companion_scale        = 0.5,
-	.companion_follow        = 90,
-	.food_spawn     = "food1.png",
-	.straight_line        = false
-};
+degrli_conf_t local_config_default = {.start_char = "Cafe",
+                                      .enable_keyboard = true,
+                                      .randomize_spawn = false,
+                                      .spawn_distance = 0,
+                                      .volume_level = 0.5,
+                                      .sprite_framerate = 60,
+                                      .sprite_speed = 10,
+                                      .follow_radius = 300,
+                                      .start_bottom = false,
+                                      .enable_gravity = false,
+                                      .sleep_time = 500,
+                                      .gravity_strength = 20,
+                                      .allow_random_actions = true,
+                                      .max_interval = 40,
+                                      .min_interval = 30,
+                                      .random_move_distance = 120,
+                                      .walk_distance = 200,
+                                      .allow_col_hotspot = false,
+                                      .disable_hotspots = false,
+                                      .enable_min_resize = true,
+                                      .force_centre = false,
+                                      .enable_manual_resize = true,
+                                      .current_acceleration = 0.3,
+                                      .follow_acceleration = 0.2,
+                                      .max_acceleration = 200,
+                                      .companion_char = "TachyonComp",
+                                      .companion_scale = 0.5,
+                                      .companion_follow = 90,
+                                      .food_spawn = "food1.png",
+                                      .straight_line = false};
 
 degrli_conf_t *local_config = &local_config_default;
 
@@ -53,7 +51,7 @@ void degrli_init_readconf(void) {
   int res;
   trace_log(INFO, " [ config ] Started config init...\n");
   trace_log(INFO, " [ config ] Looking for file in %sconfig.txt\n",
-          DEGRLI_LOCALCONFPREFIX);
+            DEGRLI_LOCALCONFPREFIX);
   char filepath[256];
   // Looks for PATH/config.txt. Assume that the last letter is a /
   if (DEGRLI_LOCALCONFPREFIX[0] != '~') {
@@ -64,21 +62,24 @@ void degrli_init_readconf(void) {
     if (home != NULL) {
       char *localpref = DEGRLI_LOCALCONFPREFIX;
       res = snprintf(filepath, sizeof(filepath), "%s%sconfig.txt", home,
-               localpref + 1);
+                     localpref + 1);
     }
   }
   if (res > sizeof(filepath)) {
-    trace_log(WARN, " [ config ] WARN: file path was truncated. We will probably not "
-            "be able to read!\n");
+    trace_log(WARN,
+              " [ config ] WARN: file path was truncated. We will probably not "
+              "be able to read!\n");
   } else if (res < 0) {
-    trace_log(WARN, " [ config ] WARN: snprintf encoding error while generating "
-            "filepath!!!\n");
+    trace_log(WARN,
+              " [ config ] WARN: snprintf encoding error while generating "
+              "filepath!!!\n");
   }
   FILE *conf = fopen(filepath, "r");
   if (conf == NULL) {
-    trace_log(WARN, " [ config ] WARN: could not read filepath. Does %sconfig.txt "
-            "exist? We will fall back to defaults.\n",
-            DEGRLI_LOCALCONFPREFIX);
+    trace_log(WARN,
+              " [ config ] WARN: could not read filepath. Does %sconfig.txt "
+              "exist? We will fall back to defaults.\n",
+              DEGRLI_LOCALCONFPREFIX);
   } else {
     // PARSE
     char *buf = (char *)malloc(256 * sizeof(char));
@@ -140,62 +141,62 @@ void degrli_init_readconf(void) {
   } while (0)
       if (MATCH("START_CHAR"))
         COPYKEY(start_char);
-      if (MATCH ("ENABLE_KEYBOARD"))
-	COPYKEYBOOL(enable_keyboard);
-      if (MATCH ("RANDOMIZE_SPAWN"))
-	      COPYKEYBOOL(randomize_spawn);
-      if (MATCH ("SPAWN_DISTANCE"))
-	      COPYKEYINT(spawn_distance);
+      if (MATCH("ENABLE_KEYBOARD"))
+        COPYKEYBOOL(enable_keyboard);
+      if (MATCH("RANDOMIZE_SPAWN"))
+        COPYKEYBOOL(randomize_spawn);
+      if (MATCH("SPAWN_DISTANCE"))
+        COPYKEYINT(spawn_distance);
       if (MATCH("VOLUME_LEVEL"))
-	      COPYKEYFLOAT(volume_level);
+        COPYKEYFLOAT(volume_level);
       if (MATCH("SPRITE_FRAMERATE"))
-	      COPYKEYINT(sprite_framerate);
+        COPYKEYINT(sprite_framerate);
       if (MATCH("FOLLOW_RADIUS"))
-	      COPYKEYINT(follow_radius);
+        COPYKEYINT(follow_radius);
       if (MATCH("START_BUTTOM") || MATCH("START_BOTTOM"))
-	      COPYKEYBOOL(start_bottom);
+        COPYKEYBOOL(start_bottom);
       if (MATCH("ENABLE_GRAVITY"))
-	      COPYKEYBOOL(enable_gravity);
+        COPYKEYBOOL(enable_gravity);
       if (MATCH("SLEEP_TIME"))
-	      COPYKEYINT(sleep_time);
+        COPYKEYINT(sleep_time);
       if (MATCH("GRAVITY_STRENGTH"))
-	      COPYKEYINT(gravity_strength);
+        COPYKEYINT(gravity_strength);
       if (MATCH("ALLOW_RANDOM_ACTIONS"))
-	      COPYKEYBOOL(allow_random_actions);
+        COPYKEYBOOL(allow_random_actions);
       if (MATCH("MAX_INTERVAL"))
-	      COPYKEYINT(max_interval);
+        COPYKEYINT(max_interval);
       if (MATCH("MIN_INTERVAL"))
-	      COPYKEYINT(min_interval);
+        COPYKEYINT(min_interval);
       if (MATCH("RANDOM_MOVE_DISTANCE"))
-              COPYKEYINT(random_move_distance);
+        COPYKEYINT(random_move_distance);
       if (MATCH("WALK_DISTANCE"))
-	      COPYKEYINT(walk_distance);
+        COPYKEYINT(walk_distance);
       if (MATCH("ALLOW_COLOR_HOTSPOT"))
-	      COPYKEYBOOL(allow_col_hotspot);
+        COPYKEYBOOL(allow_col_hotspot);
       if (MATCH("DISABLE_HOTSPOTS"))
-	      COPYKEYBOOL(disable_hotspots);
+        COPYKEYBOOL(disable_hotspots);
       if (MATCH("ENABLE_MIN_RESIZE"))
-	      COPYKEYBOOL(enable_min_resize);
+        COPYKEYBOOL(enable_min_resize);
       if (MATCH("FORCE_CENTER"))
-	      COPYKEYBOOL(force_centre);
+        COPYKEYBOOL(force_centre);
       if (MATCH("ENABLE_MANUAL_RESIZE"))
-	      COPYKEYBOOL(enable_manual_resize);
+        COPYKEYBOOL(enable_manual_resize);
       if (MATCH("MAX_ACCELERATION"))
-	      COPYKEYINT(max_acceleration);
+        COPYKEYINT(max_acceleration);
       if (MATCH("CURRENT_ACCELERATION"))
-	      COPYKEYFLOAT(current_acceleration);
+        COPYKEYFLOAT(current_acceleration);
       if (MATCH("FOLLOW_ACCELERATION"))
-	      COPYKEYFLOAT(follow_acceleration);
+        COPYKEYFLOAT(follow_acceleration);
       if (MATCH("COMPANION_CHAR"))
-	      COPYKEY(companion_char);
+        COPYKEY(companion_char);
       if (MATCH("COMPANION_SCALE"))
-	      COPYKEYFLOAT(companion_scale);
+        COPYKEYFLOAT(companion_scale);
       if (MATCH("COMPANION_FOLLOW"))
-	      COPYKEYINT(companion_follow);
+        COPYKEYINT(companion_follow);
       if (MATCH("FOOD_SPAWN"))
-	      COPYKEY(food_spawn);
+        COPYKEY(food_spawn);
       if (MATCH("STRAIGHT_LINE"))
-	      COPYKEYBOOL(straight_line);
+        COPYKEYBOOL(straight_line);
     }
     if (isbom)
       buf -= 3;
@@ -205,6 +206,4 @@ void degrli_init_readconf(void) {
   fclose(conf);
 }
 
-degrli_conf_t *degrli_request_localconf(void) {
-	return local_config;
-}
+degrli_conf_t *degrli_request_localconf(void) { return local_config; }

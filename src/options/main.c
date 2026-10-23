@@ -425,7 +425,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *l_tab_6 = gtk_label_new("Cool Information");
   GtkWidget *meme_image = gtk_image_new_from_resource("/io/github/desktop-gremlin-linux/meme.png");
   gtk_image_set_pixel_size(GTK_IMAGE(meme_image), 300);
-  GtkWidget *infolabel = gtk_label_new("desktop-gremlin-linux by potato-master369\nVersion 4.0.0 (Pre-release)");
+  GtkWidget *infolabel = gtk_label_new(DEGRLI_VER_STRING);
   gtk_widget_set_valign(infolabel, GTK_ALIGN_START);
   GtkWidget *vbox_tab_6 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   gtk_box_append(GTK_BOX(g_tab_6), vbox_tab_6);
@@ -435,7 +435,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *yootoob = gtk_button_new_with_label("YouTube");
   gtk_box_append(GTK_BOX(vbox_tab_6), guthib);
   gtk_box_append(GTK_BOX(vbox_tab_6), yootoob);
-  GtkWidget *loglabel = gtk_label_new("This is where I put version history and memes\n\n4.0 (I skipped to 4.0)\nAdded the entire thing");
+  GtkWidget *loglabel = gtk_label_new("This is where I put version history and memes\n\n4.0.2 \nbugfix");
   gtk_widget_set_vexpand(loglabel, false);
   gtk_box_append(GTK_BOX(g_tab_6), loglabel);
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_6, l_tab_6);
