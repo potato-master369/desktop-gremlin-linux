@@ -1,0 +1,56 @@
+# desktop-gremlin-linux PM recipe for Kritzkingvoid gremlins
+
+#!/bin/sh
+
+if command -v curl >/dev/null 2>&1; then
+    echo " -> curl is available"
+else
+    echo " !!! curl is not available"
+    exit 1
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+    echo " -> sha256sum is available"
+else
+    echo " !!! sha256sum is not available"
+    exit 1
+fi
+
+if command -v unzip >/dev/null 2>&1; then
+    echo " -> unzip is available"
+else
+    echo " !!! unzip is not available"
+    exit 1
+fi
+
+TEMP_ZIP=$(mktemp /tmp/dlpm-unverified-Cafe.XXXXXX.zip)
+TEMP_DIR=$(mktemp -d /tmp/dlpm-Cafe-work.XXXXXX)
+
+echo " -> Downloading asset..."
+curl -L -o "$TEMP_ZIP" "https://github.com/Kritzkingvoid/Desktop_Gremlin/releases/download/v4.0/TracenAcademy_v4.0.zip"
+
+if echo "0fa410c9bc983e39efb6cb905c7cefa65bf5000a4aa677b14ee7b5baa711be0d  $TEMP_ZIP" | sha256sum -c --status; then
+    echo " -> Checksum pass"
+else
+    echo " !!! Checksum fail; this cannot be skipped as this is fetched from an archive URL."
+    rm -f "$TEMP_ZIP"
+    rm -rf "$TEMP_DIR"
+    exit 1
+fi
+
+echo " -> Unzipping..."
+unzip -q "$TEMP_ZIP" -d "$TEMP_DIR"
+
+mkdir -p /usr/share/desktop-gremlin-linux/Sounds/Cafe
+mkdir -p /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Cafe
+
+echo " -> Installing files..."
+cp -R "$TEMP_DIR/TracenAcademy_v4.0/Sounds/Cafe/." /usr/share/desktop-gremlin-linux/Sounds/Cafe/
+cp -R "$TEMP_DIR/TracenAcademy_v4.0/SpriteSheet/Gremlins/Cafe/." /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Cafe/
+
+echo " -> Cleaning up..."
+rm -f "$TEMP_ZIP"
+rm -rf "$TEMP_DIR"
+
+echo " [ * ] Install finish!"
+exit 0

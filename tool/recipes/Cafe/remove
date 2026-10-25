@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo " -> Remove"
+rm -rvf /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Cafe
+rm -rvf /usr/share/desktop-gremlin-linux/Sounds/Cafe
+echo " [ * ] Remove success!"
+exit 0

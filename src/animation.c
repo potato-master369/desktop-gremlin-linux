@@ -124,6 +124,13 @@ static gboolean animation_tick(gpointer user_data) {
     }
     return G_SOURCE_CONTINUE;
   case ANIM_STATE_OUTRO:
+    // INFO: address a bug where having a nil outro count
+    // would prevent the program from closing.
+    if (asset_conf_animation->outro == 0) {
+      g_usleep(1000000);
+      cleanup();
+      return G_SOURCE_REMOVE;
+    }
     asset_apply(DEGRLI_LRU_OUTRO, data->cur, data->img);
     ++data->cur;
     if (data->cur == asset_conf_animation->outro) {
