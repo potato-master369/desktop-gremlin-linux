@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # desktop-gremlin-linux dlpm
 #--------------------------------------------
 # Recipe manager for downloading gremlins

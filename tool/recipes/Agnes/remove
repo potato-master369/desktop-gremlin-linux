@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo " -> Remove"
+rm -rvf /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Agnes
+rm -rvf /usr/share/desktop-gremlin-linux/Sounds/Agnes
+echo " [ * ] Remove success!"
+exit 0
