@@ -5,12 +5,14 @@
 #include <gtk/gtkshortcut.h>
 #include "meme.h"
 #include "config.h"
+#include "pkg.h"
 #include "../defines.h"
 #include "../trace.h"
 // Made with GTK-4.0
 // Options program, designed to emulate Options.exe from Desktop_Gremlin
 
 static GtkStringList *char_list = NULL;
+static GListStore *inst_list = NULL;
 static config_t conf;
 
 // Moved these to toplevel so we can mess with them
@@ -52,6 +54,25 @@ static GtkAdjustment *a_follow_radius = NULL;
 static GtkAdjustment *a_gravity_strength = NULL;
 static GtkAdjustment *a_current_acceleration = NULL;
 static GtkAdjustment *a_follow_acceleration = NULL;
+
+// Factory setup for Gtk4 gtk.ListView
+static void setup_listitem_cb(GtkListItemFactory *factory, GtkListItem *list_item) {
+  GtkWidget *label = gtk_label_new(NULL);
+  gtk_widget_set_margin_start(label, 40);
+  gtk_widget_set_margin_end(label, 40);
+  gtk_list_item_set_child(list_item, label);
+}
+
+static void bind_listitem_cb(GtkListItemFactory *factory, GtkListItem *list_item) {
+  GtkWidget *label = gtk_list_item_get_child(list_item);
+  GtkStringObject *obj = gtk_list_item_get_item(list_item);
+  gtk_label_set_text(GTK_LABEL(label), gtk_string_object_get_string(obj));
+}
+
+static void activate_cb(GtkListView *list, guint position, gpointer unused) {
+  (void)unused;
+  trace_log(INFO, "Item %d activated\n", position);
+}
 
 static void find_characters(void) {
   char path[256];
@@ -440,6 +461,36 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_append(GTK_BOX(g_tab_6), loglabel);
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_6, l_tab_6);
 
+  GtkWidget *g_tab_7 = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+  GtkWidget *l_tab_7 = gtk_label_new("Get new gremlins!");
+  // setup factory
+  inst_list = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+  pkg_populate_gui(inst_list);
+  GtkSelectionModel *selection = GTK_SELECTION_MODEL (gtk_single_selection_new(G_LIST_MODEL(inst_list)));
+  GtkListItemFactory *factory = gtk_signal_list_item_factory_new();
+  g_signal_connect(factory, "setup", G_CALLBACK(setup_listitem_cb), NULL);
+  g_signal_connect(factory, "bind", G_CALLBACK(bind_listitem_cb), NULL);
+  GtkWidget *list_view = gtk_list_view_new(selection, factory);
+  gtk_widget_add_css_class(list_view, "rich-list");
+  g_signal_connect(list_view, "activate", G_CALLBACK(activate_cb), NULL);
+  GtkWidget *scrolled = gtk_scrolled_window_new();
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), list_view);
+  GtkWidget *dv_tab_7 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+  gtk_widget_set_margin_start(dv_tab_7, 20);
+  gtk_widget_set_margin_bottom(dv_tab_7, 20);
+  gtk_widget_set_margin_end(dv_tab_7, 20);
+  gtk_widget_set_margin_top(dv_tab_7, 20);
+  pkg_setup_box(dv_tab_7);
+  gtk_widget_set_size_request(list_view, 400, -1);
+  
+  gtk_paned_set_start_child(GTK_PANED(g_tab_7), scrolled);
+  gtk_paned_set_end_child(GTK_PANED(g_tab_7), dv_tab_7);
+  gtk_notebook_append_page(GTK_NOTEBOOK(notebook), g_tab_7, l_tab_7);
+  
+  gtk_widget_set_hexpand(g_tab_7, TRUE);
+  gtk_widget_set_vexpand(g_tab_7, TRUE);
+
+
   GtkWidget *copyright_label = gtk_label_new("desktop-gremlin-linux v4.x - potato-master369 (GitHub)");
   gtk_widget_set_halign(copyright_label, GTK_ALIGN_END);
   gtk_box_append(GTK_BOX(box), copyright_label);
@@ -458,6 +509,9 @@ int main(int argc, char **argv) {
 #endif
   conf_apply_default(&conf);
   load_conf(&conf);
+  if (pkg_init() != 0) {
+    return 1;
+  }
   g_resources_register(app_get_resource());
   GtkApplication *app = gtk_application_new(
       "io.github.potato-master369.degrli-options", G_APPLICATION_DEFAULT_FLAGS);
