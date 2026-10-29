@@ -26,7 +26,7 @@
 #define DEGRLI_LOCALCONFPREFIX "~/.config/desktop-gremlin-linux/"
 #define DEGRLI_ASSET_DIR       "/usr/share/desktop-gremlin-linux/"
 // This is separate from the version string, and is only checked by the installer.
-#define DEGRLI_CHECKOUT_VERSION "v4.0.1"
+#define DEGRLI_CHECKOUT_VERSION "v4.1.0"
 #define DEGRLI_DEBUG 0
 #define DEGRLI_RELEASE 1
 // switching to DEGRLI_DEBUG doesnt do much anymore, since the release version of 4.0.0
@@ -37,7 +37,7 @@
 // #define DEGRLI_DEBUG_HIGH
 
 // Options stuff
-#define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.0.1 (uhhh bugfix i guess idk)"
+#define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.1.0 (can download stuff now i guess)"
 // uncomment to disable X11
 // #define DEGRLI_NO_X11
 // uncomment to disable the Emote1 demo.

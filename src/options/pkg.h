@@ -1,5 +1,6 @@
 #ifndef DEGRLI_PKG_H
 #define DEGRLI_PKG_H
+#include <gio/gio.h>
 #include <gtk/gtk.h>
 
 typedef struct {
@@ -19,6 +20,7 @@ typedef struct {
 
 void pkg_populate_gui(GListStore *self);
 void pkg_setup_box(GtkWidget *self);
+void pkg_update_box(GListStore *dat, int sel);
 int pkg_init(void);
 
 #endif
