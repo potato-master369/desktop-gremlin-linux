@@ -1,3 +1,7 @@
+// main.c
+// ----------------------
+// Main file for program.
+
 #include "../defines.h"
 #include "../trace.h"
 #include "config.h"
@@ -19,6 +23,7 @@ static GListStore *inst_list = NULL;
 static config_t conf;
 
 // Moved these to toplevel so we can mess with them
+static GtkWidget *w;
 static GtkWidget *w_start_char = NULL;
 static GtkWidget *w_language_diff = NULL;
 static GtkWidget *w_enable_keyboard = NULL;
@@ -323,10 +328,19 @@ static void save_defaults(GtkWidget *widget, gpointer data) {
 }
 
 // make social links actually verk
+// EDIT: fix links
+static void on_guthib(GtkButton *button, gpointer user_data) {
+  GtkUriLauncher *l = gtk_uri_launcher_new("https://www.github.com/potato-master369/");
+  gtk_uri_launcher_launch(l, GTK_WINDOW(w), NULL, NULL, NULL);
+}
 
+static void on_yutoob(GtkButton *button, gpointer user_data) {
+  GtkUriLauncher *l = gtk_uri_launcher_new("https://www.youtube.com/@WompWomp1234-j6c");
+  gtk_uri_launcher_launch(l, GTK_WINDOW(w), NULL, NULL, NULL);
+}
 
 static void activate(GtkApplication *app, gpointer user_data) {
-  GtkWidget *w = gtk_application_window_new(app);
+  w = gtk_application_window_new(app);
   gtk_window_set_default_size(GTK_WINDOW(w), 800, 600);
   gtk_window_set_title(GTK_WINDOW(w), "Desktop-gremlin-linux Options");
   // CSS go brr
@@ -600,13 +614,16 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_append(GTK_BOX(vbox_tab_6), meme_image);
   gtk_box_append(GTK_BOX(vbox_tab_6), infolabel);
   GtkWidget *guthib = gtk_button_new_with_label("Github");
+  g_signal_connect(guthib, "clicked", G_CALLBACK(on_guthib), NULL);
   GtkWidget *yootoob = gtk_button_new_with_label("YouTube");
+  g_signal_connect(yootoob, "clicked", G_CALLBACK(on_yutoob), NULL);
   gtk_box_append(GTK_BOX(vbox_tab_6), guthib);
   gtk_box_append(GTK_BOX(vbox_tab_6), yootoob);
   GtkWidget *loglabel = gtk_label_new(
       "This is where I put version history and memes\n\n4.1.0 \nnew UI and downloader thingy!");
   gtk_label_set_wrap(GTK_LABEL(loglabel), TRUE);
   gtk_widget_set_vexpand(loglabel, false);
+  gtk_widget_set_hexpand(loglabel, true);
   gtk_box_append(GTK_BOX(g_tab_6), loglabel);
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scroll_page(g_tab_6),
                            l_tab_6);

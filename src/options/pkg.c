@@ -26,6 +26,9 @@ static GtkWidget *header;
 static GtkWidget *owndesc;
 static GtkWidget *install;
 static GtkWidget *desc;
+static GtkWidget *zaghahkngvyjin;
+static int csel;
+static char cversion[64];
 
 static void pkg_init_list(void) {
   pkg_entries.len = 0;
@@ -179,20 +182,48 @@ static void pkg_install_hook(GtkButton *button, gpointer user_data) {
 
 }
 
+static inline void remove_outer_quotes(char *str) {
+    size_t len = strlen(str);
+
+    // Check if the string has at least 2 characters and matching outer quotes
+    if (len >= 2 &&
+       ((str[0] == '"' && str[len - 1] == '"') ||
+        (str[0] == '\'' && str[len - 1] == '\''))) {
+
+        // Move all characters (including '\0') 1 position to the left
+        memmove(str, str + 1, len - 1);
+        str[len - 2] = '\0'; // Truncate the trailing quote
+    }
+}
+
 #define MATCH(a, b) (strcmp(a, b) == 0)
 static void pkg_ini_callback(char *section, char *key, char *value) {
   if MATCH(section, "Info") {
     if MATCH(key, "Name") {
+      remove_outer_quotes(value);
       gtk_label_set_text(GTK_LABEL(header), value);
     }
     if MATCH(key, "Description") {
+      remove_outer_quotes(value);
       gtk_label_set_text(GTK_LABEL(desc), value);
+    }
+    if MATCH(key, "Owner") {
+      remove_outer_quotes(value);
+      gtk_label_set_text(GTK_LABEL(owndesc), value);
+    }
+    if MATCH(key, "Version") {
+      remove_outer_quotes(value);
+      strcpy(cversion, value); // save version
+      char buf[256];
+      snprintf(buf, sizeof(buf), "Package upstream (if any) version: %s", value);
+      gtk_label_set_text(GTK_LABEL(zaghahkngvyjin), buf);
     }
   }
 }
 #undef MATCH
 
 void pkg_update_box(GListStore *dat, int sel) {
+  csel = sel;
   gpointer item = g_list_model_get_object(G_LIST_MODEL(dat), sel);
   char fpathbuf[PATH_MAX];
   if (item) {
@@ -226,11 +257,14 @@ void pkg_setup_box(GtkWidget *self) {
   desc = gtk_label_new("DESCRIPTION TEXT BLABLABLA I LOVE UMAUMSUME");
   gtk_widget_set_halign(desc, GTK_ALIGN_START);
   gtk_label_set_wrap(GTK_LABEL(desc), TRUE);
+  zaghahkngvyjin = gtk_label_new("v4.2.0");
+  gtk_widget_add_css_class(zaghahkngvyjin, "dim-label");
   gtk_box_append(GTK_BOX(thefuckingbox), header);
   gtk_box_append(GTK_BOX(thefuckingbox), owndesc);
   gtk_box_append(GTK_BOX(thefuckingbox), install);
   gtk_box_append(GTK_BOX(thefuckingbox), separator);
   gtk_box_append(GTK_BOX(thefuckingbox), desc);
+  gtk_box_append(GTK_BOX(thefuckingbox), zaghahkngvyjin);
 }
 
 int pkg_init(void) {
