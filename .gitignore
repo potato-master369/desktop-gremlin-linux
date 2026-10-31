@@ -3,6 +3,7 @@
 degrli_options
 degrli_installer
 degrli
+degrli_options_pstub
 
 .vscode/
 .tar.gz
