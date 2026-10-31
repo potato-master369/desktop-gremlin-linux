@@ -23,7 +23,7 @@ static GListStore *inst_list = NULL;
 static config_t conf;
 
 // Moved these to toplevel so we can mess with them
-static GtkWidget *w;
+GtkWidget *w;
 static GtkWidget *w_start_char = NULL;
 static GtkWidget *w_language_diff = NULL;
 static GtkWidget *w_enable_keyboard = NULL;

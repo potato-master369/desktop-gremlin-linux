@@ -9,7 +9,7 @@ LDFLAGS = -Wl,--gc-sections
 LDLIBS  = $(shell pkg-config --libs gtk4) $(shell pkg-config --libs gtk4-layer-shell-0) -lm -lX11 -lXext -lXrender
 NCURSES = -lncursesw
 
-TARGETS = degrli degrli_options degrli_installer
+TARGETS = degrli degrli_options degrli_installer degrli_options_pstub
 OBJ     = dynamic.o config.o sounds.o asset.o animation.o trace.o hotspot.o
 OPTOBJ  = options.o meme.o config_opt.o trace.o pkg.o
 INSTOBJ = installer.o installer_payload.o trace.o
@@ -67,6 +67,7 @@ pkg.o: src/options/pkg.c
 options.o: src/options/main.c src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# installer
 degrli_installer: $(INSTOBJ)
 	$(CC) $(CFLAGS) -o $@ $(INSTOBJ) $(LDLIBS)
 	$(STRIP) $@
@@ -77,6 +78,11 @@ installer.o: src/installer/main.c src/defines.h
 installer_payload.o: src/installer/payload.c src/installer/payload.h src/defines.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Options pkexexec stub
+degrli_options_pstub: src/options_pstub/main.c src/defines.h
+	$(CC) $(CFLAGS) $< -o $@
+	$(STRIP) $@
+
 # Clean
 clean:
 	rm -f $(OBJ) $(TARGETS) $(OPTOBJ) $(INSTOBJ)
@@ -85,14 +91,20 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -d $(DESTDIR)$(DATADIR)/Sounds
 	install -d $(DESTDIR)$(DATADIR)/SpriteSheet
+	install -d $(DESTDIR)$(DATADIR)/dlpm
 	install -d $(HOME)/.config/desktop-gremlin-linux
 	install -m 755 degrli $(DESTDIR)$(PREFIX)/bin/degrli
 	install -m 755 degrli_options $(DESTDIR)$(PREFIX)/bin/degrli_options
+	install -m 755 degrli_options_pstub $(DESTDIR)$(PREFIX)/bin/degrli_options
+	cp -r tool/recipes $(DESTDIR)$(DATADIR)/dlpm/recipes
+	test -f $(DESTDIR)$(DATADIR)/dlpm/world || \
+		touch $(DESTDIR)$(DATADIR)/dlpm/world && chmod 644 $(DESTDIR)$(DATADIR)/dlpm/world
 	cp -r ass/Sounds/* $(DESTDIR)$(DATADIR)/Sounds/
 	install -d $(DESTDIR)$(DESKTOPDIR)
 	install -m 644 ass/degrli.desktop $(DESTDIR)$(DESKTOPDIR)/degrli.desktop
 	install -m 644 ass/degrli_options.desktop $(DESTDIR)$(DESKTOPDIR)/degrli_options.desktop
 	install -m 644 ass/app.png $(DESTDIR)$(DATADIR)/app.png
+	install -m 755 tool/fixup.py $(DESTDIR)$(DATADIR)/fixup.py
 	cp -r ass/SpriteSheet/* $(DESTDIR)$(DATADIR)/SpriteSheet
 	test -f $(HOME)/.config/desktop-gremlin-linux/config.txt || \
 		install -m 644 ass/config.txt $(HOME)/.config/desktop-gremlin-linux/config.txt
