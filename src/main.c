@@ -199,8 +199,6 @@ static void degrli_mov(int32_t offset_x, int32_t offset_y) {
   int target_x = sprite_x + offset_x;
   int target_y = sprite_y + offset_y;
 
-  // FIXME: color hotspots
-
   if (target_x >= 0 &&
       target_x + asset_config_main->width <=
           gtk_widget_get_width(GTK_WIDGET(w)) &&

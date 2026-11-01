@@ -19,6 +19,8 @@ Who wouldn't want to have their favorite Umas running around on your desktop? Th
 
 This is a rewrite of `desktop-gremlin-linux`. Similar to the V3.x branch, it is also made with GTK4. There are however, major changes. For example, the X11 client has been removed because we can now fix all the initial problems with X11.
 
+For TLDR; it works best on wayland. Which is cool, cos no one writes cool stuff for wayland.
+
 See `OPTIONS.md`, for how to use the config.txt options.
 
 ## Dependencies
