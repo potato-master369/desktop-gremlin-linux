@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo " -> Remove"
+rm -rvf /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/GoldShip
+rm -rvf /usr/share/desktop-gremlin-linux/Sounds/GoldShip
+echo " [ * ] Remove success!"
+exit 0

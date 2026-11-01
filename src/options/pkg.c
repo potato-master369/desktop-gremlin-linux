@@ -248,115 +248,51 @@ static void pkg_install_log(pkg_install_ctx_t *ctx, const char *format, ...) {
 // add the fucking package only to world file if it isnt
 // installed; so basically the dlpm.py behavior
 static int pkg_world_add(const char *pkgname) {
-  char **lines = NULL;
-  int n_lines = 0;
-  gboolean already_installed = FALSE;
-  FILE *f = fopen(DEGRLI_PKG_WORLD_PATH, "r");
-  if (f != NULL) {
-    char *line = NULL;
-    size_t len = 0;
-    while (getline(&line, &len, f) != -1) {
-      line[strcspn(line, "\r\n")] = '\0';
-      if (line[0] == '\0')
-        continue;
-      if (strcmp(line, pkgname) == 0) {
-        already_installed = TRUE;
-        continue;
-      }
+  const char *args[] = { "pkexec", DEGRLI_PKG_PSTUB_PATH, "add", pkgname, NULL};
+  GError *error = NULL;
+  GSubprocess *subprocess = NULL;
+  int ret = -1;
 
-      char **tmp = realloc(lines, (n_lines + 1) * sizeof(lines[0]));
-      if (tmp == NULL) {
-        trace_log(ERROR, "pkg: realloc failed while updating world file\n");
-        free(line);
-        for (int i = 0; i < n_lines; ++i)
-          free(lines[i]);
-        free(lines);
-        fclose(f);
-        return -1;
-      }
-      lines = tmp;
-      lines[n_lines++] = strdup(line);
-    }
-    free(line);
-    fclose(f);
-  }
-
-  if (already_installed) {
-    for (int i = 0; i < n_lines; ++i)
-      free(lines[i]);
-    free(lines);
-    return 0;
-  }
-
-  f = fopen(DEGRLI_PKG_WORLD_PATH, "w");
-  if (f == NULL) {
-    trace_log(ERROR,
-              "pkg: could not write world file " DEGRLI_PKG_WORLD_PATH ": %s\n",
-              strerror(errno));
-    for (int i = 0; i < n_lines; ++i)
-      free(lines[i]);
-    free(lines);
+  subprocess = g_subprocess_newv(args, G_SUBPROCESS_FLAGS_NONE, &error);
+  if (error != NULL) {
+    trace_log(ERROR, "Failed to launch options_pstub: %s\n", error->message);
     return -1;
   }
+  g_subprocess_wait(subprocess, NULL, &error);
+  
+  if (error != NULL) {
+    trace_log(ERROR, "wait failed: %s\n", error->message);
+    g_clear_error(&error);
+  } else {
+    ret = g_subprocess_get_exit_status(subprocess);
+  }
 
-  for (int i = 0; i < n_lines; ++i)
-    fprintf(f, "%s\n", lines[i]);
-  fprintf(f, "%s\n", pkgname);
-  fclose(f);
-
-  for (int i = 0; i < n_lines; ++i)
-    free(lines[i]);
-  free(lines);
-  return 0;
+  g_object_unref(subprocess);
+  return ret;
 }
 
 static int pkg_world_remove(const char *pkgname) {
-  trace_log(DEBUG, "astoflo\n");
-  FILE *worldfile, *tmp_file;
-  char buffer[1024];
-  char tmppath[] = "/tmp/degrli_options_XXXXXX"; // must end in 6 Xs
-  int tfd = mkstemp(tmppath);
-  if (tfd == -1) {
-    trace_log(ERROR, "pkg: could not create tmp file fd: %s\n",
-              strerror(errno));
+  const char *args[] = { "pkexec", DEGRLI_PKG_PSTUB_PATH, "remove", pkgname, NULL};
+  GError *error = NULL;
+  GSubprocess *subprocess = NULL;
+  int ret = -1;
+
+  subprocess = g_subprocess_newv(args, G_SUBPROCESS_FLAGS_NONE, &error);
+  if (error != NULL) {
+    trace_log(ERROR, "Failed to launch options_pstub: %s\n", error->message);
     return -1;
   }
-  worldfile = fopen(DEGRLI_PKG_WORLD_PATH, "r");
-  if (worldfile == NULL) {
-    fclose(worldfile);
-    trace_log(ERROR,
-              "pkg: could not read world file " DEGRLI_PKG_WORLD_PATH ": %s\n",
-              strerror(errno));
-    return -1;
-  }
-  char *line = NULL;
-  size_t len = 0;
-  ssize_t read;
-  tmp_file = fdopen(tfd, "w+");
-  if (tmp_file == NULL) {
-    fclose(worldfile);
-    trace_log(ERROR, "pkg: could not open tmp file: %s\n", strerror(errno));
-    return -1;
+  g_subprocess_wait(subprocess, NULL, &error);
+  
+  if (error != NULL) {
+    trace_log(ERROR, "wait failed: %s\n", error->message);
+    g_clear_error(&error);
+  } else {
+    ret = g_subprocess_get_exit_status(subprocess);
   }
 
-  while ((read = getline(&line, &len, worldfile)) != -1) {
-    line[strcspn(line, "\r\n")] = '\0';
-    if (strcmp(line, pkgname) != 0) {
-      fputs(line, tmp_file);
-      fputs("\n", tmp_file);
-    }
-  }
-
-  free(line);
-
-  fclose(worldfile);
-  fclose(tmp_file);
-  if (remove(DEGRLI_PKG_WORLD_PATH) != 0 ||
-      rename(tmppath, DEGRLI_PKG_WORLD_PATH) != 0) {
-    trace_log(ERROR, "pkg: could not replace world file: %s\n", strerror(errno));
-    return -1;
-  }
-  return 0;
+  g_object_unref(subprocess);
+  return ret;
 }
 
 static void pkg_mark_installed(const char *pkgname) {

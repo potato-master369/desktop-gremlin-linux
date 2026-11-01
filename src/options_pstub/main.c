@@ -86,67 +86,96 @@ static int pkg_world_add(const char *pkgname) {
 }
 
 static int pkg_world_remove(const char *pkgname) {
-  printf("astoflo\n");
-  FILE *worldfile, *tmp_file;
-  char tmppath[] =
-      "/usr/share/desktop-gremlin-linux/dlpm/degrli_options_XXXXXX"; // must end
-                                                                     // in 6 Xs
-  int tfd = mkstemp(tmppath);
-  if (tfd == -1) {
-    fprintf(stderr, "pkg: could not create tmp file fd: %s\n", strerror(errno));
-    return -1;
-  }
-  worldfile = fopen(DEGRLI_PKG_WORLD_PATH, "r");
-  if (worldfile == NULL) {
-    close(tfd);
-    unlink(tmppath);
-    fprintf(stderr,
-            "pkg: could not read world file " DEGRLI_PKG_WORLD_PATH ": %s\n",
-            strerror(errno));
-    return -1;
-  }
-  char *line = NULL;
-  size_t len = 0;
-  ssize_t read;
-  tmp_file = fdopen(tfd, "w+");
-  if (tmp_file == NULL) {
-    fclose(worldfile);
-    fprintf(stderr, "pkg: could not open tmp file: %s\n", strerror(errno));
-    return -1;
-  }
+    FILE *worldfile, *tmp_file;
 
-  while ((read = getline(&line, &len, worldfile)) != -1) {
-    line[strcspn(line, "\r\n")] = '\0';
-    if (strcmp(line, pkgname) != 0) {
-      fputs(line, tmp_file);
-      fputs("\n", tmp_file);
+    char tmppath[] =
+        "/usr/share/desktop-gremlin-linux/dlpm/world.XXXXXX";
+
+    int tfd = mkstemp(tmppath);
+    if (tfd == -1) {
+        fprintf(stderr, "pkg: could not create tmp file: %s\n",
+                strerror(errno));
+        return -1;
     }
-  }
 
-  free(line);
+    worldfile = fopen(DEGRLI_PKG_WORLD_PATH, "r");
+    if (worldfile == NULL) {
+        int err = errno;
+        close(tfd);
+        unlink(tmppath);
+        fprintf(stderr, "pkg: could not read world file: %s\n",
+                strerror(err));
+        return -1;
+    }
 
-  if (ferror(tmp_file)) {
-    fprintf(stderr, "pkg: cannot replace file. File has errors.\n");
+    tmp_file = fdopen(tfd, "w");
+    if (tmp_file == NULL) {
+        int err = errno;
+        fclose(worldfile);
+        close(tfd);
+        unlink(tmppath);
+        fprintf(stderr, "pkg: could not open tmp file: %s\n",
+                strerror(err));
+        return -1;
+    }
+
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    while ((read = getline(&line, &len, worldfile)) != -1) {
+        line[strcspn(line, "\r\n")] = '\0';
+
+        if (strcmp(line, pkgname) != 0) {
+            fprintf(tmp_file, "%s\n", line);
+        }
+    }
+
+    free(line);
+
+    if (ferror(worldfile) || ferror(tmp_file)) {
+        fprintf(stderr, "pkg: error processing world file\n");
+        fclose(worldfile);
+        fclose(tmp_file);
+        unlink(tmppath);
+        return -1;
+    }
+
     fclose(worldfile);
-    fclose(tmp_file);
-    unlink(tmppath);
-    return -1;
-  }
-  fclose(worldfile);
-  if (fclose(tmp_file) != 0) {
-    fprintf(stderr, "pkg: fclose fail\n");
-    close(tfd);
-    unlink(tmppath);
-    return -1;
-  }
-  unlink(tmppath);
-  fchmod(fileno(tmp_file), 0644);
-  if (rename(tmppath, DEGRLI_PKG_WORLD_PATH) != 0) {
-    fprintf(stderr, "pkg: could not replace world file: %s\n", strerror(errno));
-    return -1;
-  }
-  return 0;
+
+    if (fflush(tmp_file) != 0 || fsync(fileno(tmp_file)) != 0) {
+        fprintf(stderr, "pkg: could not flush temporary file: %s\n",
+                strerror(errno));
+        fclose(tmp_file);
+        unlink(tmppath);
+        return -1;
+    }
+
+    if (fchmod(fileno(tmp_file), 0644) != 0) {
+        fprintf(stderr, "pkg: could not set permissions: %s\n",
+                strerror(errno));
+        fclose(tmp_file);
+        unlink(tmppath);
+        return -1;
+    }
+
+    if (fclose(tmp_file) != 0) {
+        fprintf(stderr, "pkg: could not close temporary file: %s\n",
+                strerror(errno));
+        unlink(tmppath);
+        return -1;
+    }
+
+    if (rename(tmppath, DEGRLI_PKG_WORLD_PATH) != 0) {
+        fprintf(stderr, "pkg: could not replace world file: %s\n",
+                strerror(errno));
+        unlink(tmppath);
+        return -1;
+    }
+
+    return 0;
 }
+
 int main(int argc, char **argv) {
   if (argc != 3) {
   asofpihafsohoasfhosaf:

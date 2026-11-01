@@ -45,6 +45,8 @@ class config_out:
     column: int = 0
     scale: float = 0.0
 
+accept_scale = False
+
 asset_conf = config()
 asset_conf_out = config_out()
 
@@ -161,6 +163,7 @@ if __name__ == "__main__":
                 OPTIONS:
                 --width N    Sets the width per-sprite to N
                 --height N   Sets the height per-sprite to N
+                --ac-scale   Accepts default scale in config
                 --help       Shows this help message.
                 """)
                 sys.exit(0)
@@ -178,6 +181,7 @@ if __name__ == "__main__":
                 OPTIONS:
                 --width N    Sets the width per-sprite to N
                 --height N   Sets the height per-sprite to N
+                --ac-scale   Accepts default scale in config
                 --help       Shows this help message.
                 """)
                 sys.exit(0)
@@ -196,6 +200,8 @@ if __name__ == "__main__":
                     else:
                         print(" [ fixup ] \033[31mFATAL: --height N requires an argument to set the height. Please provide.\033[0m")
                         sys.exit(1)
+                if sys.argv[i] == "--ac-scale":
+                    accept_scale = True
                 if sys.argv[i] == "--help":
                     print("""
                     fixup help:
@@ -206,6 +212,7 @@ if __name__ == "__main__":
                     OPTIONS:
                     --width N    Sets the width per-sprite to N
                     --height N   Sets the height per-sprite to N
+                    --ac-scale   Accepts default scale in config
                     --help       Shows this help message.
                     """)
                     sys.exit(0)
@@ -236,8 +243,11 @@ if __name__ == "__main__":
         if asset_width <= 0 or asset_height <= 0:
              print(" [ fixup ] \033[31mFATAL: Invalid values from config for WIDTH and/or HEIGHT. Is config.txt valid?\033[0m")
              sys.exit(1)
-
-        is_valid = input(" [ fixup ] Shall we use config.txt's value for scale? [Y/n] ")
+        is_valid = 'n'
+        if accept_scale:
+            is_valid = 'y'
+        else:
+            is_valid = input(" [ fixup ] Shall we use config.txt's value for scale? [Y/n] ")
         if is_valid and is_valid.lower() == "n":
             asset_scale = float(input(" [ fixup] Enter a float value for SCALE: "))
         else:

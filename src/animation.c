@@ -264,21 +264,29 @@ void anim_trigger_drag_end(void) {
 // Finding as of 26/08/25:
 //   Emotes 3 and 2 are swapped.
 void anim_trigger_emote_1(void) {
+  if (asset_conf_animation->emote1 == 0)
+    return;
   degrli_play_sound("emote1");
   data->state = ANIM_STATE_EMOTE1;
   data->cur = 0;
 }
 void anim_trigger_emote_2(void) {
+  if (asset_conf_animation->emote3 == 0)
+    return;
   degrli_play_sound("emote3");
   data->state = ANIM_STATE_EMOTE2;
   data->cur = 0;
 }
 void anim_trigger_emote_3(void) {
+  if (asset_conf_animation->emote2 == 0)
+    return;
   degrli_play_sound("emote2");
   data->state = ANIM_STATE_EMOTE3;
   data->cur = 0;
 }
 void anim_trigger_emote_4(void) {
+  if (asset_conf_animation->emote4 == 0)
+    return;
   degrli_play_sound("emote4");
   data->state = ANIM_STATE_EMOTE4;
   data->cur = 0;

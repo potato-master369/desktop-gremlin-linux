@@ -40,6 +40,8 @@
 #define DEGRLI_VER_STRING "desktop-gremlin-linux by potato-master369\nVersion 4.1.0 (can download stuff now i guess)"
 // Path for DLPM world file
 #define DEGRLI_PKG_WORLD_PATH "/usr/share/desktop-gremlin-linux/dlpm/world"
+// Absolute oath to our pkexec stub
+#define DEGRLI_PKG_PSTUB_PATH "/usr/local/bin/degrli_options_pstub"
 // uncomment to disable X11
 // #define DEGRLI_NO_X11
 // uncomment to disable the Emote1 demo.

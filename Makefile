@@ -95,7 +95,7 @@ install:
 	install -d $(HOME)/.config/desktop-gremlin-linux
 	install -m 755 degrli $(DESTDIR)$(PREFIX)/bin/degrli
 	install -m 755 degrli_options $(DESTDIR)$(PREFIX)/bin/degrli_options
-	install -m 755 degrli_options_pstub $(DESTDIR)$(PREFIX)/bin/degrli_options
+	install -m 755 degrli_options_pstub $(DESTDIR)$(PREFIX)/bin/degrli_options_pstub
 	cp -r tool/recipes $(DESTDIR)$(DATADIR)/dlpm/recipes
 	test -f $(DESTDIR)$(DATADIR)/dlpm/world || \
 		touch $(DESTDIR)$(DATADIR)/dlpm/world && chmod 644 $(DESTDIR)$(DATADIR)/dlpm/world

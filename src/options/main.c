@@ -650,6 +650,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_widget_set_margin_end(dv_tab_7, 20);
   gtk_widget_set_margin_top(dv_tab_7, 20);
   pkg_setup_box(dv_tab_7);
+  pkg_update_box(inst_list, 0);
   gtk_widget_set_size_request(list_view, 400, -1);
 
   gtk_paned_set_start_child(GTK_PANED(g_tab_7), scrolled);
