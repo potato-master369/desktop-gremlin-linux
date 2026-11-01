@@ -1,6 +1,5 @@
-# desktop-gremlin-linux PM recipe for Kritzkingvoid gremlins
-
 #!/bin/sh
+# desktop-gremlin-linux PM recipe for Kritzkingvoid gremlins
 
 if command -v curl >/dev/null 2>&1; then
     echo " -> curl is available"

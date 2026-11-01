@@ -1,6 +1,5 @@
-# desktop-gremlin-linux PM recipe for Kritzkingvoid gremlins
-
 #!/bin/sh
+# desktop-gremlin-linux PM recipe for Kritzkingvoid gremlins
 
 if command -v curl >/dev/null 2>&1; then
     echo " -> curl is available"
@@ -23,8 +22,8 @@ else
     exit 1
 fi
 
-TEMP_ZIP=$(mktemp /tmp/dlpm-unverified-Agnes.XXXXXX.zip)
-TEMP_DIR=$(mktemp -d /tmp/dlpm-Agnes-work.XXXXXX)
+TEMP_ZIP=$(mktemp /tmp/dlpm-unverified-Oguri.XXXXXX.zip)
+TEMP_DIR=$(mktemp -d /tmp/dlpm-Oguri-work.XXXXXX)
 
 echo " -> Downloading asset..."
 curl -L -o "$TEMP_ZIP" "https://github.com/Kritzkingvoid/Desktop_Gremlin/releases/download/v4.0/TracenAcademy_v4.0.zip"
@@ -41,12 +40,12 @@ fi
 echo " -> Unzipping..."
 unzip -q "$TEMP_ZIP" -d "$TEMP_DIR"
 
-mkdir -p /usr/share/desktop-gremlin-linux/Sounds/Agnes
-mkdir -p /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Agnes
+mkdir -p /usr/share/desktop-gremlin-linux/Sounds/Oguri
+mkdir -p /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Oguri
 
 echo " -> Installing files..."
-cp -R "$TEMP_DIR/TracenAcademy_v4.0/Sounds/Agnes/." /usr/share/desktop-gremlin-linux/Sounds/Agnes/
-cp -R "$TEMP_DIR/TracenAcademy_v4.0/SpriteSheet/Gremlins/Agnes/." /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Agnes/
+cp -R "$TEMP_DIR/TracenAcademy_v4.0/Sounds/Oguri/." /usr/share/desktop-gremlin-linux/Sounds/Oguri/
+cp -R "$TEMP_DIR/TracenAcademy_v4.0/SpriteSheet/Gremlins/Oguri/." /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Oguri/
 
 echo " -> Cleaning up..."
 rm -f "$TEMP_ZIP"
