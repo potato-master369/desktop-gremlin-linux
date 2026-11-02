@@ -92,13 +92,15 @@ install:
 	install -d $(DESTDIR)$(DATADIR)/Sounds
 	install -d $(DESTDIR)$(DATADIR)/SpriteSheet
 	install -d $(DESTDIR)$(DATADIR)/dlpm
+	install -d $(DESTDIR)$(DATADIR)/dlpm/recipes
 	install -d $(HOME)/.config/desktop-gremlin-linux
 	install -m 755 degrli $(DESTDIR)$(PREFIX)/bin/degrli
 	install -m 755 degrli_options $(DESTDIR)$(PREFIX)/bin/degrli_options
 	install -m 755 degrli_options_pstub $(DESTDIR)$(PREFIX)/bin/degrli_options_pstub
-	cp -r tool/recipes $(DESTDIR)$(DATADIR)/dlpm/recipes
+	cp -r tool/recipes/. $(DESTDIR)$(DATADIR)/dlpm/recipes
 	test -f $(DESTDIR)$(DATADIR)/dlpm/world || \
-		touch $(DESTDIR)$(DATADIR)/dlpm/world && chmod 644 $(DESTDIR)$(DATADIR)/dlpm/world
+		touch $(DESTDIR)$(DATADIR)/dlpm/world
+	chmod 644 $(DESTDIR)$(DATADIR)/dlpm/world
 	cp -r ass/Sounds/* $(DESTDIR)$(DATADIR)/Sounds/
 	install -d $(DESTDIR)$(DESKTOPDIR)
 	install -m 644 ass/degrli.desktop $(DESTDIR)$(DESKTOPDIR)/degrli.desktop

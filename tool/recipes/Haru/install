@@ -43,6 +43,10 @@ unzip -q "$TEMP_ZIP" -d "$TEMP_DIR"
 mkdir -p /usr/share/desktop-gremlin-linux/Sounds/Haru
 mkdir -p /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Haru
 
+echo " -> Patching..."
+python3 /usr/share/desktop-gremlin-linux/fixup.py "$TEMP_DIR/TracenAcademy_v4.0/SpriteSheet/Gremlins/Haru" --ac-scale --width 325 --height 325
+rm -f "$TEMP_DIR/TracenAcademy_v4.0/SpriteSheet/Gremlins/Rice/config.old"
+
 echo " -> Installing files..."
 cp -R "$TEMP_DIR/TracenAcademy_v4.0/Sounds/Haru/." /usr/share/desktop-gremlin-linux/Sounds/Haru/
 cp -R "$TEMP_DIR/TracenAcademy_v4.0/SpriteSheet/Gremlins/Haru/." /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Haru/

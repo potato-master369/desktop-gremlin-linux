@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo " -> Remove"
+rm -rvf /usr/share/desktop-gremlin-linux/SpriteSheet/Gremlins/Calstone
+rm -rvf /usr/share/desktop-gremlin-linux/Sounds/Calstone
+echo " [ * ] Remove success!"
+exit 0

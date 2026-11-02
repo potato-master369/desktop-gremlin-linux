@@ -644,6 +644,13 @@ static void activate(GtkApplication *app, gpointer user_data) {
   g_signal_connect(list_view, "activate", G_CALLBACK(activate_cb), NULL);
   GtkWidget *scrolled = gtk_scrolled_window_new();
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), list_view);
+  GtkWidget *pkgbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+  GtkWidget *l_tab_7_2 = gtk_label_new("Select a package below...");
+  gtk_label_set_wrap(GTK_LABEL(l_tab_7_2), true);
+  gtk_widget_set_margin_top(l_tab_7_2, 20);
+  gtk_box_append(GTK_BOX(pkgbox), l_tab_7_2);
+  gtk_widget_set_vexpand(list_view, true);
+  gtk_box_append(GTK_BOX(pkgbox), scrolled);
   GtkWidget *dv_tab_7 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
   gtk_widget_set_margin_start(dv_tab_7, 20);
   gtk_widget_set_margin_bottom(dv_tab_7, 20);
@@ -653,7 +660,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   pkg_update_box(inst_list, 0);
   gtk_widget_set_size_request(list_view, 400, -1);
 
-  gtk_paned_set_start_child(GTK_PANED(g_tab_7), scrolled);
+  gtk_paned_set_start_child(GTK_PANED(g_tab_7), pkgbox);
   gtk_paned_set_end_child(GTK_PANED(g_tab_7), dv_tab_7);
   gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scroll_page(g_tab_7),
                            l_tab_7);
