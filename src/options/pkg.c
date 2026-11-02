@@ -32,9 +32,9 @@ static GtkWidget *owndesc;
 static GtkWidget *install;
 static GtkWidget *removeb;
 static GtkWidget *desc;
-static GtkWidget *zaghahkngvyjin;
 static int csel;
 static char cversion[64];
+static char cowner[64];
 char *s_sel = NULL;
 
 static void pkg_init_list(void) {
@@ -824,15 +824,11 @@ static void pkg_ini_callback(char *section, char *key, char *value) {
     }
     if MATCH (key, "Owner") {
       remove_outer_quotes(value);
-      gtk_label_set_text(GTK_LABEL(owndesc), value);
+      strcpy(cowner, value);
     }
     if MATCH (key, "Version") {
       remove_outer_quotes(value);
       strcpy(cversion, value); // save version
-      char buf[256];
-      snprintf(buf, sizeof(buf), "Package upstream (if any) version: %s",
-               value);
-      gtk_label_set_text(GTK_LABEL(zaghahkngvyjin), buf);
     }
   }
 }
@@ -866,7 +862,7 @@ void pkg_update_box(GListStore *dat, int sel) {
   char fpathbuf[PATH_MAX];
   if (item) {
     GtkStringObject *so = GTK_STRING_OBJECT(item);
-    s_sel = gtk_string_object_get_string(so);
+    s_sel = (char*)gtk_string_object_get_string(so);
     snprintf(fpathbuf, sizeof(fpathbuf),
              "/usr/share/desktop-gremlin-linux/dlpm/recipes/%s/metadata.ini",
              s_sel);
@@ -875,6 +871,9 @@ void pkg_update_box(GListStore *dat, int sel) {
     if (!metadata)
       return;
     pkg_ini_parse(metadata, pkg_ini_callback);
+    char buf[256];
+    snprintf(buf, sizeof(buf), "By %s; v. %s", cowner, cversion);
+    gtk_label_set_text(GTK_LABEL(owndesc), buf);
     if (pkg_is_in_wfile((char *)s_sel)) {
       gtk_widget_set_visible(removeb, true);
       gtk_button_set_label(GTK_BUTTON(install), "Re-install/Update");
@@ -901,6 +900,9 @@ void pkg_setup_box(GtkWidget *self) {
   removeb = gtk_button_new_with_label("Remove");
   gtk_widget_set_halign(removeb, GTK_ALIGN_START);
   gtk_widget_set_hexpand(removeb, false);
+  GtkWidget *asfogasifas = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_box_append(GTK_BOX(asfogasifas), install);
+  gtk_box_append(GTK_BOX(asfogasifas), removeb);
   gtk_widget_add_css_class(removeb, "destructive-action");
   gtk_widget_set_visible(removeb, false);
   g_signal_connect(install, "clicked", G_CALLBACK(pkg_install_hook), NULL);
@@ -911,15 +913,11 @@ void pkg_setup_box(GtkWidget *self) {
   desc = gtk_label_new("DESCRIPTION TEXT BLABLABLA I LOVE UMAUMSUME");
   gtk_widget_set_halign(desc, GTK_ALIGN_START);
   gtk_label_set_wrap(GTK_LABEL(desc), TRUE);
-  zaghahkngvyjin = gtk_label_new("v4.2.0");
-  gtk_widget_add_css_class(zaghahkngvyjin, "dim-label");
   gtk_box_append(GTK_BOX(thefuckingbox), header);
   gtk_box_append(GTK_BOX(thefuckingbox), owndesc);
-  gtk_box_append(GTK_BOX(thefuckingbox), install);
-  gtk_box_append(GTK_BOX(thefuckingbox), removeb);
+  gtk_box_append(GTK_BOX(thefuckingbox), asfogasifas);
   gtk_box_append(GTK_BOX(thefuckingbox), separator);
   gtk_box_append(GTK_BOX(thefuckingbox), desc);
-  gtk_box_append(GTK_BOX(thefuckingbox), zaghahkngvyjin);
 }
 
 int pkg_init(void) {

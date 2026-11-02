@@ -330,12 +330,14 @@ static void save_defaults(GtkWidget *widget, gpointer data) {
 // make social links actually verk
 // EDIT: fix links
 static void on_guthib(GtkButton *button, gpointer user_data) {
-  GtkUriLauncher *l = gtk_uri_launcher_new("https://www.github.com/potato-master369/");
+  GtkUriLauncher *l =
+      gtk_uri_launcher_new("https://www.github.com/potato-master369/");
   gtk_uri_launcher_launch(l, GTK_WINDOW(w), NULL, NULL, NULL);
 }
 
 static void on_yutoob(GtkButton *button, gpointer user_data) {
-  GtkUriLauncher *l = gtk_uri_launcher_new("https://www.youtube.com/@WompWomp1234-j6c");
+  GtkUriLauncher *l =
+      gtk_uri_launcher_new("https://www.youtube.com/@WompWomp1234-j6c");
   gtk_uri_launcher_launch(l, GTK_WINDOW(w), NULL, NULL, NULL);
 }
 
@@ -345,9 +347,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_window_set_title(GTK_WINDOW(w), "Desktop-gremlin-linux Options");
   // CSS go brr
   GtkCssProvider *provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_string(provider,"spinbutton > text {\n"
-    "    min-width: 50px;\n"
-    "}");
+  gtk_css_provider_load_from_string(provider, "spinbutton > text {\n"
+                                              "    min-width: 50px;\n"
+                                              "}");
 
   GdkDisplay *display = gdk_display_get_default();
   gtk_style_context_add_provider_for_display(
@@ -437,6 +439,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   GtkWidget *l_tab_2 = gtk_label_new("Sprite Settings");
   GtkWidget *g_tab_2 = gtk_grid_new();
+  gtk_widget_set_margin_top(g_tab_2, 20);
+  gtk_widget_set_margin_start(g_tab_2, 20);
+  gtk_widget_set_margin_end(g_tab_2, 20);
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_2), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_2), 20);
   w_sprite_framerate = gtk_entry_new();
@@ -497,6 +502,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   GtkWidget *l_tab_3 = gtk_label_new("Random Actions");
   GtkWidget *g_tab_3 = gtk_grid_new();
+  gtk_widget_set_margin_top(g_tab_3, 20);
+  gtk_widget_set_margin_start(g_tab_3, 20);
+  gtk_widget_set_margin_end(g_tab_3, 20);
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_3), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_3), 20);
   w_allow_random_actions = gtk_switch_new();
@@ -530,6 +538,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   GtkWidget *l_tab_4 = gtk_label_new("Configuration");
   GtkWidget *g_tab_4 = gtk_grid_new();
+  gtk_widget_set_margin_top(g_tab_4, 20);
+  gtk_widget_set_margin_start(g_tab_4, 20);
+  gtk_widget_set_margin_end(g_tab_4, 20);
   w_allow_color_hotspot = gtk_switch_new();
   add_setting_row(GTK_GRID(g_tab_4), 0, "Allow Color Hotspot",
                   w_allow_color_hotspot, "Enable color hotspots for debugging");
@@ -564,6 +575,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
   GtkWidget *g_tab_5 = gtk_grid_new();
   GtkWidget *l_tab_5 = gtk_label_new("Quirks");
+  gtk_widget_set_margin_top(g_tab_5, 20);
+  gtk_widget_set_margin_start(g_tab_5, 20);
+  gtk_widget_set_margin_end(g_tab_5, 20);
   gtk_grid_set_column_spacing(GTK_GRID(g_tab_5), 20);
   gtk_grid_set_row_spacing(GTK_GRID(g_tab_5), 20);
   GtkWidget *current_accel_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -604,6 +618,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_append(GTK_BOX(box), notebook);
   GtkWidget *g_tab_6 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 40);
   GtkWidget *l_tab_6 = gtk_label_new("Cool Information");
+  gtk_widget_set_margin_top(g_tab_6, 20);
+  gtk_widget_set_margin_start(g_tab_6, 20);
+  gtk_widget_set_margin_end(g_tab_6, 20);
   GtkWidget *meme_image =
       gtk_image_new_from_resource("/io/github/desktop-gremlin-linux/meme.png");
   gtk_image_set_pixel_size(GTK_IMAGE(meme_image), 300);
@@ -619,8 +636,11 @@ static void activate(GtkApplication *app, gpointer user_data) {
   g_signal_connect(yootoob, "clicked", G_CALLBACK(on_yutoob), NULL);
   gtk_box_append(GTK_BOX(vbox_tab_6), guthib);
   gtk_box_append(GTK_BOX(vbox_tab_6), yootoob);
-  GtkWidget *loglabel = gtk_label_new(
-      "This is where I put version history and memes\n\n4.1.0 \nnew UI and downloader thingy!");
+  GtkWidget *loglabel =
+      gtk_label_new("This is where I put version history and memes\n\n4.1.0 "
+                    "\nnew UI and downloader thingy!");
+  gtk_widget_set_halign(loglabel, GTK_ALIGN_START);
+  gtk_widget_set_valign(loglabel, GTK_ALIGN_START);
   gtk_label_set_wrap(GTK_LABEL(loglabel), TRUE);
   gtk_widget_set_vexpand(loglabel, false);
   gtk_widget_set_hexpand(loglabel, true);
@@ -640,15 +660,17 @@ static void activate(GtkApplication *app, gpointer user_data) {
   g_signal_connect(factory, "bind", G_CALLBACK(bind_listitem_cb), NULL);
   GtkWidget *list_view = gtk_list_view_new(selection, factory);
   gtk_list_view_set_single_click_activate(GTK_LIST_VIEW(list_view), TRUE);
-  gtk_widget_add_css_class(list_view, "rich-list");
+  gtk_widget_add_css_class(list_view, "navigation-sidebar");
   g_signal_connect(list_view, "activate", G_CALLBACK(activate_cb), NULL);
   GtkWidget *scrolled = gtk_scrolled_window_new();
   gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), list_view);
   GtkWidget *pkgbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
   GtkWidget *l_tab_7_2 = gtk_label_new("Select a package below...");
+  GtkWidget *s_tab_7 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_label_set_wrap(GTK_LABEL(l_tab_7_2), true);
   gtk_widget_set_margin_top(l_tab_7_2, 20);
   gtk_box_append(GTK_BOX(pkgbox), l_tab_7_2);
+  gtk_box_append(GTK_BOX(pkgbox), s_tab_7);
   gtk_widget_set_vexpand(list_view, true);
   gtk_box_append(GTK_BOX(pkgbox), scrolled);
   GtkWidget *dv_tab_7 = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
